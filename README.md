@@ -2,6 +2,9 @@
 <img 
   src="https://img.shields.io/github/downloads/Aleks-Levet/better-nothing-music-visualizer/total?style=for-the-badge&logo=github&label=Total%20app%20downloads%20from%20github:&color=ff0000&labelColor=000000"
   style="height:40px; border-radius:12px;">
+  
+[<img height="80" alt="Get it on GitHub" src="./.github/assets/get-it-on-github.png" />](https://github.com/Aleks-Levet/better-nothing-music-visualizer/releases)
+   
 ## 🌐 Read this in other languages: 
 🇮🇳 [हिन्दी](README_HI.md)
 🇮🇳 [Marathi](README-MR.md)
@@ -86,9 +89,15 @@ https://www.virustotal.com/gui/url/c92c1ff82b56eb60bfd1e159592d09f949f0ea2d195e0
 - [rKyzen(a.k.a Shivank Dan)](https://github.com/rKyzen)(Android App developer with real time music stream)
 - [Oliver Lebaigue](https://github.com/oliver-lebaigue-bright-bench) (Developer)
 - [SebiAi](https://github.com/SebiAi) (Glyphmodder and glyph related help)
-- [Earnedel-lab](https://github.com/Earendel-lab) (Readme enhancements)
+- [Earendel](https://github.com/Earendel-lab) (Readme enhancements)
 - [あけ なるかみ](https://github.com/Luke20YT) (Dev making a Music app with an integration with this script)
 - [Interlastic](https://github.com/Interlastic) (Discord Bot to try the script easily) (deprecated)
 
-### <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Travel%20and%20places/Star.png" alt="Star" width="25" height="25" /> Star History
-![Star History](https://api.star-history.com/svg?repos=Aleks-Levet/better-nothing-music-visualizer&type=Date)
+### <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Travel%20and%20places/Star.png" alt="Star" width="25" height="25" />Star History
+<a href="https://www.star-history.com/?repos=Aleks-Levet%2Fbetter-nothing-music-visualizer&type=date&legend=top-left">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=Aleks-Levet/better-nothing-music-visualizer&type=date&theme=dark&legend=top-left" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=Aleks-Levet/better-nothing-music-visualizer&type=date&legend=top-left" />
+   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=Aleks-Levet/better-nothing-music-visualizer&type=date&legend=top-left" />
+ </picture>
+</a>
