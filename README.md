@@ -42,7 +42,7 @@ Even if it technically isn’t, the visual response to music just isn’t very o
 - Nothing Phone (4a)
 
 **partial support:**
-- Nothing Phone (4a pro)
+- Nothing Phone (4a) pro
 - Nothing phone (3) 
 
 
