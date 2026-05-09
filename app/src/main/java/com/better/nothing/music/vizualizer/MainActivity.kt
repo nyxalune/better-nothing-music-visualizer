@@ -199,7 +199,15 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
     private val _selectedPreset = MutableStateFlow("")
     val selectedPreset = _selectedPreset.asStateFlow()
     fun currentPreset(): String = _selectedPreset.value
-    fun setSelectedPreset(key: String) { if (key.isNotBlank()) _selectedPreset.value = key }
+    fun setSelectedPreset(key: String) {
+        if (key.isNotBlank()) {
+            _selectedPreset.value = key
+            viewModelScope.launch(Dispatchers.IO) {
+                ctx.getSharedPreferences("viz_prefs", Context.MODE_PRIVATE)
+                    .edit { putString("selected_preset", key) }
+            }
+        }
+    }
 
     private val _presetInfos = MutableStateFlow<List<AudioCaptureService.PresetInfo>>(emptyList())
     val presetInfos = _presetInfos.asStateFlow()
@@ -339,6 +347,9 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
     private val _hapticMotorEnabled = MutableStateFlow(false)
     val hapticMotorEnabled = _hapticMotorEnabled.asStateFlow()
 
+    private val _hapticMode = MutableStateFlow(HapticMode.BASS_TO_AMPLITUDE)
+    val hapticMode = _hapticMode.asStateFlow()
+
     private val _hapticFreqMin = MutableStateFlow(60f)
     val hapticFreqMin = _hapticFreqMin.asStateFlow()
 
@@ -356,6 +367,14 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
         viewModelScope.launch(Dispatchers.IO) {
             ctx.getSharedPreferences("viz_prefs", Context.MODE_PRIVATE)
                 .edit { putBoolean("haptic_motor_enabled", enabled) }
+        }
+    }
+
+    fun setHapticMode(mode: HapticMode) {
+        _hapticMode.value = mode
+        viewModelScope.launch(Dispatchers.IO) {
+            ctx.getSharedPreferences("viz_prefs", Context.MODE_PRIVATE)
+                .edit { putString("haptic_mode", mode.name) }
         }
     }
 
@@ -428,7 +447,19 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
 
     // ── Init: all IO in parallel ──────────────────────────────────────────────
 
+    private val prefListener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { prefs, key ->
+        when (key) {
+            "haptic_motor_enabled" -> {
+                _hapticMotorEnabled.value = prefs.getBoolean(key, false)
+            }
+            "selected_preset" -> {
+                _selectedPreset.value = prefs.getString(key, "") ?: ""
+            }
+        }
+    }
+
     init {
+        ctx.getSharedPreferences("viz_prefs", Context.MODE_PRIVATE).registerOnSharedPreferenceChangeListener(prefListener)
         // Run EVERYTHING heavy off-thread immediately
         viewModelScope.launch(Dispatchers.Default) {
             val prefs = ctx.getSharedPreferences("viz_prefs", Context.MODE_PRIVATE)
@@ -476,8 +507,11 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
                 val theme = prefs.getString("selected_theme", "OLED Black") ?: "OLED Black"
                 _selectedTheme.value = if (theme == "Normal") "OLED Black" else theme
                 _selectedFont.value = prefs.getString("selected_font", "NDot") ?: "NDot"
+                _selectedPreset.value = prefs.getString("selected_preset", "") ?: ""
 
                 _hapticMotorEnabled.value = prefs.getBoolean("haptic_motor_enabled", false)
+                val modeName = prefs.getString("haptic_mode", HapticMode.BASS_TO_AMPLITUDE.name)
+                _hapticMode.value = HapticMode.valueOf(modeName ?: HapticMode.BASS_TO_AMPLITUDE.name)
                 _hapticFreqMin.value = prefs.getInt("haptic_freq_min", 60).toFloat()
                 _hapticFreqMax.value = prefs.getInt("haptic_freq_max", 250).toFloat()
                 _hapticMultiplier.value = prefs.getFloat("haptic_multiplier", 1.0f)
@@ -563,6 +597,10 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
         if (infos.none { it.key == _selectedPreset.value }) {
             _selectedPreset.value = infos.firstOrNull()?.key.orEmpty()
         }
+    }
+    override fun onCleared() {
+        ctx.getSharedPreferences("viz_prefs", Context.MODE_PRIVATE).unregisterOnSharedPreferenceChangeListener(prefListener)
+        super.onCleared()
     }
 }
 
@@ -706,6 +744,7 @@ class MainActivity : ComponentActivity(), SensorEventListener {
                 val selectedPreset by viewModel.selectedPreset.collectAsStateWithLifecycle()
 
                 val hapticMotorEnabled by viewModel.hapticMotorEnabled.collectAsStateWithLifecycle()
+                val hapticMode by viewModel.hapticMode.collectAsStateWithLifecycle()
                 val hapticFreqMin by viewModel.hapticFreqMin.collectAsStateWithLifecycle()
                 val hapticFreqMax by viewModel.hapticFreqMax.collectAsStateWithLifecycle()
                 val hapticMultiplier by viewModel.hapticMultiplier.collectAsStateWithLifecycle()
@@ -749,6 +788,8 @@ class MainActivity : ComponentActivity(), SensorEventListener {
                     viewModel = viewModel,
                     hapticMotorEnabled = hapticMotorEnabled,
                     onHapticMotorEnabledChanged = ::onHapticMotorEnabledChanged,
+                    hapticMode = hapticMode,
+                    onHapticModeChanged = ::onHapticModeChanged,
                     hapticFreqMin = hapticFreqMin,
                     hapticFreqMax = hapticFreqMax,
                     onHapticFreqRangeChanged = ::onHapticFreqRangeChanged,
@@ -833,6 +874,11 @@ class MainActivity : ComponentActivity(), SensorEventListener {
     private fun onHapticMotorEnabledChanged(enabled: Boolean) {
         viewModel.setHapticMotorEnabled(enabled)
         service?.setHapticEnabled(enabled)
+    }
+
+    private fun onHapticModeChanged(mode: HapticMode) {
+        viewModel.setHapticMode(mode)
+        service?.setHapticMode(mode)
     }
 
     private fun onHapticFreqRangeChanged(min: Float, max: Float) {
@@ -1013,6 +1059,7 @@ class MainActivity : ComponentActivity(), SensorEventListener {
         service?.setGamma(viewModel.gammaValue.value)
 
         service?.setHapticEnabled(viewModel.hapticMotorEnabled.value)
+        service?.setHapticMode(viewModel.hapticMode.value)
         service?.setHapticFreqRange(viewModel.hapticFreqMin.value, viewModel.hapticFreqMax.value)
         service?.setHapticMultiplier(viewModel.hapticMultiplier.value)
         service?.setHapticGamma(viewModel.hapticGamma.value)
@@ -1189,6 +1236,8 @@ private fun BetterVizApp(
     onAutoDeviceToggle: (Boolean) -> Unit,
     hapticMotorEnabled: Boolean,
     onHapticMotorEnabledChanged: (Boolean) -> Unit,
+    hapticMode: HapticMode,
+    onHapticModeChanged: (HapticMode) -> Unit,
     hapticFreqMin: Float,
     hapticFreqMax: Float,
     onHapticFreqRangeChanged: (Float, Float) -> Unit,
@@ -1331,6 +1380,8 @@ private fun BetterVizApp(
                         Tab.Haptics -> HapticsScreen(
                             hapticMotorEnabled = hapticMotorEnabled,
                             onHapticMotorEnabledChanged = onHapticMotorEnabledChanged,
+                            hapticMode = hapticMode,
+                            onHapticModeChanged = onHapticModeChanged,
                             hapticFreqMin = hapticFreqMin,
                             hapticFreqMax = hapticFreqMax,
                             onHapticFreqRangeChanged = onHapticFreqRangeChanged,

@@ -1,7 +1,6 @@
 package com.better.nothing.music.vizualizer;
 
 import android.content.Context;
-import android.os.Build;
 import android.os.CombinedVibration;
 import android.os.SystemClock;
 import android.os.VibrationEffect;
@@ -49,7 +48,6 @@ public final class ContinuousHapticEngine {
     private static final float SPECTRUM_GAIN = 4.0f;
 
     // Keep the motor from going completely dead for tiny non-zero values.
-    private static final int MIN_ACTIVE_AMPLITUDE = 1;
     private static final int MAX_AMPLITUDE = 255;
 
     private final Vibrator vibrator;
@@ -73,14 +71,9 @@ public final class ContinuousHapticEngine {
     public ContinuousHapticEngine(Context context) {
         Context appContext = Objects.requireNonNull(context, "context").getApplicationContext();
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            VibratorManager vm = (VibratorManager) appContext.getSystemService(Context.VIBRATOR_MANAGER_SERVICE);
-            this.vibratorManager = vm;
-            this.vibrator = (vm != null) ? vm.getDefaultVibrator() : nullSafeVibrator(appContext);
-        } else {
-            this.vibratorManager = null;
-            this.vibrator = nullSafeVibrator(appContext);
-        }
+        VibratorManager vm = (VibratorManager) appContext.getSystemService(Context.VIBRATOR_MANAGER_SERVICE);
+        this.vibratorManager = vm;
+        this.vibrator = (vm != null) ? vm.getDefaultVibrator() : nullSafeVibrator(appContext);
     }
 
     public synchronized void setHapticMultiplier(float multiplier) {
@@ -89,10 +82,6 @@ public final class ContinuousHapticEngine {
 
     public synchronized void setHapticGamma(float gamma) {
         this.hapticGamma = Math.max(0.1f, gamma);
-    }
-
-    public synchronized boolean isRunning() {
-        return waveformActive;
     }
 
     public synchronized void performHapticFeedback(float rawPeak, @Nullable AudioProcessor.VisualizerConfig config) {
@@ -134,9 +123,6 @@ public final class ContinuousHapticEngine {
         
         int amplitude = Math.round(Math.min(1.0f, shaped) * MAX_AMPLITUDE);
 
-        if (amplitude > 0) {
-            amplitude = Math.max(MIN_ACTIVE_AMPLITUDE, amplitude);
-        }
         amplitude = clampInt(amplitude, 0, MAX_AMPLITUDE);
 
         if (amplitude <= 0) {
@@ -228,12 +214,6 @@ public final class ContinuousHapticEngine {
     private static Vibrator nullSafeVibrator(Context context) {
         VibratorManager vm = (VibratorManager) context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE);
         return (vm != null) ? vm.getDefaultVibrator() : null;
-    }
-
-    private static float clamp01(float value) {
-        if (value < 0f) return 0f;
-        if (value > 1f) return 1f;
-        return value;
     }
 
     private static int clampInt(int value, int min, int max) {

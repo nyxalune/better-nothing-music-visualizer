@@ -95,7 +95,7 @@ public class AudioProcessor {
         float[] uniquePeaks = computeUniquePeaks(config, magnitude);
         float hapticPeak = hapticRange != null ? computeRangePeak(hapticRange, magnitude) : 0f;
 
-        return new AudioFrameResult(uniquePeaks, hapticPeak);
+        return new AudioFrameResult(uniquePeaks, hapticPeak, magnitude);
     }
 
     private float[] computeUniquePeaks(VisualizerConfig config, float[] magnitude) {
@@ -206,10 +206,12 @@ public class AudioProcessor {
     public static final class AudioFrameResult {
         public final float[] uniquePeaks;
         public final float hapticPeak;
+        public final float[] magnitude;
 
-        public AudioFrameResult(float[] uniquePeaks, float hapticPeak) {
+        public AudioFrameResult(float[] uniquePeaks, float hapticPeak, float[] magnitude) {
             this.uniquePeaks = uniquePeaks;
             this.hapticPeak = hapticPeak;
+            this.magnitude = magnitude;
         }
     }
 }

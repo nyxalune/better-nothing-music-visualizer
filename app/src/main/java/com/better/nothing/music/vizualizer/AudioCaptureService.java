@@ -69,8 +69,11 @@ public class AudioCaptureService extends Service {
     private static final String CHANNEL_ID = "glyph_viz_channel";
     private static final int NOTIF_ID = 1;
     public static final String ACTION_STOP = "com.better.nothing.music.vizualizer.action.STOP";
+    public static final String ACTION_TOGGLE_HAPTICS = "com.better.nothing.music.vizualizer.action.TOGGLE_HAPTICS";
 
     public static final String EXTRA_PRESET_KEY = "preset_key";
+    public static final String EXTRA_RESULT_CODE = "result_code";
+    public static final String EXTRA_DATA = "data";
     public static final float DEFAULT_GAMMA = 2f;
 
     private static final String PREFS_NAME = "glyph_visualizer_prefs";
@@ -97,6 +100,7 @@ public class AudioCaptureService extends Service {
     private static final long PROJECTION_SETTLE_DELAY_MS = 500L;
 
     private static volatile boolean sIsRunning = false;
+    private static AudioCaptureService sInstance = null;
 
     private final IBinder mBinder = new LocalBinder();
     private final Object mCaptureLock = new Object();
@@ -175,10 +179,12 @@ public class AudioCaptureService extends Service {
     private static final long FLASH_DURATION_MS = 200L;
 
     private volatile boolean mHapticEnabled = false;
+    private volatile HapticMode mHapticMode = HapticMode.BASS_TO_AMPLITUDE;
     private volatile float mHapticMinHz = 60;
     private volatile float mHapticMaxHz = 250;
     private volatile AudioProcessor.FrequencyRange mHapticRange;
-    private ContinuousHapticEngine mHapticEngine;
+    private ContinuousHapticEngine mContinuousHapticEngine;
+    private BeatDetectionHapticEngine mBeatDetectionEngine;
 
     private AudioProcessor mAudioProcessor;
     private GlyphRenderer mGlyphRenderer;
@@ -193,7 +199,7 @@ public class AudioCaptureService extends Service {
                 long now = SystemClock.elapsedRealtime();
                 // If it's been more than 100ms since the last audio frame, manually trigger a frame for breathing
                 if (now - mLastAudioActivityMs > 100) {
-                    processFrame(new float[0], 0f, mVisualizerConfig, mPresetConfigVersion);
+                    processFrame(new float[0], 0f, 0f, mVisualizerConfig, mPresetConfigVersion);
                 }
             }
             if (sIsRunning) {
@@ -217,13 +223,15 @@ public class AudioCaptureService extends Service {
     private static final class PendingFrame {
         final float[] uniquePeaks;
         final float hapticPeak;
+        final float hapticEnergy;
         final AudioProcessor.VisualizerConfig config;
         final int configVersion;
         final long dueAtMs;
 
-        PendingFrame(float[] uniquePeaks, float hapticPeak, AudioProcessor.VisualizerConfig config, int configVersion, long dueAtMs) {
+        PendingFrame(float[] uniquePeaks, float hapticPeak, float hapticEnergy, AudioProcessor.VisualizerConfig config, int configVersion, long dueAtMs) {
             this.uniquePeaks = uniquePeaks;
             this.hapticPeak = hapticPeak;
+            this.hapticEnergy = hapticEnergy;
             this.config = config;
             this.configVersion = configVersion;
             this.dueAtMs = dueAtMs;
@@ -249,16 +257,18 @@ public class AudioCaptureService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
+        sInstance = this;
 
         mWorkerThread = new HandlerThread("GlyphVizWorker", Process.THREAD_PRIORITY_BACKGROUND);
         mWorkerThread.start();
         mWorkerHandler = Handler.createAsync(mWorkerThread.getLooper());
         mAudioManager = getSystemService(AudioManager.class);
         if (mAudioManager != null) {
-            mAudioManager.registerAudioDeviceCallback(mAudioDeviceManager, mWorkerHandler);
+            mAudioManager.registerAudioDeviceCallback(mAudioDeviceCallback, mWorkerHandler);
         }
 
-        mHapticEngine = new ContinuousHapticEngine(this);
+        mContinuousHapticEngine = new ContinuousHapticEngine(this);
+        mBeatDetectionEngine = new BeatDetectionHapticEngine(this);
         mAudioProcessor = new AudioProcessor();
         mAudioDeviceManager = new AudioDeviceManager(this, this::refreshLatencyForCurrentAudioRoute);
 
@@ -270,6 +280,23 @@ public class AudioCaptureService extends Service {
         SharedPreferences appPrefs = getSharedPreferences(APP_PREFS_NAME, MODE_PRIVATE);
         mIdleBreathingEnabled = appPrefs.getBoolean("idle_breathing_enabled", false);
         mNotificationFlashEnabled = appPrefs.getBoolean("notification_flash_enabled", false);
+
+        mHapticEnabled = appPrefs.getBoolean("haptic_motor_enabled", false);
+        String hapticModeName = appPrefs.getString("haptic_mode", HapticMode.BASS_TO_AMPLITUDE.name());
+        try {
+            mHapticMode = HapticMode.valueOf(hapticModeName);
+        } catch (Exception e) {
+            mHapticMode = HapticMode.BASS_TO_AMPLITUDE;
+        }
+        mHapticMinHz = appPrefs.getInt("haptic_freq_min", 60);
+        mHapticMaxHz = appPrefs.getInt("haptic_freq_max", 250);
+        
+        float hapticMultiplier = appPrefs.getFloat("haptic_multiplier", 1.0f);
+        float hapticGamma = appPrefs.getFloat("haptic_gamma", 2.0f);
+        
+        mContinuousHapticEngine.setHapticMultiplier(hapticMultiplier);
+        mContinuousHapticEngine.setHapticGamma(hapticGamma);
+        mBeatDetectionEngine.setHapticMultiplier(hapticMultiplier);
         
         String idlePattern = appPrefs.getString("idle_pattern", "pulse");
         mGlyphRenderer.setIdlePattern(idlePattern);
@@ -301,14 +328,32 @@ public class AudioCaptureService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        if (intent != null && ACTION_STOP.equals(intent.getAction())) {
-            stopSelf();
-            return START_NOT_STICKY;
+        if (intent != null) {
+            if (ACTION_STOP.equals(intent.getAction())) {
+                stopCapture();
+                stopSelf();
+                return START_NOT_STICKY;
+            } else if (ACTION_TOGGLE_HAPTICS.equals(intent.getAction())) {
+                boolean newState = !mHapticEnabled;
+                setHapticEnabled(newState);
+                getSharedPreferences(APP_PREFS_NAME, MODE_PRIVATE)
+                        .edit().putBoolean("haptic_motor_enabled", newState).apply();
+                requestTileRefresh();
+                return START_NOT_STICKY;
+            }
         }
 
         String requestedPreset = intent != null ? intent.getStringExtra(EXTRA_PRESET_KEY) : null;
         if (requestedPreset != null && !requestedPreset.isBlank()) {
             setPreset(requestedPreset.trim());
+        }
+
+        if (intent != null && intent.hasExtra(EXTRA_RESULT_CODE) && intent.hasExtra(EXTRA_DATA)) {
+            int resultCode = intent.getIntExtra(EXTRA_RESULT_CODE, 0);
+            Intent data = intent.getParcelableExtra(EXTRA_DATA, Intent.class);
+            if (data != null) {
+                startCapture(resultCode, data);
+            }
         }
 
         startForeground(NOTIF_ID, buildNotification());
@@ -317,6 +362,7 @@ public class AudioCaptureService extends Service {
 
     @Override
     public void onDestroy() {
+        sInstance = null;
         stopCapture();
         clearGlyphSession();
         if (mGM != null) {
@@ -337,6 +383,14 @@ public class AudioCaptureService extends Service {
 
     public static boolean isRunning() {
         return sIsRunning;
+    }
+
+    public static boolean isHapticEnabledGlobal(Context context) {
+        if (sIsRunning && sInstance != null) {
+            return sInstance.mHapticEnabled;
+        }
+        return context.getSharedPreferences(APP_PREFS_NAME, MODE_PRIVATE)
+                .getBoolean("haptic_motor_enabled", false);
     }
 
     public static Intent createStopIntent(Context context) {
@@ -530,8 +584,15 @@ public class AudioCaptureService extends Service {
     public void setHapticEnabled(boolean enabled) {
         mHapticEnabled = enabled;
         if (!enabled) {
-            mHapticEngine.stopHaptics();
+            mContinuousHapticEngine.stopHaptics();
+            mBeatDetectionEngine.stopHaptics();
         }
+    }
+
+    public void setHapticMode(HapticMode mode) {
+        mHapticMode = mode;
+        if (mContinuousHapticEngine != null) mContinuousHapticEngine.stopHaptics();
+        if (mBeatDetectionEngine != null) mBeatDetectionEngine.stopHaptics();
     }
 
     public void setHapticFreqRange(float minHz, float maxHz) {
@@ -541,11 +602,12 @@ public class AudioCaptureService extends Service {
     }
 
     public void setHapticMultiplier(float multiplier) {
-        mHapticEngine.setHapticMultiplier(multiplier);
+        mContinuousHapticEngine.setHapticMultiplier(multiplier);
+        mBeatDetectionEngine.setHapticMultiplier(multiplier);
     }
 
     public void setHapticGamma(float gamma) {
-        mHapticEngine.setHapticGamma(gamma);
+        mContinuousHapticEngine.setHapticGamma(gamma);
     }
 
     public void startCapture(int resultCode, Intent data) {
@@ -579,6 +641,8 @@ public class AudioCaptureService extends Service {
             mCapturing = true;
             sIsRunning = true;
             ensureCaptureExecutor();
+            requestTileRefresh();
+            Log.d(TAG, "Capture started successfully via startCapture");
 
             mCaptureExecutor.execute(() -> {
                 Process.setThreadPriority(Process.THREAD_PRIORITY_AUDIO);
@@ -747,10 +811,17 @@ public class AudioCaptureService extends Service {
             }
 
             float hapticPeak = mHapticEnabled ? result.hapticPeak : 0f;
+            float hapticEnergy = 0f;
+            if (mHapticEnabled && mHapticMode == HapticMode.BEAT_DETECTION && mHapticRange != null) {
+                for (int i = mHapticRange.binLo; i <= mHapticRange.binHi && i < result.magnitude.length; i++) {
+                    hapticEnergy += result.magnitude[i];
+                }
+            }
 
             pendingFrames.addLast(new PendingFrame(
                     result.uniquePeaks,
                     hapticPeak,
+                    hapticEnergy,
                     config,
                     presetVersion,
                     SystemClock.elapsedRealtime() + mLatencyCompensationMs
@@ -769,18 +840,22 @@ public class AudioCaptureService extends Service {
                 return;
             }
             pendingFrames.removeFirst();
-            processFrame(pendingFrame.uniquePeaks, pendingFrame.hapticPeak, pendingFrame.config, pendingFrame.configVersion);
+            processFrame(pendingFrame.uniquePeaks, pendingFrame.hapticPeak, pendingFrame.hapticEnergy, pendingFrame.config, pendingFrame.configVersion);
         }
     }
 
-    private void processFrame(float[] uniquePeaks, float hapticPeak, AudioProcessor.VisualizerConfig config, int configVersion) {
+    private void processFrame(float[] uniquePeaks, float hapticPeak, float hapticEnergy, AudioProcessor.VisualizerConfig config, int configVersion) {
         if (config == null || configVersion != mPresetConfigVersion) {
             return;
         }
 
         // Apply haptics here so they follow the same latency queue as glyphs
         if (mHapticEnabled) {
-            mHapticEngine.performHapticFeedback(hapticPeak, config);
+            if (mHapticMode == HapticMode.BASS_TO_AMPLITUDE) {
+                mContinuousHapticEngine.performHapticFeedback(hapticPeak, config);
+            } else {
+                mBeatDetectionEngine.performHapticFeedback(hapticEnergy);
+            }
         }
 
         if (!mSessionOpen || mGM == null) {
@@ -827,7 +902,8 @@ public class AudioCaptureService extends Service {
 
 
     private void resetVisualizerState() {
-        mHapticEngine.stopHaptics();
+        mContinuousHapticEngine.stopHaptics();
+        mBeatDetectionEngine.stopHaptics();
         mGlyphRenderer.resetState(mVisualizerConfig);
         mLastSendMs = 0L;
     }
@@ -1121,6 +1197,10 @@ public class AudioCaptureService extends Service {
         TileService.requestListeningState(
                 this,
                 new ComponentName(this, VisualizerTileService.class)
+        );
+        TileService.requestListeningState(
+                this,
+                new ComponentName(this, HapticsTileService.class)
         );
     }
 

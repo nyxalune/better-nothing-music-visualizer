@@ -1,6 +1,7 @@
 package com.better.nothing.music.vizualizer;
 
 import android.app.PendingIntent;
+import android.content.ComponentName;
 import android.content.Intent;
 import android.graphics.drawable.Icon;
 import android.service.quicksettings.Tile;
@@ -11,31 +12,31 @@ public class VisualizerTileService extends TileService {
     @Override public void onClick() {
         super.onClick();
         if (AudioCaptureService.isRunning()) {
-            startService(AudioCaptureService.createStopIntent(this));
+            Intent stopIntent = AudioCaptureService.createStopIntent(this);
+            startService(stopIntent);
             refresh(false);
         } else {
-            unlockAndRun(()->{
-                Intent i = new Intent(this, MainActivity.class);
-                i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                i.putExtra(MainActivity.EXTRA_REQUEST_START, true);
+            refresh(true); // Immediate UI feedback
+            unlockAndRun(() -> {
+                Intent i = new Intent(this, PermissionTrampolineActivity.class);
+                i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_MULTIPLE_TASK | Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS);
                 PendingIntent pendingIntent = PendingIntent.getActivity(
                         this,
-                        2,
+                        3,
                         i,
                         PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
                 );
                 startActivityAndCollapse(pendingIntent);
             });
-            refresh(false);
         }
     }
     private void refresh() { refresh(AudioCaptureService.isRunning()); }
     private void refresh(boolean on) {
         Tile t=getQsTile(); if(t==null) return;
         t.setState(on?Tile.STATE_ACTIVE:Tile.STATE_INACTIVE);
-        t.setLabel(on?"Glyph Viz ON":"Glyph Visualizer");
-        t.setSubtitle(on?"Tap to stop":"Tap to open");
-        t.setIcon(Icon.createWithResource(this,android.R.drawable.ic_media_play));
+        t.setLabel("Glyph Visualizer");
+        t.setSubtitle(on?"Running":"Inactive");
+        t.setIcon(Icon.createWithResource(this, R.drawable.app_icon));
         t.updateTile();
     }
 }

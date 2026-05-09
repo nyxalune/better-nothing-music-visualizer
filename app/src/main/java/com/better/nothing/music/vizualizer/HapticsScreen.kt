@@ -13,6 +13,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -38,10 +39,13 @@ fun invLerpLog(freq: Float, min: Float, max: Float): Float {
     return (ln(freq) - logMin) / (logMax - logMin)
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HapticsScreen(
     hapticMotorEnabled: Boolean,
     onHapticMotorEnabledChanged: (Boolean) -> Unit,
+    hapticMode: HapticMode,
+    onHapticModeChanged: (HapticMode) -> Unit,
     hapticFreqMin: Float,
     hapticFreqMax: Float,
     onHapticFreqRangeChanged: (Float, Float) -> Unit,
@@ -89,6 +93,39 @@ fun HapticsScreen(
         }
 
         if (hapticMotorEnabled) {
+            // Mode Selector
+            Card(
+                shape = RoundedCornerShape(28.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Column(
+                    modifier = Modifier.padding(20.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Text(
+                        text = stringResource(R.string.haptics_mode_label),
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+
+                    ExpressiveSegmentedButtonRow(
+                        items = HapticMode.entries,
+                        selectedItem = hapticMode,
+                        onItemSelection = onHapticModeChanged,
+                        labelProvider = { mode ->
+                            stringResource(
+                                when (mode) {
+                                    HapticMode.BASS_TO_AMPLITUDE -> R.string.haptics_mode_bass
+                                    HapticMode.BEAT_DETECTION -> R.string.haptics_mode_beat
+                                }
+                            )
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            }
+
             // Frequency Range Slider
             Card(
                 shape = RoundedCornerShape(28.dp),
@@ -128,52 +165,60 @@ fun HapticsScreen(
                 }
             }
 
-            // Amplitude Multiplier
-            Card(
-                shape = RoundedCornerShape(28.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Column(
-                    modifier = Modifier.padding(20.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+            if (hapticMode == HapticMode.BASS_TO_AMPLITUDE) {
+                // Amplitude Multiplier
+                Card(
+                    shape = RoundedCornerShape(28.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    modifier = Modifier.fillMaxWidth(),
                 ) {
-                    Text(
-                        text = stringResource(R.string.haptics_amplitude_label, hapticMultiplier),
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    ExpressiveSlider(
-                        value = hapticMultiplier,
-                        onValueChange = onHapticMultiplierChanged,
-                        valueRange = 0.5f..1.5f,
-                        modifier = Modifier.fillMaxWidth()
-                    )
+                    Column(
+                        modifier = Modifier.padding(20.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Text(
+                            text = stringResource(R.string.haptics_amplitude_label, hapticMultiplier),
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        ExpressiveSlider(
+                            value = hapticMultiplier,
+                            onValueChange = onHapticMultiplierChanged,
+                            valueRange = 0.5f..1.5f,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
                 }
-            }
 
-            // Gamma (Curve)
-            Card(
-                shape = RoundedCornerShape(28.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Column(
-                    modifier = Modifier.padding(20.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                // Gamma (Curve)
+                Card(
+                    shape = RoundedCornerShape(28.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    modifier = Modifier.fillMaxWidth(),
                 ) {
-                    Text(
-                        text = stringResource(R.string.haptics_gamma_label, hapticGamma),
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    ExpressiveSlider(
-                        value = hapticGamma,
-                        onValueChange = onHapticGammaChanged,
-                        valueRange = 1f..4.0f,
-                        modifier = Modifier.fillMaxWidth()
-                    )
+                    Column(
+                        modifier = Modifier.padding(20.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Text(
+                            text = stringResource(R.string.haptics_gamma_label, hapticGamma),
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        ExpressiveSlider(
+                            value = hapticGamma,
+                            onValueChange = onHapticGammaChanged,
+                            valueRange = 1f..4.0f,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
                 }
+            } else {
+                // Beat Detection Description
+                BodyText(
+                    text = stringResource(R.string.haptics_beat_detection_desc),
+                    modifier = Modifier.padding(horizontal = 8.dp)
+                )
             }
         }
         Spacer(modifier = Modifier.height(70.dp))

@@ -52,7 +52,10 @@ import androidx.compose.material3.NavigationBarDefaults
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.RangeSlider
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.Shapes
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
@@ -276,6 +279,38 @@ fun NativeBottomBar(
                     unselectedIconColor = MaterialTheme.colorScheme.onSurface,
                     unselectedTextColor = MaterialTheme.colorScheme.onSurface
                 )
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun <T> ExpressiveSegmentedButtonRow(
+    items: List<T>,
+    selectedItem: T,
+    onItemSelection: (T) -> Unit,
+    labelProvider: @Composable (T) -> String,
+    modifier: Modifier = Modifier
+) {
+    val haptics = LocalHapticFeedback.current
+    SingleChoiceSegmentedButtonRow(
+        modifier = modifier
+    ) {
+        items.forEachIndexed { index, item ->
+            SegmentedButton(
+                selected = item == selectedItem,
+                onClick = {
+                    haptics.performHapticFeedback(HapticFeedbackType.SegmentTick)
+                    onItemSelection(item)
+                },
+                shape = SegmentedButtonDefaults.itemShape(index = index, count = items.size),
+                label = {
+                    Text(
+                        text = labelProvider(item),
+                        style = MaterialTheme.typography.labelLarge
+                    )
+                }
             )
         }
     }

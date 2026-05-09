@@ -47,16 +47,7 @@ class PermissionTrampolineActivity : ComponentActivity() {
     }
     
     private fun getDefaultPreset(): String {
-        // First try the main app prefs
         val appPrefs = getSharedPreferences("viz_prefs", Context.MODE_PRIVATE)
-        var preset = appPrefs.getString("selected_preset", "")
-        
-        if (preset.isNullOrBlank()) {
-            // Fallback to service internal prefs if any
-            val svcPrefs = getSharedPreferences("glyph_visualizer_prefs", Context.MODE_PRIVATE)
-            preset = svcPrefs.getString("current_preset", "np1s")
-        }
-        
-        return preset ?: "np1s"
+        return appPrefs.getString("selected_preset", "np1s")?.takeIf { it.isNotBlank() } ?: "np1s"
     }
 }
