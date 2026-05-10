@@ -64,6 +64,7 @@ import androidx.compose.material3.carousel.HorizontalMultiBrowseCarousel
 import androidx.compose.material3.carousel.rememberCarouselState
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.Row
 
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
