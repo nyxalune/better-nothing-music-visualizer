@@ -21,6 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
 # VERSION 1.2.0 OF THE SCRIPT.
+# ignore this line
 
 """
 /*/*/* NEW ANALYSIS PIPELINE!! */*/*/
