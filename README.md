@@ -84,14 +84,106 @@ https://www.virustotal.com/gui/url/c92c1ff82b56eb60bfd1e159592d09f949f0ea2d195e0
 
 ### <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Symbols/Copyright.png" alt="Copyright" width="25" height="25" /> Credits:
 #### Here are the people involved in this project:
-- [Aleks-Levet](https://github.com/Aleks-Levet) (founder and coordinator, main idea, owner)
-- [Nicouschulas](https://github.com/Nicouschulas) (Readme & Wiki enhancements)
-- [rKyzen(a.k.a Shivank Dan)](https://github.com/rKyzen)(Android App developer with real time music stream)
-- [Oliver Lebaigue](https://github.com/oliver-lebaigue-bright-bench) (Developer)
-- [SebiAi](https://github.com/SebiAi) (Glyphmodder and glyph related help)
-- [Earendel](https://github.com/Earendel-lab) (Readme enhancements)
-- [あけ なるかみ](https://github.com/Luke20YT) (Dev making a Music app with an integration with this script)
-- [Interlastic](https://github.com/Interlastic) (Discord Bot to try the script easily) (deprecated)
+<table>
+  <tr>
+    <td width="100" align="center">
+      <a href="https://github.com/Aleks-Levet">
+        <img src="https://github.com/Aleks-Levet.png?size=100&mask=circle" width="50" style="border-radius: 50%; border: 2px solid #555;"><br/>
+        <sub><b>Aleks-Levet</b></sub>
+      </a>
+    </td>
+    <td align="left">
+      <strong>Founder, Coordinator & Developer</strong><br/>
+      Main idea and owner.
+    </td>
+  </tr>
+  <tr>
+    <td width="100" align="center">
+      <a href="https://github.com/rKyzen">
+        <img src="https://github.com/rKyzen.png?size=100&mask=circle" width="50" style="border-radius: 50%; border: 2px solid #555;"><br/>
+        <sub><b>rKyzen</b></sub><br/>
+        <i>(Shivank Dan)</i>
+      </a>
+    </td>
+    <td align="left">
+      <strong>Android App Developer</strong><br/>
+      Implemented the real-time music stream.
+    </td>
+  </tr>
+  <tr>
+    <td width="100" align="center">
+      <a href="https://github.com/oliver-lebaigue-bright-bench">
+        <img src="https://github.com/oliver-lebaigue-bright-bench.png?size=100&mask=circle" width="50" style="border-radius: 50%; border: 2px solid #555;"><br/>
+        <sub><b>Oliver Lebaigue</b></sub>
+      </a>
+    </td>
+    <td align="left">
+      <strong>Android Developer</strong>
+      Enhancing the app + various nice additions
+    </td>
+  </tr>
+  <tr>
+    <td width="100" align="center">
+      <a href="https://github.com/Nicouschulas">
+        <img src="https://github.com/Nicouschulas.png?size=100&mask=circle" width="50" style="border-radius: 50%; border: 2px solid #555;"><br/>
+        <sub><b>Nicouschulas</b></sub>
+      </a>
+    </td>
+    <td align="left">
+      <strong>Wiki & Documentation</strong><br/>
+      Readme & Wiki enhancements.
+    </td>
+  </tr>
+  <tr>
+    <td width="100" align="center">
+      <a href="https://github.com/SebiAi">
+        <img src="https://github.com/SebiAi.png?size=100&mask=circle" width="50" style="border-radius: 50%; border: 2px solid #555;"><br/>
+        <sub><b>SebiAi</b></sub>
+      </a>
+    </td>
+    <td align="left">
+      <strong>Glyph Specialist</strong><br/>
+      Glyphmodder and glyph related help.
+    </td>
+  </tr>
+  <tr>
+    <td width="100" align="center">
+      <a href="https://github.com/Earendel-lab">
+        <img src="https://github.com/Earendel-lab.png?size=100&mask=circle" width="50" style="border-radius: 50%; border: 2px solid #555;"><br/>
+        <sub><b>Earendel</b></sub>
+      </a>
+    </td>
+    <td align="left">
+      <strong>Documentation</strong><br/>
+      Readme enhancements.
+    </td>
+  </tr>
+  <tr>
+    <td width="100" align="center">
+      <a href="https://github.com/Luke20YT">
+        <img src="https://github.com/Luke20YT.png?size=100&mask=circle" width="50" style="border-radius: 50%; border: 2px solid #555;"><br/>
+        <sub><b>あけ なるかみ</b></sub><br/>
+        <i>(Luke20YT)</i>
+      </a>
+    </td>
+    <td align="left">
+      <strong>Integrator</strong><br/>
+      Creating a Music app with an integration with this script.
+    </td>
+  </tr>
+  <tr>
+    <td width="100" align="center">
+      <a href="https://github.com/Interlastic">
+        <img src="https://github.com/Interlastic.png?size=100&mask=circle" width="50" style="border-radius: 50%; border: 2px solid #555;"><br/>
+        <sub><b>Interlastic</b></sub>
+      </a>
+    </td>
+    <td align="left">
+      <strong>Tools</strong><br/>
+      Discord Bot to try the script easily (deprecated).
+    </td>
+  </tr>
+</table>
 
 ### <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Travel%20and%20places/Star.png" alt="Star" width="25" height="25" />Star History
 <a href="https://www.star-history.com/?repos=Aleks-Levet%2Fbetter-nothing-music-visualizer&type=date&legend=top-left">
@@ -101,3 +193,45 @@ https://www.virustotal.com/gui/url/c92c1ff82b56eb60bfd1e159592d09f949f0ea2d195e0
    <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=Aleks-Levet/better-nothing-music-visualizer&type=date&legend=top-left" />
  </picture>
 </a>
+
+### <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Objects/Laptop.png" alt="Laptop" width="25" height="25" /> The Developers
+
+<table>
+  <tr>
+    <td width="100" align="center">
+      <a href="https://github.com/Aleks-Levet">
+        <img src="https://github.com/Aleks-Levet.png?size=100&mask=circle" width="50" style="border-radius: 50%; border: 2px solid #555;"><br/>
+        <sub><b>Aleks-Levet</b></sub>
+      </a>
+    </td>
+    <td align="left">
+      <strong>Founder, Coordinator & Developer</strong><br/>
+      Main idea and owner.
+    </td>
+  </tr>
+  <tr>
+    <td width="100" align="center">
+      <a href="https://github.com/rKyzen">
+        <img src="https://github.com/rKyzen.png?size=100&mask=circle" width="50" style="border-radius: 50%; border: 2px solid #555;"><br/>
+        <sub><b>rKyzen</b></sub><br/>
+        <i>(Shivank Dan)</i>
+      </a>
+    </td>
+    <td align="left">
+      <strong>Android App Developer</strong><br/>
+      Implemented the real-time music stream.
+    </td>
+  </tr>
+  <tr>
+    <td width="100" align="center">
+      <a href="https://github.com/oliver-lebaigue-bright-bench">
+        <img src="https://github.com/oliver-lebaigue-bright-bench.png?size=100&mask=circle" width="50" style="border-radius: 50%; border: 2px solid #555;"><br/>
+        <sub><b>Oliver Lebaigue</b></sub>
+      </a>
+    </td>
+    <td align="left">
+      <strong>Core Developer</strong>
+      Enhancing the app + various nice additions
+    </td>
+  </tr>
+</table>
