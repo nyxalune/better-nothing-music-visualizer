@@ -64,10 +64,12 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import java.util.Locale
 import kotlin.math.log10
 import kotlin.math.pow
 import kotlin.math.max
@@ -348,6 +350,8 @@ fun LatencyCard(
 
 @Composable
 fun FFTSpectrumCard(fftData: FloatArray) {
+    var touchX by remember { mutableStateOf<Float?>(null) }
+
     Card(
         shape = RoundedCornerShape(28.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -365,17 +369,38 @@ fun FFTSpectrumCard(fftData: FloatArray) {
                 textAlign = TextAlign.Center
             )
 
-            Box(
+            BoxWithConstraints(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(150.dp)
                     .clip(RoundedCornerShape(16.dp))
                     .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
+                    .pointerInput(Unit) {
+                        detectDragGestures(
+                            onDragStart = { touchX = it.x },
+                            onDrag = { change, _ -> 
+                                change.consume()
+                                touchX = change.position.x 
+                            },
+                            onDragEnd = { touchX = null },
+                            onDragCancel = { touchX = null }
+                        )
+                    }
+                    .pointerInput(Unit) {
+                        detectTapGestures(
+                            onPress = {
+                                touchX = it.x
+                                tryAwaitRelease()
+                                touchX = null
+                            }
+                        )
+                    }
             ) {
                 val primaryColor = MaterialTheme.colorScheme.primary
+                val width = maxWidth
+                val density = LocalDensity.current
 
                 // --- DECAY LOGIC ---
-                // Instant rise, smoothed fall (using a typical decay alpha of 0.8)
                 val decayedData = remember { mutableStateOf(floatArrayOf()) }
                 LaunchedEffect(fftData) {
                     if (fftData.isEmpty()) return@LaunchedEffect
@@ -404,8 +429,8 @@ fun FFTSpectrumCard(fftData: FloatArray) {
                     val data = decayedData.value
                     if (data.isEmpty()) return@Canvas
 
-                    val width = size.width
-                    val height = size.height
+                    val w = size.width
+                    val h = size.height
                     val barPath = Path()
                     
                     val minFreq = 20f
@@ -422,7 +447,7 @@ fun FFTSpectrumCard(fftData: FloatArray) {
                     val gradient = Brush.verticalGradient(
                         colors = listOf(primaryColor.copy(alpha = 0.5f), Color.Transparent),
                         startY = 0f,
-                        endY = height
+                        endY = h
                     )
 
                     val points = 200
@@ -440,11 +465,10 @@ fun FFTSpectrumCard(fftData: FloatArray) {
                             (1f - t) * data[lowerBin] + t * data[upperBin]
                         } else 0f
 
-                        // Adjusted scaling: multiplier reduced to 50f
                         val scaledMag = (mag * 50f).coerceIn(0f, 1f)
-                        val y = height - (scaledMag * (height - 10f)) - 5f
+                        val y = h - (scaledMag * (h - 10f)) - 5f
 
-                        val x = fraction * width
+                        val x = fraction * w
                         if (first) {
                             barPath.moveTo(x, y)
                             first = false
@@ -455,20 +479,83 @@ fun FFTSpectrumCard(fftData: FloatArray) {
 
                     val fillPath = Path().apply {
                         addPath(barPath)
-                        lineTo(width, height)
-                        lineTo(0f, height)
+                        lineTo(w, h)
+                        lineTo(0f, h)
                         close()
                     }
 
-                    drawPath(
-                        path = fillPath,
-                        brush = gradient
-                    )
-
+                    drawPath(path = fillPath, brush = gradient)
                     drawPath(
                         path = barPath,
                         color = primaryColor,
                         style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round)
+                    )
+
+                    // Draw touch feedback line
+                    touchX?.let { tx ->
+                        val x = tx.coerceIn(0f, w)
+                        drawLine(
+                            color = primaryColor.copy(alpha = 0.6f),
+                            start = Offset(x, 0f),
+                            end = Offset(x, h),
+                            strokeWidth = 2.dp.toPx(),
+                            pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f))
+                        )
+                    }
+                }
+
+                // Touch frequency text overlay
+                touchX?.let { tx ->
+                    val fraction = (tx / constraints.maxWidth.toFloat()).coerceIn(0f, 1f)
+                    val logMin = log10(20f)
+                    val logMax = log10(20000f)
+                    val logFreq = logMin + fraction * (logMax - logMin)
+                    val freq = 10f.pow(logFreq)
+                    
+                    val text = if (freq >= 1000) String.format(Locale.US, "%.1fkHz", freq / 1000f) else String.format(Locale.US, "%dHz", freq.toInt())
+                    
+                    val txDp = with(density) { tx.toDp() }
+                    
+                    Box(
+                        modifier = Modifier
+                            .offset(
+                                x = txDp.coerceIn(0.dp, width - 60.dp),
+                                y = 8.dp
+                            )
+                            .background(primaryColor, RoundedCornerShape(4.dp))
+                            .padding(horizontal = 4.dp, vertical = 2.dp)
+                    ) {
+                        Text(
+                            text = text,
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            }
+
+            // Frequency labels row
+            BoxWithConstraints(modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp)) {
+                val minFreq = 20f
+                val maxFreq = 20000f
+                val logMin = log10(minFreq)
+                val logMax = log10(maxFreq)
+                
+                val labels = listOf(20f, 100f, 500f, 1000f, 5000f, 10000f, 20000f)
+                
+                labels.forEach { freq ->
+                    val fraction = (log10(freq) - logMin) / (logMax - logMin)
+                    val label = if (freq >= 1000) "${(freq / 1000).toInt()}k" else "${freq.toInt()}"
+                    
+                    Text(
+                        text = label,
+                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier
+                            .width(24.dp)
+                            .offset(x = (maxWidth * fraction.toFloat()) - 12.dp)
                     )
                 }
             }
