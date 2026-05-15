@@ -92,7 +92,7 @@ public class AudioProcessor {
 
             // Amplify high frequencies: linear boost from 1.0x at 0Hz to ~4.0x at 20kHz
             float freq = i * hzPerBin;
-            float boost = 1f + (freq / 20000f) * 3f;
+            float boost = 1f + (freq / 15000f) * 5f;
             magnitude[i] = mag * boost;
         }
 
