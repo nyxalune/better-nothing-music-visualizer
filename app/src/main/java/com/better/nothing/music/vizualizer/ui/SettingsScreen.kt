@@ -350,13 +350,6 @@ internal fun SettingsScreen(
                     }
                 }
             }
-            
-            Text(
-                text = stringResource(R.string.settings_update_tip),
-                style = MaterialTheme.typography.bodySmall,
-                color = Color.Gray,
-                modifier = Modifier.padding(horizontal = 8.dp)
-            )
         }
 
         // ── Zones Configuration ──────────────────────────────────────────────
