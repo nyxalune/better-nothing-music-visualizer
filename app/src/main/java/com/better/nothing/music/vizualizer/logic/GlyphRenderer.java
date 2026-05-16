@@ -9,18 +9,19 @@ import java.util.Arrays;
  */
 public class GlyphRenderer {
 
+    private static final int MAX_BRIGHTNESS = 4095;
     private static final float PEAK_FALLOFF = 0.9995f;
     private static final float EPSILON = 0.000001f;
-    private static final float SILENCE_THRESHOLD = 0.005f;
+    private static final float SILENCE_THRESHOLD = 0.002f;
     private static final long BREATH_DELAY_MS = 3000L;
     private static final long BREATH_PERIOD_MS = 5000L;
     private static final long FLASH_DURATION_MS = 200L;
 
     private float mGamma;
     private float mSpectrumGain = 4f;
-    private int mMaxBrightness = 4095;
+    private int mMaxBrightness = MAX_BRIGHTNESS;
     private boolean mIdleBreathingEnabled;
-    private final boolean mNotificationFlashEnabled;
+    private boolean mNotificationFlashEnabled;
     private int mDeviceType = DeviceProfile.DEVICE_UNKNOWN;
     private String mIdlePattern = "pulse";
 
@@ -52,18 +53,27 @@ public class GlyphRenderer {
         this.mIdlePattern = pattern;
     }
 
+    public void setNotificationFlashEnabled(boolean enabled) {
+        mNotificationFlashEnabled = enabled;
+    }
+
     public void setGamma(float gamma) {
         mGamma = gamma;
         mLastHash = Integer.MIN_VALUE; // Force redraw with new gamma
     }
 
     public void setSpectrumGain(float gain) {
-        mSpectrumGain = gain;
+        // Enforce 4.0 gain as requested
+        mSpectrumGain = 4.0f;
         mLastHash = Integer.MIN_VALUE;
     }
 
+    public float getSpectrumGain() {
+        return mSpectrumGain;
+    }
+
     public void setMaxBrightness(int brightness) {
-        mMaxBrightness = brightness;
+        mMaxBrightness = Math.max(0, Math.min(MAX_BRIGHTNESS, brightness));
         mLastHash = Integer.MIN_VALUE;
     }
 
@@ -101,6 +111,11 @@ public class GlyphRenderer {
         ensureStateArrays(zoneCount, config.uniqueRanges.length);
 
         float[] nextLightState = computeNextLightState(uniqueMagnitudes, config, zoneCount);
+
+        // Apply gamma to music state FIRST, before idle breathing, so breathing bypasses gamma
+        for (int i = 0; i < nextLightState.length; i++) {
+            nextLightState[i] = applyGamma(nextLightState[i]);
+        }
 
         if (nowMs - mLastNotificationFlashMs < FLASH_DURATION_MS) {
             Arrays.fill(nextLightState, 1.0f);
@@ -250,7 +265,8 @@ public class GlyphRenderer {
         int count = Math.min(normalizedLightState.length, expectedLength);
         float multiplier = (float) mMaxBrightness;
         for (int i = 0; i < count; i++) {
-            frameColors[i] = Math.round(applyGamma(normalizedLightState[i]) * multiplier);
+            // Gamma is already applied to music state in processFrame, and breathing bypasses it
+            frameColors[i] = Math.round(normalizedLightState[i] * multiplier);
         }
         return frameColors;
     }

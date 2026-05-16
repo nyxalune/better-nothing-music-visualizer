@@ -23,10 +23,6 @@
 
     <!-- Settings Screen -->
     <string name="settings_title">Ayarlar</string>
-    <string name="glyph_tab">Glif Sekmesi</string>
-    <string name="glyph_tab_description">Alt gezinme çubuğundan glif kontrolleri sekmesini göster veya gizle.</string>
-    <string name="haptics_tab">Haptik Sekmesi</string>
-    <string name="haptics_tab_description">Alt gezinme çubuğundan haptik araçları sekmesini göster veya gizle.</string>
     <string name="app_theme">Uygulama Teması</string>
     <string name="theme_normal">OLED Siyah</string>
     <string name="theme_liquorice">Meyan Kökü Siyahı</string>
@@ -41,9 +37,7 @@
 
     <!-- Haptics Screen -->
     <string name="haptics_title">Haptik</string>
-    <string name="haptics_description">Haptik araçları yakında buraya eklenecek. Bu sayfa titreşim ön ayarları, desen testleri ve olaya özel geri bildirim ayarları için hazır.</string>
     <string name="haptics_header">Haptik</string>
-    <string name="haptics_subtitle">Sese duyarlı titreşim ayarları.</string>
     <string name="haptics_mode_label">Haptik Motor Modu</string>
     <string name="haptics_mode_bass">Bas Genliği</string>
     <string name="haptics_mode_beat">Ritim Algılama</string>

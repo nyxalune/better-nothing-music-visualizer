@@ -1,16 +1,22 @@
 package com.better.nothing.music.vizualizer.ui
 
+import android.annotation.SuppressLint
 import com.better.nothing.music.vizualizer.R
 import com.better.nothing.music.vizualizer.model.DeviceProfile
 import com.better.nothing.music.vizualizer.service.AudioCaptureService
 import android.content.Context
 import android.os.Build
 import android.provider.Settings
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
@@ -33,7 +39,6 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -47,19 +52,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlin.math.pow
-import kotlin.math.roundToInt
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -77,7 +78,6 @@ internal fun GlyphsScreen(
 ) {
     val mainScrollState = rememberScrollState()
     val context = LocalContext.current
-    val screenHeight = LocalConfiguration.current.screenHeightDp.dp
 
     val selectedInfo = remember(selectedPreset, presets) {
         presets.firstOrNull { it.key == selectedPreset } ?: presets.firstOrNull()
@@ -87,13 +87,7 @@ internal fun GlyphsScreen(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(mainScrollState)
-            .padding(horizontal = 8.dp)
-            .animateContentSize(
-                spring(
-                    dampingRatio = 1.15f,
-                    stiffness = Spring.StiffnessVeryLow
-                )
-            ),
+            .padding(horizontal = 8.dp),
         verticalArrangement = Arrangement.spacedBy(20.dp),
     ) {
         Spacer(modifier = Modifier.height(50.dp))
@@ -111,258 +105,147 @@ internal fun GlyphsScreen(
 
         // Header with external toggle for glyph visualization
         val hapticsLocal = androidx.compose.ui.platform.LocalHapticFeedback.current
-        val DEFAULT_BR = 4500
-        val lastNonZero = remember { androidx.compose.runtime.mutableStateOf(if (maxBrightness > 0) maxBrightness else DEFAULT_BR) }
+        val DEFAULT_BR = 4095
+        val lastNonZero = remember { mutableStateOf(if (maxBrightness > 0) maxBrightness else DEFAULT_BR) }
         androidx.compose.runtime.LaunchedEffect(maxBrightness) {
             if (maxBrightness > 0) lastNonZero.value = maxBrightness
         }
 
         val glyphEnabled = maxBrightness > 0
-        val glyphHeaderMotion = spring<Float>(
-            dampingRatio = 1.15f,
-            stiffness = Spring.StiffnessVeryLow
-        )
-        val glyphHeaderDpMotion = spring<androidx.compose.ui.unit.Dp>(
-            dampingRatio = 1.15f,
-            stiffness = Spring.StiffnessVeryLow
-        )
-        val headerProgress by animateFloatAsState(
-            targetValue = if (glyphEnabled) 1f else 0f,
-            animationSpec = glyphHeaderMotion,
-            label = "glyph_header_progress"
-        )
-        val titleScale = 1.2f - (0.2f * headerProgress)
-        val disabledTitleSpacing by animateDpAsState(
-            targetValue = if (glyphEnabled) 0.dp else 50.dp,
-            animationSpec = glyphHeaderDpMotion,
-            label = "glyph_disabled_title_spacing"
-        )
-        val disabledCardTopSpacer by animateDpAsState(
-            targetValue = if (glyphEnabled) 0.dp else screenHeight * 0.4f,
-            animationSpec = glyphHeaderDpMotion,
-            label = "glyph_disabled_card_top_spacer"
+        AnimatedToggleCard(
+            title = "Glyph vizualisation",
+            checked = glyphEnabled,
+            onCheckedChange = { switchEnabled ->
+                hapticsLocal.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
+                if (switchEnabled) {
+                    onMaxBrightnessChanged(lastNonZero.value)
+                } else {
+                    onMaxBrightnessChanged(0)
+                }
+            },
+            disabledTopSpacerFraction = 0.4f,
+            modifier = Modifier.fillMaxWidth(),
         )
 
-        Spacer(modifier = Modifier.height(disabledCardTopSpacer))
-
-        // Single unified morphing component
-        Card(
-            shape = RoundedCornerShape(32.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            modifier = Modifier
-                .fillMaxWidth()
-                .animateContentSize(
-                    spring(
-                        dampingRatio = 1.15f,
-                        stiffness = Spring.StiffnessVeryLow
-                    )
+        AnimatedVisibility(
+            visible = glyphEnabled,
+            enter = fadeIn(animationSpec = tween(durationMillis = 320)) +
+                slideInVertically(
+                    animationSpec = tween(durationMillis = 420),
+                    initialOffsetY = { fullHeight -> fullHeight / 3 }
                 ),
+            exit = fadeOut(animationSpec = tween(durationMillis = 220)) +
+                slideOutVertically(
+                    animationSpec = tween(durationMillis = 280),
+                    targetOffsetY = { fullHeight -> fullHeight / 5 }
+                )
         ) {
-            GlyphHeaderLayout(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(24.dp)
-                    .animateContentSize(
-                        spring(
-                            dampingRatio = 1.15f,
-                            stiffness = Spring.StiffnessVeryLow
-                        )
-                    ),
-                progress = headerProgress,
-                titleScale = titleScale,
-                titleToSwitchSpacing = disabledTitleSpacing,
-                checked = glyphEnabled,
-                onCheckedChange = { switchEnabled ->
-                    hapticsLocal.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
-                    if (switchEnabled) {
-                        onMaxBrightnessChanged(lastNonZero.value)
-                    } else {
-                        onMaxBrightnessChanged(0)
-                    }
-                }
-            )
-        }
-
-        if (glyphEnabled) {
-            // Brightness card placed above gamma card
-            BrightnessCard(
-                maxBrightness = maxBrightness,
-                enabled = glyphEnabled,
-                lastNonZero = lastNonZero.value,
-                onLastNonZeroChanged = { v -> lastNonZero.value = v },
-                onMaxBrightnessChanged = onMaxBrightnessChanged
-            )
-
-            Text(
-                text = stringResource(R.string.gamma_control),
-                style = MaterialTheme.typography.headlineMedium,
-                color = MaterialTheme.colorScheme.onBackground,
-            )
-
-            Row(
+            Column(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(14.dp),
-                verticalAlignment = Alignment.CenterVertically,
+                verticalArrangement = Arrangement.spacedBy(20.dp)
             ) {
-                GammaPreviewCard(gammaValue = gammaValue)
-                BodyText(
-                    text = stringResource(R.string.gamma_description),
-                    modifier = Modifier.weight(1f),
-                    size = 14.sp,
-                    lineHeight = 22.sp,
+                BrightnessCard(
+                    maxBrightness = maxBrightness,
+                    enabled = glyphEnabled,
+                    lastNonZero = lastNonZero.value,
+                    onLastNonZeroChanged = { v -> lastNonZero.value = v },
+                    onMaxBrightnessChanged = onMaxBrightnessChanged
                 )
-            }
 
-            GammaCard(gammaValue = gammaValue, onGammaChanged = onGammaChanged)
-
-            Text(
-                text = stringResource(R.string.visualizer_presets),
-                modifier = Modifier.padding(top = 20.dp),
-                style = MaterialTheme.typography.headlineMedium,
-                color = MaterialTheme.colorScheme.onBackground,
-            )
-
-            FlowRow(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(0.dp),
-            ) {
-                presets.forEach { preset ->
-                    key(preset.key) {
-                        NativeFilterChip(
-                            label = preset.key,
-                            selected = preset.key == selectedPreset,
-                            onClick = { onPresetSelected(preset.key) },
-                        )
-                    }
-                }
-
-                NativeFilterChip(
-                    label = "+ Create New",
-                    selected = false,
-                    onClick = { viewModel.showEditor() },
+                Text(
+                    text = stringResource(R.string.gamma_control),
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = MaterialTheme.colorScheme.onBackground,
                 )
-            }
 
-            Card(
-                shape = RoundedCornerShape(28.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .animateContentSize(
-                        animationSpec = spring(
-                            dampingRatio = Spring.DampingRatioMediumBouncy,
-                            stiffness = Spring.StiffnessLow
-                        )
-                    ),
-            ) {
-                Crossfade(
-                    targetState = selectedInfo?.description,
-                    label = "desc_fade",
-                    animationSpec = spring(stiffness = Spring.StiffnessMedium)
-                ) { description ->
-                    Text(
-                        text = description ?: stringResource(R.string.glyph_no_config),
-                        style = MaterialTheme.typography.bodyLarge.copy(lineHeight = 22.sp),
-                        color = Color(0xFFFFFFFF),
-                        modifier = Modifier
-                            .padding(20.dp)
-                            .fillMaxWidth(),
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(14.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    GammaPreviewCard(gammaValue = gammaValue)
+                    BodyText(
+                        text = stringResource(R.string.gamma_description),
+                        modifier = Modifier.weight(1f),
+                        size = 14.sp,
+                        lineHeight = 22.sp,
                     )
                 }
-            }
 
-            if (isRunning) {
-                val vizState by viewModel.visualizerState.collectAsStateWithLifecycle()
-                GlyphPreview(
-                    vizState = vizState,
-                    device = selectedDevice,
+                GammaCard(gammaValue = gammaValue, onGammaChanged = onGammaChanged)
+
+                Text(
+                    text = stringResource(R.string.visualizer_presets),
+                    modifier = Modifier.padding(top = 20.dp),
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = MaterialTheme.colorScheme.onBackground,
+                )
+
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(0.dp),
+                ) {
+                    presets.forEach { preset ->
+                        key(preset.key) {
+                            NativeFilterChip(
+                                label = preset.key,
+                                selected = preset.key == selectedPreset,
+                                onClick = { onPresetSelected(preset.key) },
+                            )
+                        }
+                    }
+
+                    NativeFilterChip(
+                        label = "+ Create New",
+                        selected = false,
+                        onClick = { viewModel.showEditor() },
+                    )
+                }
+
+                Card(
+                    shape = RoundedCornerShape(28.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(400.dp)
-                )
+                        .animateContentSize(
+                            animationSpec = spring(
+                                dampingRatio = Spring.DampingRatioMediumBouncy,
+                                stiffness = Spring.StiffnessLow
+                            )
+                        ),
+                ) {
+                    Crossfade(
+                        targetState = selectedInfo?.description,
+                        label = "desc_fade",
+                        animationSpec = spring(stiffness = Spring.StiffnessMedium)
+                    ) { description ->
+                        Text(
+                            text = description ?: stringResource(R.string.glyph_no_config),
+                            style = MaterialTheme.typography.bodyLarge.copy(lineHeight = 22.sp),
+                            color = Color(0xFFFFFFFF),
+                            modifier = Modifier
+                                .padding(20.dp)
+                                .fillMaxWidth(),
+                        )
+                    }
+                }
+
+                if (isRunning) {
+                    val vizState by viewModel.visualizerState.collectAsStateWithLifecycle()
+                    GlyphPreview(
+                        vizState = vizState,
+                        device = selectedDevice,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(400.dp)
+                    )
+                }
             }
         }
 
         Spacer(modifier = Modifier.height(70.dp))
-
-        Spacer(modifier = Modifier.height(70.dp))
     }
-}
-
-@Composable
-private fun GlyphHeaderLayout(
-    progress: Float,
-    titleScale: Float,
-    titleToSwitchSpacing: androidx.compose.ui.unit.Dp,
-    checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val spacingPx = with(androidx.compose.ui.platform.LocalDensity.current) {
-        titleToSwitchSpacing.roundToPx()
-    }
-
-    Layout(
-        modifier = modifier,
-        content = {
-            Text(
-                text = "Glyph vizualisation",
-                style = MaterialTheme.typography.headlineMedium,
-                color = MaterialTheme.colorScheme.onBackground,
-            )
-            Switch(
-                checked = checked,
-                onCheckedChange = onCheckedChange
-            )
-        }
-    ) { measurables, constraints ->
-        val textPlaceable = measurables[0].measure(
-            constraints.copy(minWidth = 0, minHeight = 0)
-        )
-        val switchPlaceable = measurables[1].measure(
-            constraints.copy(minWidth = 0, minHeight = 0)
-        )
-
-        val width = constraints.maxWidth
-        val scaledTextWidth = (textPlaceable.width * titleScale).roundToInt()
-        val scaledTextHeight = (textPlaceable.height * titleScale).roundToInt()
-
-        val enabledHeight = maxOf(scaledTextHeight, switchPlaceable.height)
-        val disabledHeight = scaledTextHeight + spacingPx + switchPlaceable.height
-        val layoutHeight = lerpInt(disabledHeight, enabledHeight, progress)
-
-        val disabledTextX = ((width - scaledTextWidth) / 2f).roundToInt()
-        val disabledTextY = 0
-        val enabledTextX = 0
-        val enabledTextY = ((enabledHeight - scaledTextHeight) / 2f).roundToInt()
-
-        val disabledSwitchX = ((width - switchPlaceable.width) / 2f).roundToInt()
-        val disabledSwitchY = scaledTextHeight + spacingPx
-        val enabledSwitchX = width - switchPlaceable.width
-        val enabledSwitchY = ((enabledHeight - switchPlaceable.height) / 2f).roundToInt()
-
-        val textVisualX = lerpInt(disabledTextX, enabledTextX, progress)
-        val textVisualY = lerpInt(disabledTextY, enabledTextY, progress)
-        val switchX = lerpInt(disabledSwitchX, enabledSwitchX, progress)
-        val switchY = lerpInt(disabledSwitchY, enabledSwitchY, progress)
-
-        val textPlacementX = textVisualX + ((scaledTextWidth - textPlaceable.width) / 2f).roundToInt()
-        val textPlacementY = textVisualY + ((scaledTextHeight - textPlaceable.height) / 2f).roundToInt()
-
-        layout(width, layoutHeight) {
-            textPlaceable.placeWithLayer(textPlacementX, textPlacementY) {
-                scaleX = titleScale
-                scaleY = titleScale
-                transformOrigin = TransformOrigin.Center
-            }
-            switchPlaceable.placeRelative(switchX, switchY)
-        }
-    }
-}
-
-private fun lerpInt(start: Int, end: Int, progress: Float): Int {
-    return (start + (end - start) * progress).roundToInt()
 }
 
 @Composable
@@ -431,7 +314,7 @@ fun BrightnessCard(
 ) {
     val haptics = androidx.compose.ui.platform.LocalHapticFeedback.current
 
-    val DEFAULT_BRIGHTNESS = 4500
+    val DEFAULT_BRIGHTNESS = 4095
     val MIN_BRIGHTNESS = 50
     val MAX_BRIGHTNESS = 4500
 
@@ -455,8 +338,9 @@ fun BrightnessCard(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         modifier = Modifier.fillMaxWidth(),
     ) {
+        Spacer(modifier = Modifier.height(12.dp))
         Column(
-            modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
+            modifier = Modifier.padding(horizontal = 20.dp, vertical = 0.dp),
             verticalArrangement = Arrangement.spacedBy(17.dp),
         ) {
             Row(
@@ -471,7 +355,7 @@ fun BrightnessCard(
                 Spacer(modifier = Modifier.weight(1f))
                 Spacer(modifier = Modifier.width(12.dp))
                 Text(
-                    text = "${if (maxBrightness > 0) maxBrightness else lastNonZero}/${MAX_BRIGHTNESS}" + (if (maxBrightness == DEFAULT_BRIGHTNESS) " (default)" else ""),
+                    text = "${if (maxBrightness > 0) maxBrightness else lastNonZero}/${MAX_BRIGHTNESS}" + (if (maxBrightness == 4095) " (default)" else ""),
                     color = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
                     style = MaterialTheme.typography.bodyMedium,
                 )
@@ -486,10 +370,12 @@ fun BrightnessCard(
                 valueRange = 0f..1f,
                 modifier = Modifier.fillMaxWidth(),
             )
+            Spacer(modifier = Modifier.height(6.dp))
         }
     }
 }
 
+@SuppressLint("DefaultLocale")
 @Composable
 fun GammaCard(
     gammaValue: Float,
@@ -500,8 +386,9 @@ fun GammaCard(
         colors   = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         modifier = Modifier.fillMaxWidth(),
     ) {
+        Spacer(modifier = Modifier.height(12.dp))
         Column(
-            modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
+            modifier = Modifier.padding(horizontal = 20.dp, vertical = 0.dp),
             verticalArrangement = Arrangement.spacedBy(17.dp),
         ) {
             Row(
@@ -527,6 +414,7 @@ fun GammaCard(
                 valueRange = 0.4f..3.5f,
                 modifier = Modifier.fillMaxWidth(),
             )
+            Spacer(modifier = Modifier.height(6.dp))
         }
     }
 }

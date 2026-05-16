@@ -120,8 +120,20 @@ public class AudioProcessor {
         }
 
         float leakageFloor = dominantMagnitude * SPECTRUM_LEAKAGE_FLOOR_RATIO;
+        boolean hasFilteredEnergy = false;
         for (int i = 0; i < uniqueMagnitudes.length; i++) {
             uniqueMagnitudes[i] = Math.max(0f, uniqueMagnitudes[i] - leakageFloor);
+            if (uniqueMagnitudes[i] > EPSILON) {
+                hasFilteredEnergy = true;
+            }
+        }
+
+        // If the leakage floor wipes every band, fall back to the raw per-range values
+        // so the visualizer still receives energy and can normalize it downstream.
+        if (!hasFilteredEnergy) {
+            for (int i = 0; i < config.uniqueRanges.length; i++) {
+                uniqueMagnitudes[i] = computeRangeMagnitude(config.uniqueRanges[i], magnitude);
+            }
         }
         return uniqueMagnitudes;
     }

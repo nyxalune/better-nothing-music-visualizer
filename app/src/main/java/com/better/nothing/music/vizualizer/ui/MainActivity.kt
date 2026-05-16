@@ -214,10 +214,11 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
     private val _maxBrightness = MutableStateFlow(4095)
     val maxBrightness = _maxBrightness.asStateFlow()
     fun setMaxBrightness(value: Int) {
-        _maxBrightness.value = value
+        val clamped = value.coerceIn(0, 4095)
+        _maxBrightness.value = clamped
         viewModelScope.launch(Dispatchers.IO) {
             ctx.getSharedPreferences("viz_prefs", Context.MODE_PRIVATE)
-                .edit { putInt("max_brightness", value) }
+                .edit { putInt("max_brightness", clamped) }
         }
     }
 
@@ -719,7 +720,7 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
 
                 val gamma = AudioCaptureService.loadGamma(ctx)
                 val spectrumGain = prefs.getFloat("spectrum_gain", 4.0f)
-                val maxBrightness = prefs.getInt("max_brightness", 4095)
+                val maxBrightness = prefs.getInt("max_brightness", 4095).coerceIn(0, 4095)
                 val latency = AudioCaptureService.loadLatencyCompensationMs(
                     ctx,
                     device,
@@ -1358,6 +1359,10 @@ class MainActivity : ComponentActivity(), SensorEventListener {
         service?.setLatencyCompensationMs(viewModel.latencyMs.value)
         service?.setGamma(viewModel.gammaValue.value)
         service?.setSpectrumGain(viewModel.spectrumGain.value)
+        service?.setMaxBrightness(viewModel.maxBrightness.value)
+        service?.setIdleBreathingEnabled(viewModel.idleBreathingEnabled.value)
+        service?.setIdlePattern(viewModel.idlePattern.value)
+        service?.setNotificationFlashEnabled(viewModel.notificationFlashEnabled.value)
 
         service?.setHapticEnabled(viewModel.hapticMotorEnabled.value)
         service?.setHapticMode(viewModel.hapticMode.value)
