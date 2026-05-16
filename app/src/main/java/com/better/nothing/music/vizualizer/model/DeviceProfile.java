@@ -60,7 +60,7 @@ public final class DeviceProfile {
             case DEVICE_NP2A -> 26;
             case DEVICE_NP3A -> 36;
             case DEVICE_NP4A -> 7;
-            case DEVICE_NP_4APRO -> 169;
+            case DEVICE_NP4APRO -> 169;
             case DEVICE_NP3 -> 625;
             default -> 0;
         };
