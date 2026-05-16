@@ -17,6 +17,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -24,6 +25,7 @@ import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.nativePaint
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.graphics.vector.PathParser
@@ -139,7 +141,12 @@ fun GlyphPreviewContent(
     ) {
         Canvas(modifier = Modifier.fillMaxSize()) {
             val viewBoxW = 182f
-            val viewBoxH = if (device == DeviceProfile.DEVICE_NP1 || device == DeviceProfile.DEVICE_NP2) 382f else 182f
+            val viewBoxH = if (device == DeviceProfile.DEVICE_NP1 ||
+                device == DeviceProfile.DEVICE_NP2 ||
+                device == DeviceProfile.DEVICE_NP3 ||
+                device == DeviceProfile.DEVICE_NP4A ||
+                device == DeviceProfile.DEVICE_NP4APRO
+            ) 382f else 182f
             val scale = min(size.width / viewBoxW, size.height / viewBoxH)
             val dx = (size.width - viewBoxW * scale) / 2
             val dy = (size.height - viewBoxH * scale) / 2
@@ -155,7 +162,7 @@ fun GlyphPreviewContent(
                     if (alpha > baseOpacity) {
                         glowPaint.color = color
                         glowPaint.alpha = alpha * 0.4f
-                        glowPaint.nativePaint.maskFilter = android.graphics.BlurMaskFilter(8f, android.graphics.BlurMaskFilter.Blur.NORMAL)
+                        glowPaint.nativePaint.maskFilter = android.graphics.BlurMaskFilter(8f * scale, android.graphics.BlurMaskFilter.Blur.NORMAL)
                         canvas.drawPath(path, glowPaint)
                     }
                 }
@@ -235,6 +242,15 @@ fun GlyphPreviewContent(
                     }
 
                     DeviceProfile.DEVICE_NP4A -> {
+                        // Phone frame for 4a
+                        drawRoundRect(
+                            color = Color(0xFF333333),
+                            topLeft = Offset(8f, 8f),
+                            size = Size(166f, 366f),
+                            cornerRadius = CornerRadius(32f, 32f),
+                            style = Stroke(width = 3f)
+                        )
+
                         paths["p4a_bar"]?.let {
                             drawPathAddressable(this, it, color, (0..5).toList(), vizState, baseOpacity, scale, glowPaint, vertical = false)
                         }
@@ -245,33 +261,58 @@ fun GlyphPreviewContent(
 
                     DeviceProfile.DEVICE_NP4APRO, DeviceProfile.DEVICE_NP3 -> {
                         val isPro = device == DeviceProfile.DEVICE_NP4APRO
-                        val matrixScale = 1.3f
-                        val matrixTranslateX = -7f
-                        val matrixTranslateY = -9f
 
-                        withTransform({
-                            translate(matrixTranslateX, matrixTranslateY)
-                            scale(matrixScale, matrixScale, pivot = Offset.Zero)
-                        }) {
-                            val pixelSize = 4.25f
-                            val pixelGap = 0.86f
-                            val gridSize = if (isPro) 13 else 25
+                        // Phone frame
+                        drawRoundRect(
+                            color = Color(0xFF333333),
+                            topLeft = Offset(8f, 8f),
+                            size = Size(166f, 366f),
+                            cornerRadius = CornerRadius(32f, 32f),
+                            style = Stroke(width = 3f)
+                        )
 
-                            for (idx in vizState.indices) {
-                                if (idx >= gridSize * gridSize) break
-                                val a = getA(idx)
-                                val row = idx / gridSize
-                                val col = idx % gridSize
-                                drawRect(
-                                    color = color,
-                                    topLeft = Offset(
-                                        11.6f + col * (pixelSize + pixelGap),
-                                        11.6f + row * (pixelSize + pixelGap)
-                                    ),
-                                    size = Size(pixelSize, pixelSize),
-                                    alpha = a
-                                )
+                        // Camera cutout
+                        drawCircle(
+                            color = Color(0xFF222222),
+                            radius = 8f,
+                            center = Offset(viewBoxW / 2, 35f)
+                        )
+
+                        val gridSize = if (isPro) 13 else 25
+                        val pixelSize = if (isPro) 8f else 4.5f
+                        val pixelGap = if (isPro) 1.5f else 1f
+
+                        val matrixW = gridSize * pixelSize + (gridSize - 1) * pixelGap
+                        val matrixH = matrixW
+
+                        val startX = (viewBoxW - matrixW) / 2
+                        val startY = (382f - matrixH) / 2
+
+                        for (idx in 0 until (gridSize * gridSize)) {
+                            val a = getA(idx)
+                            val row = idx / gridSize
+                            val col = idx % gridSize
+                            val px = startX + col * (pixelSize + pixelGap)
+                            val py = startY + row * (pixelSize + pixelGap)
+
+                            if (a > baseOpacity) {
+                                drawIntoCanvas { canvas ->
+                                    glowPaint.color = color
+                                    glowPaint.alpha = a * 0.4f
+                                    glowPaint.nativePaint.maskFilter = android.graphics.BlurMaskFilter(
+                                        6f * scale,
+                                        android.graphics.BlurMaskFilter.Blur.NORMAL
+                                    )
+                                    canvas.drawRect(px, py, px + pixelSize, py + pixelSize, glowPaint)
+                                }
                             }
+
+                            drawRect(
+                                color = color,
+                                topLeft = Offset(px, py),
+                                size = Size(pixelSize, pixelSize),
+                                alpha = a
+                            )
                         }
                     }
                 }
