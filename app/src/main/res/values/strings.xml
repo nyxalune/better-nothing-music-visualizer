@@ -18,15 +18,11 @@
     <string name="glyph_controls">Glyph controls</string>
     <string name="gamma_control">Gamma control</string>
     <string name="gamma_description">A higher gamma value gives a more punchy look, but with less subtle details and overall brightness. A lower one is brighter but less punchy.</string>
-    <string name="light_gamma">Light Gamma: %.1f</string>
+    <string name="light_gamma">Light Gamma:</string>
     <string name="visualizer_presets">Visualizer presets</string>
 
     <!-- Settings Screen -->
     <string name="settings_title">Settings</string>
-    <string name="glyph_tab">Glyph Tab</string>
-    <string name="glyph_tab_description">Show or hide glyph controls tab from bottom navigation bar.</string>
-    <string name="haptics_tab">Haptics Tab</string>
-    <string name="haptics_tab_description">Show or hide haptics tools tab from bottom navigation bar.</string>
     <string name="app_theme">App Theme</string>
     <string name="theme_normal">OLED Black</string>
     <string name="theme_liquorice">Liquorice Black</string>
@@ -41,15 +37,13 @@
 
     <!-- Haptics Screen -->
     <string name="haptics_title">Haptics</string>
-    <string name="haptics_description">Haptics tools will be added here soon. This page is ready for vibration presets, pattern tests, and event-specific feedback settings.</string>
-    <string name="haptics_header">Haptics</string>
-    <string name="haptics_subtitle">Audio-reactive vibration settings.</string>
+    <string name="haptics_header">Haptic controls</string>
     <string name="haptics_mode_label">Haptic Engine Mode</string>
-    <string name="haptics_mode_bass">Bass to Amplitude</string>
+    <string name="haptics_mode_bass">Bass Amplitude</string>
     <string name="haptics_mode_beat">Beat Detection</string>
-    <string name="haptics_mode_richtap">RichTap HD (Bass)</string>
+    <string name="haptics_mode_richtap">RichTap HD</string>
     <string name="haptics_beat_detection_desc">Vibrates on detected beats within the selected frequency range. Smoother but sometimes not as stable. It\'s a beta feature.</string>
-    <string name="haptics_motor_title">Audio-Reactive Haptics</string>
+    <string name="haptics_motor_title">Haptic visualisation</string>
     <string name="haptics_frequency_label">Frequency: %1$d - %2$d Hz</string>
     <string name="haptics_frequency_desc">Vibrates based on audio amplitude in this range.</string>
     <string name="haptics_amplitude_label">Amplitude: %.1fx</string>
@@ -94,7 +88,7 @@
     <string name="open_github_profile">Open GitHub profile</string>
     <string name="credit_alekslevet_role">Founder, coordinator, main idea, owner</string>
     <string name="credit_rkyzen_role">Android app developer (real-time music stream)</string>
-    <string name="credit_oliver_role">developer</string>
+    <string name="credit_oliver_role">Co-developer of this amazing app</string>
     <string name="credit_nicouschulas_role">Readme &amp; Wiki enhancements</string>
     <string name="credit_sebiai_role">Glyph modding and support</string>
     <string name="credit_earnedel_role">Readme enhancements</string>
