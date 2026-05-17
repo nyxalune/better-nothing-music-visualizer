@@ -3,6 +3,7 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 plugins {
     id 'com.android.application'
     id 'org.jetbrains.kotlin.plugin.compose'
+    id 'com.google.gms.google-services'
 }
 
 android {
@@ -10,7 +11,7 @@ android {
     compileSdk 36
 
     defaultConfig {
-        applicationId "com.better.nothing.music.vizualizer"
+        applicationId "com.better.nothing.music.visualizer"
         minSdk 34
         targetSdk 36
         versionCode 7
@@ -27,7 +28,6 @@ android {
             debuggable true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             versionNameSuffix '.debug'
-            applicationIdSuffix '.debug'
         }
     }
 
@@ -58,6 +58,12 @@ dependencies {
 
     // 2. Compose BOM - Manages versions for all compose libs below
     implementation platform('androidx.compose:compose-bom:2026.05.00')
+
+    // Firebase
+    implementation platform('com.google.firebase:firebase-bom:34.13.0')
+    implementation 'com.google.firebase:firebase-analytics'
+    implementation 'com.google.firebase:firebase-database'
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.11.0'
 
     // 3. Core Compose Libraries (Versions handled by BOM)
     implementation 'androidx.compose.ui:ui'

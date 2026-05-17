@@ -11,7 +11,15 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Public
 import androidx.compose.material.icons.filled.Save
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.Clear
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -36,9 +44,12 @@ import kotlin.math.*
 fun CustomPresetEditorScreen(
     onDismiss: () -> Unit,
     onSave: (String, List<AudioProcessor.ZoneSpec>) -> Unit,
+    onShare: (String, String, List<AudioProcessor.ZoneSpec>) -> Unit,
     selectedDevice: Int,
 ) {
     var presetName by remember { mutableStateOf("My Custom Preset") }
+    var authorName by remember { mutableStateOf("Anonymous") }
+    var showShareDialog by remember { mutableStateOf(false) }
     val ledCount = remember(selectedDevice) { DeviceProfile.getLedCount(selectedDevice) }
     val haptics = LocalHapticFeedback.current
 
@@ -55,6 +66,23 @@ fun CustomPresetEditorScreen(
     }
 
     var selectedIndex by remember { mutableIntStateOf(0) }
+    val selectedIndices = remember { mutableStateListOf<Int>(0) }
+    var isMultiSelect by remember { mutableStateOf(false) }
+
+    fun distributeLogarithmically() {
+        if (selectedIndices.isEmpty()) return
+        val sorted = selectedIndices.sorted()
+        val minFreq = 60f
+        val maxFreq = 16000f
+        val total = sorted.size
+        
+        sorted.forEachIndexed { i, idx ->
+            val low = minFreq * (maxFreq / minFreq).toDouble().pow(i.toDouble() / total).toFloat()
+            val high = minFreq * (maxFreq / minFreq).toDouble().pow((i + 1).toDouble() / total).toFloat()
+            zones[idx] = AudioProcessor.ZoneSpec(low, high, Float.NaN, Float.NaN)
+        }
+        haptics.performHapticFeedback(HapticFeedbackType.GestureThresholdActivate)
+    }
 
     Scaffold(
         topBar = {
@@ -66,6 +94,11 @@ fun CustomPresetEditorScreen(
                     }
                 },
                 actions = {
+                    IconButton(
+                        onClick = { showShareDialog = true }
+                    ) {
+                        Icon(Icons.Default.Public, contentDescription = "Share", tint = Color.White)
+                    }
                     TextButton(
                         onClick = { 
                             haptics.performHapticFeedback(HapticFeedbackType.GestureThresholdActivate)
@@ -87,6 +120,36 @@ fun CustomPresetEditorScreen(
         },
         containerColor = Color.Black
     ) { padding ->
+        if (showShareDialog) {
+            AlertDialog(
+                onDismissRequest = { showShareDialog = false },
+                title = { Text("Share to Community") },
+                text = {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text("Share your preset with other users.")
+                        OutlinedTextField(
+                            value = authorName,
+                            onValueChange = { authorName = it },
+                            label = { Text("Author Name") },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                },
+                confirmButton = {
+                    TextButton(onClick = {
+                        onShare(presetName, authorName, zones.toList())
+                        showShareDialog = false
+                    }) {
+                        Text("Share")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showShareDialog = false }) {
+                        Text("Cancel")
+                    }
+                }
+            )
+        }
         Column(
             modifier = Modifier
                 .padding(padding)
@@ -113,7 +176,7 @@ fun CustomPresetEditorScreen(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(300.dp)
+                    .height(350.dp)
                     .clip(RoundedCornerShape(40.dp))
                     .background(Color(0xFF1A1A1A))
                     .padding(24.dp),
@@ -121,20 +184,49 @@ fun CustomPresetEditorScreen(
             ) {
                 EditableGlyphPreview(
                     device = selectedDevice,
-                    selectedIndex = selectedIndex,
+                    selectedIndices = selectedIndices.toList(),
+                    onIndexSelected = { idx, multi ->
+                        if (multi || isMultiSelect) {
+                            if (selectedIndices.contains(idx)) selectedIndices.remove(idx)
+                            else selectedIndices.add(idx)
+                        } else {
+                            selectedIndices.clear()
+                            selectedIndices.add(idx)
+                        }
+                        selectedIndex = idx
+                        haptics.performHapticFeedback(HapticFeedbackType.SegmentTick)
+                    },
                     modifier = Modifier.fillMaxSize()
                 )
             }
 
-            Text("Select Segment to Edit:", color = Color.White, style = MaterialTheme.typography.titleMedium)
-            
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("Segments (${selectedIndices.size} selected)", color = Color.White, style = MaterialTheme.typography.titleMedium)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    FilterChip(
+                        selected = isMultiSelect,
+                        onClick = { isMultiSelect = !isMultiSelect },
+                        label = { Text("Multi-select") },
+                        colors = FilterChipDefaults.filterChipColors(selectedContainerColor = MaterialTheme.colorScheme.primary)
+                    )
+                    IconButton(onClick = { selectedIndices.clear() }) {
+                        Icon(Icons.Default.Clear, contentDescription = "Clear", tint = Color.Gray)
+                    }
+                }
+            }
+
+            // Keep the grid selection for precision
             FlowRow(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 for (i in 0 until ledCount) {
-                    val isSelected = i == selectedIndex
+                    val isSelected = selectedIndices.contains(i)
                     Box(
                         modifier = Modifier
                             .size(36.dp)
@@ -142,6 +234,13 @@ fun CustomPresetEditorScreen(
                             .background(if (isSelected) MaterialTheme.colorScheme.primary else Color(0xFF333333))
                             .clickable { 
                                 haptics.performHapticFeedback(HapticFeedbackType.SegmentTick)
+                                if (isMultiSelect) {
+                                    if (selectedIndices.contains(i)) selectedIndices.remove(i)
+                                    else selectedIndices.add(i)
+                                } else {
+                                    selectedIndices.clear()
+                                    selectedIndices.add(i)
+                                }
                                 selectedIndex = i 
                             },
                         contentAlignment = Alignment.Center
@@ -154,9 +253,33 @@ fun CustomPresetEditorScreen(
                     }
                 }
             }
+            
+            if (selectedIndices.size > 1) {
+                Card(
+                    shape = RoundedCornerShape(28.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier.padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Icon(Icons.Default.AutoAwesome, contentDescription = null)
+                        Column(Modifier.weight(1f)) {
+                            Text("Bulk Actions", style = MaterialTheme.typography.titleSmall)
+                            Text("Apply settings to all selected segments", fontSize = 12.sp)
+                        }
+                        Button(onClick = { distributeLogarithmically() }) {
+                            Text("Auto-Distribute")
+                        }
+                    }
+                }
+            }
 
-            if (selectedIndex != -1 && (selectedIndex < zones.size)) {
-                val zone = zones[selectedIndex]
+            if (selectedIndices.isNotEmpty()) {
+                val firstIdx = selectedIndices.first()
+                val zone = zones[firstIdx]
                 Card(
                     shape = RoundedCornerShape(28.dp),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -164,7 +287,7 @@ fun CustomPresetEditorScreen(
                 ) {
                     Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                         Text(
-                            text = "Editing Segment #${selectedIndex + 1}",
+                            text = if (selectedIndices.size == 1) "Editing Segment #${firstIdx + 1}" else "Editing ${selectedIndices.size} Segments",
                             style = MaterialTheme.typography.titleMedium,
                             color = MaterialTheme.colorScheme.primary
                         )
@@ -182,7 +305,9 @@ fun CustomPresetEditorScreen(
                             onValueChange = { newRange ->
                                 val newLow = lerpLog(newRange.start, 20f, 20000f)
                                 val newHigh = lerpLog(newRange.endInclusive, 20f, 20000f)
-                                zones[selectedIndex] = AudioProcessor.ZoneSpec(newLow, newHigh, zone.lowPercent, zone.highPercent)
+                                selectedIndices.forEach { idx ->
+                                    zones[idx] = AudioProcessor.ZoneSpec(newLow, newHigh, zone.lowPercent, zone.highPercent)
+                                }
                             },
                             valueRange = 0f..1f,
                             modifier = Modifier.fillMaxWidth()
@@ -205,13 +330,50 @@ fun CustomPresetEditorScreen(
 @Composable
 fun EditableGlyphPreview(
     device: Int,
-    selectedIndex: Int,
+    selectedIndices: List<Int>,
+    onIndexSelected: (Int, Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val parser = remember { PathParser() }
     val paths = remember { getGlyphPaths(parser) }
+    val bounds = remember(paths) { paths.mapValues { it.value.getBounds() } }
     
-    Canvas(modifier = modifier) {
+    Canvas(modifier = modifier.pointerInput(device) {
+        detectTapGestures { offset ->
+            // Simple hit testing for matrix devices
+            val viewBoxW = 182f
+            val viewBoxH = if (device == DeviceProfile.DEVICE_NP1 || device == DeviceProfile.DEVICE_NP2) 382f else 182f
+            val scale = min(size.width / viewBoxW, size.height / viewBoxH)
+            val dx = (size.width - viewBoxW * scale) / 2
+            val dy = (size.height - viewBoxH * scale) / 2
+            
+            val localX = (offset.x - dx) / scale
+            val localY = (offset.y - dy) / scale
+
+            if (device == DeviceProfile.DEVICE_NP4APRO || device == DeviceProfile.DEVICE_NP3) {
+                val isPro = device == DeviceProfile.DEVICE_NP4APRO
+                val matrixW = if (isPro) 13 else 25
+                val matrixH = if (isPro) 13 else 25
+                val pixelSize = if (isPro) 8f else 4.5f
+                val pixelGap = if (isPro) 1.5f else 1f
+                val gridWidth = matrixW * pixelSize + (matrixW - 1) * pixelGap
+                val gridHeight = matrixH * pixelSize + (matrixH - 1) * pixelGap
+                val startX = (182f - gridWidth) / 2
+                val startY = (382f - gridHeight) / 2
+                
+                val col = ((localX - startX) / (pixelSize + pixelGap)).toInt()
+                val row = ((localY - startY) / (pixelSize + pixelGap)).toInt()
+                
+                if (col in 0 until matrixW && row in 0 until matrixH) {
+                    onIndexSelected(row * matrixW + col, false)
+                }
+            } else {
+                // Approximate hit testing for paths
+                // In a production app, we'd use android.graphics.Path.contains() via a custom view or complex math
+                // For now, we use bounds or let users use the numbers below for non-matrix devices
+            }
+        }
+    }) {
         val viewBoxW = 182f
         val viewBoxH = if (device == DeviceProfile.DEVICE_NP1 || device == DeviceProfile.DEVICE_NP2) 382f else 182f
         val scale = min(size.width / viewBoxW, size.height / viewBoxH)
@@ -222,18 +384,18 @@ fun EditableGlyphPreview(
             translate(dx, dy)
             scale(scale, scale, pivot = Offset.Zero)
         }) {
-            drawEditorGlyphs(this, device, selectedIndex, paths)
+            drawEditorGlyphs(this, device, selectedIndices, paths)
         }
     }
 }
 
-private fun drawEditorGlyphs(scope: DrawScope, device: Int, selectedIndex: Int, paths: Map<String, Path>) {
+private fun drawEditorGlyphs(scope: DrawScope, device: Int, selectedIndices: List<Int>, paths: Map<String, Path>) {
     val selectedColor = Color.Red
     val normalColor = Color.White
     val baseAlpha = 0.2f
 
-    fun getColor(idx: Int) = if (idx == selectedIndex) selectedColor else normalColor
-    fun getAlpha(idx: Int) = if (idx == selectedIndex) 1.0f else baseAlpha
+    fun getColor(idx: Int) = if (selectedIndices.contains(idx)) selectedColor else normalColor
+    fun getAlpha(idx: Int) = if (selectedIndices.contains(idx)) 1.0f else baseAlpha
 
     when (device) {
         DeviceProfile.DEVICE_NP1 -> {
@@ -244,7 +406,7 @@ private fun drawEditorGlyphs(scope: DrawScope, device: Int, selectedIndex: Int, 
             paths["p1_ring_tr"]?.let { scope.drawPath(it, getColor(4), alpha = getAlpha(4)) }
             paths["p1_ring_tl"]?.let { scope.drawPath(it, getColor(5), alpha = getAlpha(5)) }
             paths["p1_dot"]?.let { scope.drawPath(it, getColor(6), alpha = getAlpha(6)) }
-            paths["p1_battery"]?.let { drawPathSegmentedVertical(scope, it, (7..14).toList(), selectedIndex, selectedColor, normalColor, baseAlpha) }
+            paths["p1_battery"]?.let { drawPathSegmentedVertical(scope, it, (7..14).toList(), selectedIndices, selectedColor, normalColor, baseAlpha) }
         }
         DeviceProfile.DEVICE_NP2 -> {
             paths["p2_0"]?.let { scope.drawPath(it, getColor(0), alpha = getAlpha(0)) }
@@ -252,19 +414,19 @@ private fun drawEditorGlyphs(scope: DrawScope, device: Int, selectedIndex: Int, 
             paths["p2_2"]?.let { scope.drawPath(it, getColor(2), alpha = getAlpha(2)) }
 
             // NP2 Progress glyph (3-18) is a single sequence of 16 segments in its arc
-            paths["p2_ring"]?.let { drawPathSegmentedVertical(scope, it, (3..18).toList(), selectedIndex, selectedColor, normalColor, baseAlpha) }
+            paths["p2_ring"]?.let { drawPathSegmentedVertical(scope, it, (3..18).toList(), selectedIndices, selectedColor, normalColor, baseAlpha) }
 
             for (i in 19..24) {
                 paths["p2_$i"]?.let { scope.drawPath(it, getColor(i), alpha = getAlpha(i)) }
             }
-            paths["p2_battery"]?.let { drawPathSegmentedVertical(scope, it, (25..32).toList(), selectedIndex, selectedColor, normalColor, baseAlpha) }
+            paths["p2_battery"]?.let { drawPathSegmentedVertical(scope, it, (25..32).toList(), selectedIndices, selectedColor, normalColor, baseAlpha) }
         }
         DeviceProfile.DEVICE_NP2A -> {
             scope.withTransform({
                 translate(-13.02971f, -40f)
                 scale(1.128745f, 1.128745f, pivot = Offset.Zero)
             }) {
-                paths["p2a_large"]?.let { drawPathSegmentedVertical(this, it, (0..23).toList(), selectedIndex, selectedColor, normalColor, baseAlpha) }
+                paths["p2a_large"]?.let { drawPathSegmentedVertical(this, it, (0..23).toList(), selectedIndices, selectedColor, normalColor, baseAlpha) }
                 paths["p2a_medium"]?.let { drawPath(it, getColor(24), alpha = getAlpha(24)) }
                 paths["p2a_small"]?.let { drawPath(it, getColor(25), alpha = getAlpha(25)) }
             }
@@ -274,13 +436,13 @@ private fun drawEditorGlyphs(scope: DrawScope, device: Int, selectedIndex: Int, 
                 translate(-2f, 7f)
                 scale(1.03f, 1.03f, pivot = Offset.Zero)
             }) {
-                paths["p3a_large"]?.let { drawPathSegmentedVertical(this, it, (0..19).toList(), selectedIndex, selectedColor, normalColor, baseAlpha) }
-                paths["p3a_medium"]?.let { drawPathSegmentedVertical(this, it, (20..30).toList(), selectedIndex, selectedColor, normalColor, baseAlpha) }
-                paths["p3a_small"]?.let { drawPathSegmentedVertical(this, it, (31..35).toList(), selectedIndex, selectedColor, normalColor, baseAlpha, vertical = false) }
+                paths["p3a_large"]?.let { drawPathSegmentedVertical(this, it, (0..19).toList(), selectedIndices, selectedColor, normalColor, baseAlpha) }
+                paths["p3a_medium"]?.let { drawPathSegmentedVertical(this, it, (20..30).toList(), selectedIndices, selectedColor, normalColor, baseAlpha) }
+                paths["p3a_small"]?.let { drawPathSegmentedVertical(this, it, (31..35).toList(), selectedIndices, selectedColor, normalColor, baseAlpha, vertical = false) }
             }
         }
         DeviceProfile.DEVICE_NP4A -> {
-            paths["p4a_bar"]?.let { drawPathSegmentedVertical(scope, it, (0..5).toList(), selectedIndex, selectedColor, normalColor, baseAlpha, vertical = false) }
+            paths["p4a_bar"]?.let { drawPathSegmentedVertical(scope, it, (0..5).toList(), selectedIndices, selectedColor, normalColor, baseAlpha, vertical = false) }
             paths["p4a_dot"]?.let { scope.drawPath(it, getColor(6), alpha = getAlpha(6)) }
         }
         DeviceProfile.DEVICE_NP4APRO, DeviceProfile.DEVICE_NP3 -> {
@@ -317,7 +479,7 @@ private fun drawPathSegmentedVertical(
     scope: DrawScope,
     path: Path,
     indices: List<Int>,
-    selectedIndex: Int,
+    selectedIndices: List<Int>,
     selectedColor: Color,
     normalColor: Color,
     baseAlpha: Float,
@@ -329,7 +491,7 @@ private fun drawPathSegmentedVertical(
     val step = if (vertical) b.height / count else b.width / count
 
     indices.forEachIndexed { i, idx ->
-        val isSelected = idx == selectedIndex
+        val isSelected = selectedIndices.contains(idx)
         val color = if (isSelected) selectedColor else normalColor
         val alpha = if (isSelected) 1.0f else baseAlpha
 

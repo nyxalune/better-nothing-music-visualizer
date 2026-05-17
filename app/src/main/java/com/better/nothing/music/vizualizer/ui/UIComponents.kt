@@ -23,6 +23,9 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsDraggedAsState
 import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -58,6 +61,9 @@ import androidx.compose.material3.Shapes
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.Typography
 import androidx.compose.material3.dynamicDarkColorScheme
@@ -127,34 +133,43 @@ fun BodyText(
     )
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun NativeFilterChip(
     label: String,
     selected: Boolean,
     onClick: () -> Unit,
+    onLongClick: (() -> Unit)? = null,
+    trailingIcon: @Composable (() -> Unit)? = null,
 ) {
     val haptics = LocalHapticFeedback.current
-    FilterChip(
-        selected = selected,
-        onClick  = {
-            haptics.performHapticFeedback(HapticFeedbackType.SegmentTick)
-            onClick()
-        },
-        label    = { Text(text = label, style = MaterialTheme.typography.labelLarge) },
-        shape    = RoundedCornerShape(8.dp),
-        colors   = FilterChipDefaults.filterChipColors(
-            selectedContainerColor = MaterialTheme.colorScheme.primary,
-            selectedLabelColor     = MaterialTheme.colorScheme.onPrimary,
-            containerColor         = Color.Transparent,
-            labelColor             = MaterialTheme.colorScheme.onSurfaceVariant,
-        ),
-        border   = FilterChipDefaults.filterChipBorder(
-            enabled             = true,
-            selected            = selected,
-            borderColor         = MaterialTheme.colorScheme.outline,
-            selectedBorderColor = Color.Transparent,
-        ),
-    )
+    Surface(
+        shape = RoundedCornerShape(8.dp),
+        color = if (selected) MaterialTheme.colorScheme.primary else Color.Transparent,
+        contentColor = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+        border = if (selected) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+        modifier = Modifier.combinedClickable(
+            onClick = {
+                haptics.performHapticFeedback(HapticFeedbackType.SegmentTick)
+                onClick()
+            },
+            onLongClick = onLongClick?.let {
+                {
+                    haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                    it()
+                }
+            }
+        )
+    ) {
+        Row(
+            Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text(text = label, style = MaterialTheme.typography.labelLarge)
+            trailingIcon?.invoke()
+        }
+    }
 }
 
 @Composable
@@ -270,7 +285,6 @@ fun NativeBottomBar(
                         Tab.Glyphs -> Icon(painter = painterResource(R.drawable.ic_nav_glyphs), contentDescription = tab.label)
                         Tab.Haptics -> Icon(Icons.Filled.Vibration, tab.label)
                         Tab.Settings -> Icon(Icons.Filled.Settings, tab.label)
-                        Tab.About -> Icon(Icons.Filled.Info, tab.label)
                     }
                 },
                 colors = NavigationBarItemDefaults.colors(

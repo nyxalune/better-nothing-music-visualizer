@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "252304807982",
+    "project_id": "bnmv-67120",
+    "storage_bucket": "bnmv-67120.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:252304807982:android:9c1dc5bc06113e793b27bf",
+        "android_client_info": {
+          "package_name": "com.better.nothing.music.visualizer"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDWTyc2YTxS3k2YFt_N_I23OhAP1MoreCU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

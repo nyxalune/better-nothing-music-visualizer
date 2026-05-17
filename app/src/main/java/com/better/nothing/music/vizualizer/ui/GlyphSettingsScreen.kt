@@ -35,11 +35,11 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Public
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.StarOutline
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
@@ -174,24 +174,51 @@ internal fun GlyphsScreen(
 
                 GammaCard(gammaValue = gammaValue, onGammaChanged = onGammaChanged)
 
-                Text(
-                    text = stringResource(R.string.visualizer_presets),
-                    modifier = Modifier.padding(top = 20.dp),
-                    style = MaterialTheme.typography.headlineMedium,
-                    color = MaterialTheme.colorScheme.onBackground,
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(top = 20.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = stringResource(R.string.visualizer_presets),
+                        style = MaterialTheme.typography.headlineMedium,
+                        color = MaterialTheme.colorScheme.onBackground,
+                    )
+                    TextButton(
+                        onClick = { viewModel.showCommunity() },
+                        colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.primary)
+                    ) {
+                        Icon(Icons.Default.Public, contentDescription = null)
+                        Spacer(Modifier.width(8.dp))
+                        Text("Community")
+                    }
+                }
 
                 FlowRow(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(0.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
+                    val favorites by viewModel.favoritePresets.collectAsStateWithLifecycle()
+                    
                     presets.forEach { preset ->
                         key(preset.key) {
+                            val isFavorite = favorites.contains(preset.key)
                             NativeFilterChip(
                                 label = preset.key,
                                 selected = preset.key == selectedPreset,
                                 onClick = { onPresetSelected(preset.key) },
+                                onLongClick = { viewModel.toggleFavorite(preset.key) },
+                                trailingIcon = {
+                                    if (isFavorite) {
+                                        Icon(
+                                            Icons.Default.Star,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(16.dp),
+                                            tint = if (preset.key == selectedPreset) Color.Black else MaterialTheme.colorScheme.primary
+                                        )
+                                    }
+                                }
                             )
                         }
                     }

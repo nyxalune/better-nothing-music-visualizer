@@ -20,11 +20,13 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.ServiceInfo;
 import android.media.AudioAttributes;
 import android.media.AudioDeviceCallback;
 import android.media.AudioDeviceInfo;
 import android.media.AudioFormat;
 import android.media.AudioManager;
+import android.media.MediaRecorder;
 import android.media.AudioPlaybackCaptureConfiguration;
 import android.media.AudioRecord;
 import android.media.projection.MediaProjection;
@@ -81,6 +83,9 @@ public class AudioCaptureService extends Service {
     private static final String TAG = "GlyphViz:Service";
     private static final String CHANNEL_ID = "glyph_viz_channel";
     private static final int NOTIF_ID = 1;
+    public enum CaptureSource { INTERNAL, MIC }
+    private volatile CaptureSource mCaptureSource = CaptureSource.INTERNAL;
+
     public static final String ACTION_STOP = "com.better.nothing.music.vizualizer.action.STOP";
     public static final String ACTION_TOGGLE_HAPTICS = "com.better.nothing.music.vizualizer.action.TOGGLE_HAPTICS";
 
@@ -419,11 +424,18 @@ public class AudioCaptureService extends Service {
             Intent data = intent.getParcelableExtra(EXTRA_DATA, Intent.class);
             if (data != null) {
                 startCapture(resultCode, data);
+                return START_STICKY;
             }
         }
 
-        startForeground(NOTIF_ID, buildNotification());
-        return START_NOT_STICKY;
+        if (mCaptureSource == CaptureSource.MIC && sIsRunning) {
+            startForeground(NOTIF_ID, buildNotification(), ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE);
+        } else if (mCaptureSource == CaptureSource.INTERNAL && sIsRunning && mProjection != null) {
+            startForeground(NOTIF_ID, buildNotification(), ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION);
+        } else {
+            startForeground(NOTIF_ID, buildNotification(), ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE);
+        }
+        return START_STICKY;
     }
 
     @Override
@@ -579,6 +591,31 @@ public class AudioCaptureService extends Service {
             return;
         }
         applyPresetSelection(presetSelection.trim());
+    }
+
+    public void setCaptureSource(CaptureSource source) {
+        if (mCaptureSource != source) {
+            mCaptureSource = source;
+            if (sIsRunning) {
+                if (mWorkerHandler != null) {
+                    mWorkerHandler.post(this::restartCapture);
+                }
+            }
+        }
+    }
+
+    private void restartCapture() {
+        synchronized (mCaptureLock) {
+            if (!mCapturing) return;
+            if (mCaptureSource == CaptureSource.MIC) {
+                startMicCapture();
+            } else {
+                // Switching to internal requires activity token
+                stopCaptureLocked();
+                sIsRunning = false;
+                requestTileRefresh();
+            }
+        }
     }
 
     public void reloadConfig() {
@@ -763,38 +800,50 @@ public class AudioCaptureService extends Service {
     }
 
     public void startCapture(int resultCode, Intent data) {
-        MediaProjectionManager projectionManager = (MediaProjectionManager) getSystemService(MEDIA_PROJECTION_SERVICE);
+        startCaptureInternal(CaptureSource.INTERNAL, resultCode, data);
+    }
 
-        if (projectionManager == null) {
-            Log.e(TAG, "MediaProjectionManager is unavailable");
-            sIsRunning = false;
-            return;
+    public void startMicCapture() {
+        startCaptureInternal(CaptureSource.MIC, 0, null);
+    }
+
+    private void startCaptureInternal(CaptureSource source, int resultCode, Intent data) {
+        mCaptureSource = source;
+        MediaProjectionManager projectionManager = null;
+        if (source == CaptureSource.INTERNAL) {
+            projectionManager = (MediaProjectionManager) getSystemService(MEDIA_PROJECTION_SERVICE);
+            if (projectionManager == null) {
+                Log.e(TAG, "MediaProjectionManager is unavailable");
+                sIsRunning = false;
+                return;
+            }
         }
 
         synchronized (mCaptureLock) {
             stopCaptureLocked();
 
-            // 1. MUST promote to foreground BEFORE validating the projection token
-            startForeground(NOTIF_ID, buildNotification());
-
-            MediaProjection projection = projectionManager.getMediaProjection(resultCode, data);
-            if (projection == null) {
-                Log.e(TAG, "MediaProjection token was denied or expired");
-                stopForeground(STOP_FOREGROUND_REMOVE);
-                sIsRunning = false;
-                return;
-            }
-
-            mProjection = projection;
-            if (mWorkerHandler != null) {
-                mProjection.registerCallback(mProjectionCallback, mWorkerHandler);
+            if (source == CaptureSource.INTERNAL) {
+                startForeground(NOTIF_ID, buildNotification(), ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION);
+                MediaProjection projection = projectionManager.getMediaProjection(resultCode, data);
+                if (projection == null) {
+                    Log.e(TAG, "MediaProjection token was denied or expired");
+                    stopForeground(STOP_FOREGROUND_REMOVE);
+                    sIsRunning = false;
+                    return;
+                }
+                mProjection = projection;
+                if (mWorkerHandler != null) {
+                    mProjection.registerCallback(mProjectionCallback, mWorkerHandler);
+                }
+            } else {
+                startForeground(NOTIF_ID, buildNotification(), ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE);
             }
 
             mCapturing = true;
             sIsRunning = true;
             ensureCaptureExecutor();
             requestTileRefresh();
-            Log.d(TAG, "Capture started successfully via startCapture");
+            Log.d(TAG, "Capture started successfully via source: " + source);
 
             mCaptureExecutor.execute(() -> {
                 Process.setThreadPriority(Process.THREAD_PRIORITY_AUDIO);
@@ -802,31 +851,39 @@ public class AudioCaptureService extends Service {
                     // Give the system a moment to settle the foreground state
                     SystemClock.sleep(PROJECTION_SETTLE_DELAY_MS);
 
-                    AudioPlaybackCaptureConfiguration config =
-                            new AudioPlaybackCaptureConfiguration.Builder(mProjection)
-                                    .addMatchingUsage(AudioAttributes.USAGE_MEDIA)
-                                    .addMatchingUsage(AudioAttributes.USAGE_GAME)
-                                    .addMatchingUsage(AudioAttributes.USAGE_UNKNOWN)
-                                    .addMatchingUsage(AudioAttributes.USAGE_ASSISTANCE_SONIFICATION)
-                                    .build();
-
-                    // 2. Calculate safe buffer size
+                    AudioRecord localRecord;
                     int minBufSize = AudioRecord.getMinBufferSize(
                             SAMPLE_RATE,
                             AudioFormat.CHANNEL_IN_MONO,
                             AudioFormat.ENCODING_PCM_16BIT);
-
                     int bufferSize = Math.max(minBufSize, 4096 * 4);
 
-                    AudioRecord localRecord = new AudioRecord.Builder()
-                            .setAudioPlaybackCaptureConfig(config)
-                            .setAudioFormat(new AudioFormat.Builder()
-                                    .setSampleRate(SAMPLE_RATE)
-                                    .setChannelMask(AudioFormat.CHANNEL_IN_MONO)
-                                    .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
-                                    .build())
-                            .setBufferSizeInBytes(bufferSize)
-                            .build();
+                    if (source == CaptureSource.INTERNAL) {
+                        AudioPlaybackCaptureConfiguration config =
+                                new AudioPlaybackCaptureConfiguration.Builder(mProjection)
+                                        .addMatchingUsage(AudioAttributes.USAGE_MEDIA)
+                                        .addMatchingUsage(AudioAttributes.USAGE_GAME)
+                                        .addMatchingUsage(AudioAttributes.USAGE_UNKNOWN)
+                                        .addMatchingUsage(AudioAttributes.USAGE_ASSISTANCE_SONIFICATION)
+                                        .build();
+
+                        localRecord = new AudioRecord.Builder()
+                                .setAudioPlaybackCaptureConfig(config)
+                                .setAudioFormat(new AudioFormat.Builder()
+                                        .setSampleRate(SAMPLE_RATE)
+                                        .setChannelMask(AudioFormat.CHANNEL_IN_MONO)
+                                        .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
+                                        .build())
+                                .setBufferSizeInBytes(bufferSize)
+                                .build();
+                    } else {
+                        localRecord = new AudioRecord(
+                                MediaRecorder.AudioSource.MIC,
+                                SAMPLE_RATE,
+                                AudioFormat.CHANNEL_IN_MONO,
+                                AudioFormat.ENCODING_PCM_16BIT,
+                                bufferSize);
+                    }
 
                     // 3. Verify Initialization
                     if (localRecord.getState() != AudioRecord.STATE_INITIALIZED) {
@@ -835,7 +892,7 @@ public class AudioCaptureService extends Service {
                     }
 
                     synchronized (mCaptureLock) {
-                        if (!mCapturing || mProjection != projection) {
+                        if (!mCapturing) {
                             localRecord.release();
                             return;
                         }

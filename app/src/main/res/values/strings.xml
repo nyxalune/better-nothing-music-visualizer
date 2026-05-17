@@ -86,6 +86,11 @@
     <string name="media_projection_info">MediaProjection is used only to power the real-time visualizer. No unnecessary recording or data storage is performed.</string>
     <string name="credits">Credits</string>
     <string name="open_github_profile">Open GitHub profile</string>
+    <string name="check_for_app_updates">Check for App Updates</string>
+    <string name="checking_for_updates">Checking for updates...</string>
+    <string name="app_up_to_date">App is up to date</string>
+    <string name="update_available">Update available: %s</string>
+    <string name="update_now">Update Now</string>
     <string name="credit_alekslevet_role">Founder, coordinator, main idea, owner</string>
     <string name="credit_rkyzen_role">Android app developer (real-time music stream)</string>
     <string name="credit_oliver_role">Co-developer of this amazing app</string>

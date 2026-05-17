@@ -3,6 +3,8 @@ package com.better.nothing.music.vizualizer.ui
 import com.better.nothing.music.vizualizer.R
 import com.better.nothing.music.vizualizer.model.DeviceProfile
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
@@ -52,11 +54,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.FileOpen
 import androidx.compose.material.icons.filled.GraphicEq
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.Vibration
 import androidx.compose.foundation.layout.size
-
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
@@ -143,35 +147,41 @@ internal fun SettingsScreen(
                 "Material You",
                 "Material You Light"
             )
-            val carouselState = rememberCarouselState { themeOptions.size }
+            val initialThemeIndex = remember { themeOptions.indexOf(selectedTheme).coerceAtLeast(0) }
+            val carouselState = rememberCarouselState(initialItem = initialThemeIndex) { themeOptions.size }
 
             HorizontalMultiBrowseCarousel(
                 state = carouselState,
                 preferredItemWidth = 140.dp,
                 itemSpacing = 8.dp,
-                contentPadding = PaddingValues(horizontal = 8.dp),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(60.dp)
+                    .height(75.dp)
             ) { index ->
                 val theme = themeOptions[index]
                 val isSelected = selectedTheme == theme
                 Card(
                     onClick = { viewModel.setSelectedTheme(theme) },
-                    shape = RoundedCornerShape(16.dp),
+                    shape = RoundedCornerShape(22.dp),
                     colors = CardDefaults.cardColors(
-                        containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer 
-                                       else MaterialTheme.colorScheme.surfaceVariant
+                        containerColor = if (isSelected) MaterialTheme.colorScheme.primary
+                        else MaterialTheme.colorScheme.surface,
+                        contentColor = if (isSelected) MaterialTheme.colorScheme.onPrimary
+                        else MaterialTheme.colorScheme.onSurface
                     ),
-                    border = if (isSelected) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null,
-                    modifier = Modifier.fillMaxSize()
+                    border = if (isSelected) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .maskClip(RoundedCornerShape(22.dp))
                 ) {
                     Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
                         Text(
                             text = theme,
-                            style = MaterialTheme.typography.labelLarge,
+                            style = MaterialTheme.typography.titleSmall,
                             textAlign = TextAlign.Center,
-                            modifier = Modifier.padding(8.dp)
+                            modifier = Modifier.padding(12.dp),
+                            maxLines = 2,
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
                         )
                     }
                 }
@@ -226,7 +236,7 @@ internal fun SettingsScreen(
                                 color = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.padding(bottom = 8.dp)
                             )
-                            
+
                             Box {
                                 OutlinedTextField(
                                     value = patternNames[idlePattern] ?: idlePattern,
@@ -242,7 +252,7 @@ internal fun SettingsScreen(
                                         .background(Color.Transparent)
                                         .clickable { patternExpanded = true }
                                 )
-                                
+
                                 DropdownMenu(
                                     expanded = patternExpanded,
                                     onDismissRequest = { patternExpanded = false },
@@ -261,7 +271,7 @@ internal fun SettingsScreen(
                             }
                         }
                     }
-                    
+
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant, thickness = 0.5.dp)
 
                     FeatureToggle(
@@ -298,7 +308,7 @@ internal fun SettingsScreen(
                                 style = MaterialTheme.typography.titleSmall,
                                 color = MaterialTheme.colorScheme.primary
                             )
-                            
+
                             Box {
                                 OutlinedTextField(
                                     value = DeviceProfile.deviceName(spoofedDevice),
@@ -315,7 +325,7 @@ internal fun SettingsScreen(
                                         .background(Color.Transparent)
                                         .clickable { spoofExpanded = true }
                                 )
-                                
+
                                 DropdownMenu(
                                     expanded = spoofExpanded,
                                     onDismissRequest = { spoofExpanded = false },
@@ -434,23 +444,91 @@ internal fun SettingsScreen(
                         }
                     }
 
-                    Button(
-                        onClick = { viewModel.updateZonesConfig() },
-                        enabled = configStatus is MainViewModel.ConfigUpdateStatus.Idle,
+                    val filePickerLauncher = rememberLauncherForActivityResult(
+                        ActivityResultContracts.GetContent()
+                    ) { uri ->
+                        uri?.let { viewModel.importZonesConfig(it) }
+                    }
+
+                    Row(
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp)
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        if (configStatus is MainViewModel.ConfigUpdateStatus.Updating) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(20.dp),
-                                color = MaterialTheme.colorScheme.onPrimary,
-                                strokeWidth = 2.dp
+                        Button(
+                            onClick = { viewModel.updateZonesConfig() },
+                            enabled = configStatus is MainViewModel.ConfigUpdateStatus.Idle,
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            if (configStatus is MainViewModel.ConfigUpdateStatus.Updating) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(20.dp),
+                                    color = MaterialTheme.colorScheme.onPrimary,
+                                    strokeWidth = 2.dp
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Updating...")
+                            } else {
+                                Text("Check for Updates")
+                            }
+                        }
+
+                        Button(
+                            onClick = { filePickerLauncher.launch("*/*") },
+                            enabled = configStatus is MainViewModel.ConfigUpdateStatus.Idle,
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                            )
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.FileOpen,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
                             )
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("Updating...")
-                        } else {
-                            Text("Check for Updates")
+                            Text("Load Local")
                         }
+                    }
+                }
+            }
+        }
+
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(
+                text = "About",
+                style = MaterialTheme.typography.titleLarge,
+                modifier = Modifier.padding(bottom = 4.dp),
+            )
+
+            Card(
+                onClick = { viewModel.showAbout() },
+                shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Row(
+                    modifier = Modifier.padding(20.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Icon(
+                        imageVector = androidx.compose.material.icons.Icons.Default.Info,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Column {
+                        Text(
+                            text = stringResource(R.string.about_title),
+                            style = MaterialTheme.typography.titleMedium,
+                        )
+                        Text(
+                            text = "Credits, version info, and more",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color.Gray
+                        )
                     }
                 }
             }

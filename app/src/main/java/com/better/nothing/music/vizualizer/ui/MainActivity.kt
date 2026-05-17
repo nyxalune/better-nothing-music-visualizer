@@ -20,13 +20,22 @@
 package com.better.nothing.music.vizualizer.ui
 
 import com.better.nothing.music.vizualizer.R
+import com.better.nothing.music.vizualizer.BuildConfig
 import com.better.nothing.music.vizualizer.model.HapticMode
 import com.better.nothing.music.vizualizer.model.DeviceProfile
 import com.better.nothing.music.vizualizer.logic.AudioProcessor
 import com.better.nothing.music.vizualizer.service.AudioCaptureService
 import com.better.nothing.music.vizualizer.service.HapticsTileService
 import com.better.nothing.music.vizualizer.service.VisualizerTileService
-import com.better.nothing.music.vizualizer.ui.CustomPresetEditorScreen
+import com.better.nothing.music.vizualizer.util.AnalyticsHelper
+import com.better.nothing.music.vizualizer.logic.CommunityRepository
+import com.better.nothing.music.vizualizer.model.CommunityPreset
+import com.better.nothing.music.vizualizer.model.ZoneData
+import com.better.nothing.music.vizualizer.ui.CommunityPresetsScreen
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.stateIn
 
 import android.Manifest
 import android.app.Application
@@ -39,6 +48,7 @@ import android.media.AudioDeviceCallback
 import android.media.AudioDeviceInfo
 import android.media.AudioManager
 import android.media.projection.MediaProjectionManager
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
@@ -64,6 +74,7 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -100,7 +111,7 @@ import kotlin.math.sqrt
 // Promoted to internal so MainViewModel can reference it without reflection.
 
 enum class Tab(val label: String) {
-    Audio("Audio"), Glyphs("Glyphs"), Haptics("Haptics"), Settings("Settings"), About("About");
+    Audio("Audio"), Glyphs("Glyphs"), Haptics("Haptics"), Settings("Settings");
 
 }
 
@@ -117,13 +128,58 @@ private data class AudioRoute(
 //   • All IO / CPU work is dispatched off the main thread.
 
 internal class MainViewModel(application: Application) : AndroidViewModel(application) {
-
     private val ctx = application
+    private val communityRepository = CommunityRepository()
+    private val analytics = AnalyticsHelper(application)
+
+    private val _favoritePresets = MutableStateFlow<Set<String>>(emptySet())
+    val favoritePresets = _favoritePresets.asStateFlow()
+
+    private val _captureSource = MutableStateFlow(AudioCaptureService.CaptureSource.INTERNAL)
+    val captureSource = _captureSource.asStateFlow()
+
+    init {
+        val prefs = ctx.getSharedPreferences("viz_prefs", Context.MODE_PRIVATE)
+        _favoritePresets.value = prefs.getStringSet("favorite_presets", emptySet()) ?: emptySet()
+        
+        val savedSource = prefs.getString("capture_source", AudioCaptureService.CaptureSource.INTERNAL.name)
+        _captureSource.value = AudioCaptureService.CaptureSource.valueOf(savedSource ?: AudioCaptureService.CaptureSource.INTERNAL.name)
+    }
+
+    fun toggleFavorite(presetKey: String) {
+        val current = _favoritePresets.value.toMutableSet()
+        val isFavorited = if (current.contains(presetKey)) {
+            current.remove(presetKey)
+            false
+        } else {
+            current.add(presetKey)
+            true
+        }
+        _favoritePresets.value = current
+        
+        val isCustom = _presetInfos.value.find { it.key == presetKey }?.description?.startsWith("Custom:") == true
+        analytics.logPresetFavorited(presetKey, isFavorited, isCustom)
+        
+        viewModelScope.launch(Dispatchers.IO) {
+            ctx.getSharedPreferences("viz_prefs", Context.MODE_PRIVATE)
+                .edit().putStringSet("favorite_presets", current).apply()
+        }
+    }
 
     // ── Tab ───────────────────────────────────────────────────────────────────
     private val _selectedTab = MutableStateFlow(Tab.Audio)
     val selectedTab = _selectedTab.asStateFlow()
     fun selectTab(tab: Tab) { _selectedTab.value = tab }
+
+    fun setCaptureSource(source: AudioCaptureService.CaptureSource) {
+        _captureSource.value = source
+        MainActivity.serviceStatic?.setCaptureSource(source)
+        analytics.logCaptureSourceChanged(source.name)
+        viewModelScope.launch(Dispatchers.IO) {
+            ctx.getSharedPreferences("viz_prefs", Context.MODE_PRIVATE)
+                .edit { putString("capture_source", source.name) }
+        }
+    }
 
     // ── Device ────────────────────────────────────────────────────────────────
     // Exposed as MutableStateFlow (not just a val) so the Activity can always
@@ -221,7 +277,10 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
     // ── Running state ─────────────────────────────────────────────────────────
     private val _runningState = MutableStateFlow(false)
     val runningState = _runningState.asStateFlow()
-    fun setRunning(running: Boolean) { _runningState.value = running }
+    fun setRunning(running: Boolean) {
+        _runningState.value = running
+        analytics.logVisualizerStarted(running)
+    }
 
     // ── Presets ──────────────────────────────────────────────────────────────
     private val _selectedPreset = MutableStateFlow("")
@@ -230,6 +289,8 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
     fun setSelectedPreset(key: String) {
         if (key.isNotBlank()) {
             _selectedPreset.value = key
+            val isCustom = _presetInfos.value.find { it.key == key }?.description?.startsWith("Custom:") == true
+            analytics.logPresetSelected(key, isCustom)
             viewModelScope.launch(Dispatchers.IO) {
                 ctx.getSharedPreferences("viz_prefs", Context.MODE_PRIVATE)
                     .edit { putString("selected_preset", key) }
@@ -268,6 +329,9 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
     private val _remoteConfigVersion = MutableStateFlow<String?>(null)
     val remoteConfigVersion = _remoteConfigVersion.asStateFlow()
 
+    private val _appRemoteVersion = MutableStateFlow<String?>(null)
+    val appRemoteVersion = _appRemoteVersion.asStateFlow()
+
     private val _disableGlyphsWhenSilent = MutableStateFlow(false)
     val disableGlyphsWhenSilent = _disableGlyphsWhenSilent.asStateFlow()
 
@@ -275,11 +339,29 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
     private val _configUpdateStatus = MutableStateFlow<ConfigUpdateStatus>(ConfigUpdateStatus.Idle)
     val configUpdateStatus = _configUpdateStatus.asStateFlow()
 
+    private val _appUpdateStatus = MutableStateFlow<AppUpdateStatus>(AppUpdateStatus.Idle)
+    val appUpdateStatus = _appUpdateStatus.asStateFlow()
+
+    private val _showUpdateDialog = MutableStateFlow(false)
+    val showUpdateDialog = _showUpdateDialog.asStateFlow()
+
+    fun dismissUpdateDialog() {
+        _showUpdateDialog.value = false
+    }
+
     sealed class ConfigUpdateStatus {
         object Idle : ConfigUpdateStatus()
         object Updating : ConfigUpdateStatus()
         data class Success(val message: String) : ConfigUpdateStatus()
         data class Error(val message: String) : ConfigUpdateStatus()
+    }
+
+    sealed class AppUpdateStatus {
+        object Idle : AppUpdateStatus()
+        object Checking : AppUpdateStatus()
+        data class Available(val version: String, val url: String) : AppUpdateStatus()
+        object UpToDate : AppUpdateStatus()
+        data class Error(val message: String) : AppUpdateStatus()
     }
 
     // FIXED: Proper thread handling for network and UI updates
@@ -350,6 +432,43 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
         }
     }
 
+    fun importZonesConfig(uri: Uri) {
+        _configUpdateStatus.value = ConfigUpdateStatus.Updating
+        viewModelScope.launch {
+            try {
+                val success = withContext(Dispatchers.IO) {
+                    val content = ctx.contentResolver.openInputStream(uri)?.bufferedReader()?.use { it.readText() }
+                    if (content == null) return@withContext false
+
+                    // Basic validation
+                    JSONObject(content)
+
+                    val file = File(ctx.filesDir, "zones.config")
+                    file.writeText(content)
+
+                    // Refresh presets (file IO)
+                    refreshPresetsInternal()
+
+                    val newVersion = AudioCaptureService.loadZonesConfigVersion(ctx)
+                    _configVersion.value = newVersion
+                    _remoteConfigVersion.value = null // Clear remote version since we are on local
+
+                    // Force running service to reload its config from disk
+                    MainActivity.serviceStatic?.reloadConfig()
+                    true
+                }
+
+                if (success) {
+                    _configUpdateStatus.value = ConfigUpdateStatus.Success("Successfully imported zones.config")
+                } else {
+                    _configUpdateStatus.value = ConfigUpdateStatus.Error("Failed to read selected file")
+                }
+            } catch (e: Exception) {
+                _configUpdateStatus.value = ConfigUpdateStatus.Error("Error importing: ${e.message}")
+            }
+        }
+    }
+
     fun resetConfigUpdateStatus() {
         _configUpdateStatus.value = ConfigUpdateStatus.Idle
     }
@@ -373,6 +492,70 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
                 Log.e("MainViewModel", "Failed to check remote version", e)
             }
         }
+    }
+
+    fun checkAppUpdate() {
+        _appUpdateStatus.value = AppUpdateStatus.Checking
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val url = URL("https://api.github.com/repos/Aleks-Levet/better-nothing-music-visualizer/releases/latest")
+                val connection = url.openConnection() as HttpURLConnection
+                connection.setRequestProperty("Accept", "application/vnd.github.v3+json")
+                connection.setRequestProperty("User-Agent", "BetterNothingMusicVisualizer") // Required by GitHub API
+                connection.connectTimeout = 5000
+                connection.readTimeout = 5000
+
+                if (connection.responseCode == HttpURLConnection.HTTP_OK) {
+                    val content = connection.inputStream.bufferedReader().use { it.readText() }
+                    val json = JSONObject(content)
+                    val tagName = json.getString("tag_name")
+                    val htmlUrl = json.getString("html_url")
+                    
+                    val latestVersion = tagName.removePrefix("v")
+                    val currentVersion = BuildConfig.VERSION_NAME
+
+                    _appRemoteVersion.value = latestVersion
+
+                    if (isNewerVersion(currentVersion, latestVersion)) {
+                        _appUpdateStatus.value = AppUpdateStatus.Available(latestVersion, htmlUrl)
+                        _showUpdateDialog.value = true
+                    } else {
+                        _appUpdateStatus.value = AppUpdateStatus.UpToDate
+                    }
+                } else {
+                    val errorMsg = "Check failed: ${connection.responseCode}"
+                    _appUpdateStatus.value = AppUpdateStatus.Error(errorMsg)
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(ctx, errorMsg, Toast.LENGTH_SHORT).show()
+                    }
+                }
+            } catch (e: Exception) {
+                val errorMsg = "Update check error: ${e.message}"
+                _appUpdateStatus.value = AppUpdateStatus.Error(errorMsg)
+                Log.e("MainViewModel", "App update check failed", e)
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(ctx, errorMsg, Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+
+    private fun isNewerVersion(current: String, latest: String): Boolean {
+        // Remove common suffixes like .debug or -beta
+        val cleanCurrent = current.split("-", " ").first()
+        val cleanLatest = latest.split("-", " ").first()
+
+        val currentParts = cleanCurrent.split(".").mapNotNull { it.takeWhile { c -> c.isDigit() }.toIntOrNull() }
+        val latestParts = cleanLatest.split(".").mapNotNull { it.takeWhile { c -> c.isDigit() }.toIntOrNull() }
+        
+        val length = maxOf(currentParts.size, latestParts.size)
+        for (i in 0 until length) {
+            val curr = if (i < currentParts.size) currentParts[i] else 0
+            val lat = if (i < latestParts.size) latestParts[i] else 0
+            if (lat > curr) return true
+            if (lat < curr) return false
+        }
+        return false
     }
 
     // ── Theme & Font ─────────────────────────────────────────────────────────
@@ -418,6 +601,48 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
 
     fun showEditor() { _isEditingPreset.value = true }
     fun hideEditor() { _isEditingPreset.value = false }
+
+    private val _isShowingAbout = MutableStateFlow(false)
+    val isShowingAbout = _isShowingAbout.asStateFlow()
+
+    fun showAbout() { _isShowingAbout.value = true }
+    fun hideAbout() { _isShowingAbout.value = false }
+
+    private val _isShowingCommunity = MutableStateFlow(false)
+    val isShowingCommunity = _isShowingCommunity.asStateFlow()
+
+    fun showCommunity() { _isShowingCommunity.value = true }
+    fun hideCommunity() { _isShowingCommunity.value = false }
+
+    private val _communityError = MutableStateFlow<String?>(null)
+    val communityError = _communityError.asStateFlow()
+
+    val communityPresets = communityRepository.getPresets()
+        .onEach { _communityError.value = null }
+        .catch { e -> _communityError.value = e.message }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
+    fun sharePresetToCommunity(name: String, author: String, zones: List<AudioProcessor.ZoneSpec>) {
+        viewModelScope.launch {
+            val preset = CommunityPreset(
+                name = name,
+                author = author,
+                phoneModel = phoneModelForDevice(selectedDevice.value),
+                zones = zones.map { ZoneData.fromZoneSpec(it) }
+            )
+            communityRepository.uploadPreset(preset)
+            analytics.logPresetShared(name)
+        }
+    }
+
+    fun downloadPreset(preset: CommunityPreset) {
+        saveCustomPreset(preset.name, preset.zones.map { it.toZoneSpec() })
+        analytics.logCommunityPresetDownloaded(preset.name, preset.author)
+        viewModelScope.launch {
+            communityRepository.incrementDownloadCount(preset.id)
+            _isShowingCommunity.value = false
+        }
+    }
 
     fun saveCustomPreset(name: String, zones: List<AudioProcessor.ZoneSpec>) {
         viewModelScope.launch(Dispatchers.IO) {
@@ -762,6 +987,7 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
                 _richTapFrequency.value = prefs.getInt("richtap_frequency", 50)
 
                 checkRemoteConfigVersion()
+                checkAppUpdate()
             }
 
             startRunningStatePoller()
@@ -908,6 +1134,9 @@ class MainActivity : ComponentActivity() {
                 pendingResultCode = 0
                 pendingData = null
                 hasPendingToken = false
+            } else if (pendingVisualizerStart && viewModel.captureSource.value == AudioCaptureService.CaptureSource.MIC) {
+                service?.startMicCapture()
+                pendingVisualizerStart = false
             }
         }
 
@@ -1002,6 +1231,32 @@ class MainActivity : ComponentActivity() {
                 val disableGlyphsWhenSilent by viewModel.disableGlyphsWhenSilent.collectAsStateWithLifecycle()
                 val selectedDevice by viewModel.selectedDevice.collectAsStateWithLifecycle()
                 val isEditingPreset by viewModel.isEditingPreset.collectAsStateWithLifecycle()
+                val isShowingAbout by viewModel.isShowingAbout.collectAsStateWithLifecycle()
+                val showUpdateDialog by viewModel.showUpdateDialog.collectAsStateWithLifecycle()
+                val appUpdateStatus by viewModel.appUpdateStatus.collectAsStateWithLifecycle()
+
+                if (showUpdateDialog && appUpdateStatus is MainViewModel.AppUpdateStatus.Available) {
+                    val update = appUpdateStatus as MainViewModel.AppUpdateStatus.Available
+                    val uriHandler = androidx.compose.ui.platform.LocalUriHandler.current
+                    androidx.compose.material3.AlertDialog(
+                        onDismissRequest = viewModel::dismissUpdateDialog,
+                        title = { androidx.compose.material3.Text("Update Available") },
+                        text = { androidx.compose.material3.Text("A new version (${update.version}) is available. Do you want to download it now?") },
+                        confirmButton = {
+                            androidx.compose.material3.Button(onClick = {
+                                uriHandler.openUri(update.url)
+                                viewModel.dismissUpdateDialog()
+                            }) {
+                                androidx.compose.material3.Text("Download")
+                            }
+                        },
+                        dismissButton = {
+                            androidx.compose.material3.TextButton(onClick = viewModel::dismissUpdateDialog) {
+                                androidx.compose.material3.Text("Not now")
+                            }
+                        }
+                    )
+                }
 
                 if (isEditingPreset) {
                     androidx.compose.ui.window.Dialog(
@@ -1014,7 +1269,43 @@ class MainActivity : ComponentActivity() {
                         CustomPresetEditorScreen(
                             onDismiss = viewModel::hideEditor,
                             onSave = viewModel::saveCustomPreset,
+                            onShare = viewModel::sharePresetToCommunity,
                             selectedDevice = selectedDevice
+                        )
+                    }
+                }
+
+                if (isShowingAbout) {
+                    androidx.compose.ui.window.Dialog(
+                        onDismissRequest = viewModel::hideAbout,
+                        properties = androidx.compose.ui.window.DialogProperties(
+                            usePlatformDefaultWidth = false,
+                            decorFitsSystemWindows = false
+                        )
+                    ) {
+                        Box(modifier = Modifier.background(MaterialTheme.colorScheme.background)) {
+                            AboutScreen(viewModel = viewModel, onDismiss = viewModel::hideAbout)
+                        }
+                    }
+                }
+
+                val isShowingCommunity by viewModel.isShowingCommunity.collectAsStateWithLifecycle()
+                val communityPresets by viewModel.communityPresets.collectAsStateWithLifecycle()
+                val communityError by viewModel.communityError.collectAsStateWithLifecycle()
+                
+                if (isShowingCommunity) {
+                    androidx.compose.ui.window.Dialog(
+                        onDismissRequest = viewModel::hideCommunity,
+                        properties = androidx.compose.ui.window.DialogProperties(
+                            usePlatformDefaultWidth = false,
+                            decorFitsSystemWindows = false
+                        )
+                    ) {
+                        CommunityPresetsScreen(
+                            presets = communityPresets,
+                            error = communityError,
+                            onDownload = viewModel::downloadPreset,
+                            onDismiss = viewModel::hideCommunity
                         )
                     }
                 }
@@ -1234,8 +1525,39 @@ class MainActivity : ComponentActivity() {
         if (AudioCaptureService.isRunning()) {
             stopEverything()
         } else {
-            requestProjection()
+            if (viewModel.captureSource.value == AudioCaptureService.CaptureSource.MIC) {
+                startMicVisualizer()
+            } else {
+                requestProjection()
+            }
         }
+    }
+
+    private fun startMicVisualizer() {
+        if (ContextCompat.checkSelfPermission(
+                this, Manifest.permission.RECORD_AUDIO
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            audioPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+            return
+        }
+
+        val serviceIntent = Intent(this, AudioCaptureService::class.java).apply {
+            putExtra(AudioCaptureService.EXTRA_PRESET_KEY, viewModel.currentPreset())
+        }
+        ContextCompat.startForegroundService(this, serviceIntent)
+        if (!bound) bindService(serviceIntent, serviceConnection, BIND_AUTO_CREATE)
+        if (bound && service != null) {
+            applyServiceSettings()
+            service?.startMicCapture()
+        } else {
+            pendingVisualizerStart = true
+        }
+        viewModel.setRunning(true)
+        TileService.requestListeningState(
+            this,
+            ComponentName(this, VisualizerTileService::class.java)
+        )
     }
 
     private fun requestProjection() {
@@ -1306,6 +1628,7 @@ class MainActivity : ComponentActivity() {
         service?.setHapticGamma(viewModel.hapticGamma.value)
         service?.setDisableGlyphsWhenSilent(viewModel.disableGlyphsWhenSilent.value)
 
+        service?.setCaptureSource(viewModel.captureSource.value)
         val preset = viewModel.currentPreset()
         if (preset.isNotBlank()) service?.setPreset(preset)
     }
@@ -1424,7 +1747,7 @@ private fun AudioDeviceInfo.toAudioRoute(): AudioRoute {
 }
 
 // Define the static list outside or as a constant to avoid overhead
-private val Tabs = listOf(Tab.Audio, Tab.Glyphs, Tab.Haptics, Tab.Settings, Tab.About)
+private val Tabs = listOf(Tab.Audio, Tab.Glyphs, Tab.Haptics, Tab.Settings)
 
 private val HeavyEasingSpec = tween<Float>(
     durationMillis = 600,
@@ -1611,6 +1934,7 @@ private fun BetterVizApp(
                     when (currentTab) {
                         Tab.Audio -> {
                             val fftData by viewModel.fftState.collectAsStateWithLifecycle()
+                            val captureSource by viewModel.captureSource.collectAsStateWithLifecycle()
                             AudioScreen(
                                 isRunning = isRunning,
                                 latencyMs = latencyMs,
@@ -1621,6 +1945,8 @@ private fun BetterVizApp(
                                 onAutoDeviceToggle = onAutoDeviceToggle,
                                 connectedDeviceName = connectedDeviceName,
                                 fftData = fftData,
+                                captureSource = captureSource,
+                                onCaptureSourceChanged = viewModel::setCaptureSource
                             )
                         }
                         Tab.Glyphs -> GlyphsScreen(
@@ -1663,7 +1989,6 @@ private fun BetterVizApp(
                             disableGlyphsWhenSilent = disableGlyphsWhenSilent,
                             onDisableGlyphsWhenSilentChanged = onDisableGlyphsWhenSilentChanged,
                         )
-                        Tab.About -> AboutScreen(viewModel)
                     }
                 }
             }

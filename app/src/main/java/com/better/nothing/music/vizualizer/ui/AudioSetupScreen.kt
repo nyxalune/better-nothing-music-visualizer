@@ -1,5 +1,6 @@
 package com.better.nothing.music.vizualizer.ui
 
+import com.better.nothing.music.vizualizer.service.AudioCaptureService
 import com.better.nothing.music.vizualizer.R
 import android.Manifest
 import android.content.pm.PackageManager
@@ -89,6 +90,8 @@ fun AudioScreen(
     onAutoDeviceToggle: (Boolean) -> Unit,
     connectedDeviceName: String? = null,
     fftData: FloatArray = floatArrayOf(),
+    captureSource: AudioCaptureService.CaptureSource = AudioCaptureService.CaptureSource.INTERNAL,
+    onCaptureSourceChanged: (AudioCaptureService.CaptureSource) -> Unit = {},
 ) {
     val context = LocalContext.current
     val scrollState = rememberScrollState()
@@ -99,6 +102,15 @@ fun AudioScreen(
     ) { isGranted ->
         if (isGranted) {
             onAutoDeviceToggle(true)
+        }
+    }
+
+    // Launcher for Record Audio permission when switching to Mic mode
+    val recordAudioLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            onCaptureSourceChanged(AudioCaptureService.CaptureSource.MIC)
         }
     }
 
@@ -129,6 +141,22 @@ fun AudioScreen(
         Spacer(modifier = Modifier.height(50.dp))
 
         ScreenTitle(text = stringResource(R.string.audio_screen_title))
+
+        CaptureSourceCard(
+            selectedSource = captureSource,
+            onSourceSelected = { source ->
+                if (source == AudioCaptureService.CaptureSource.MIC) {
+                    val status = ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO)
+                    if (status == PackageManager.PERMISSION_GRANTED) {
+                        onCaptureSourceChanged(source)
+                    } else {
+                        recordAudioLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                    }
+                } else {
+                    onCaptureSourceChanged(source)
+                }
+            }
+        )
 
         val descriptionText = if (isRunning) {
             stringResource(R.string.audio_description_running)
@@ -161,6 +189,67 @@ fun AudioScreen(
             }
         }
         Spacer(modifier = Modifier.height(70.dp))
+    }
+}
+
+@Composable
+fun CaptureSourceCard(
+    selectedSource: AudioCaptureService.CaptureSource,
+    onSourceSelected: (AudioCaptureService.CaptureSource) -> Unit
+) {
+    Card(
+        shape = RoundedCornerShape(28.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Text(
+                text = "Capture Source",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.primary
+            )
+            
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                CaptureSourceButton(
+                    label = "Internal",
+                    selected = selectedSource == AudioCaptureService.CaptureSource.INTERNAL,
+                    onClick = { onSourceSelected(AudioCaptureService.CaptureSource.INTERNAL) },
+                    modifier = Modifier.weight(1f)
+                )
+                CaptureSourceButton(
+                    label = "Microphone",
+                    selected = selectedSource == AudioCaptureService.CaptureSource.MIC,
+                    onClick = { onSourceSelected(AudioCaptureService.CaptureSource.MIC) },
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun CaptureSourceButton(
+    label: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(16.dp),
+        color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+        contentColor = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = modifier.height(48.dp)
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Text(label, style = MaterialTheme.typography.labelLarge)
+        }
     }
 }
 
