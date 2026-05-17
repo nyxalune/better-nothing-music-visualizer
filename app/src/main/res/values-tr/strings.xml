@@ -86,6 +86,11 @@
     <string name="media_projection_info">MediaProjection yalnızca gerçek zamanlı görselleştiriciye güç sağlamak için kullanılır. Gereksiz kayıt veya veri depolama işlemi yapılmaz.</string>
     <string name="credits">Emeği Geçenler</string>
     <string name="open_github_profile">GitHub profilini aç</string>
+    <string name="check_for_app_updates">Uygulama Güncellemelerini Kontrol Et</string>
+    <string name="checking_for_updates">Güncellemeler kontrol ediliyor...</string>
+    <string name="app_up_to_date">Uygulama güncel</string>
+    <string name="update_available">Güncelleme mevcut: %s</string>
+    <string name="update_now">Şimdi Güncelle</string>
     <string name="credit_alekslevet_role">Kurucu, koordinatör, ana fikir, sahip</string>
     <string name="credit_rkyzen_role">Android uygulama geliştiricisi (gerçek zamanlı müzik akışı)</string>
     <string name="credit_oliver_role">Geliştirici</string>
