@@ -105,6 +105,18 @@ https://www.virustotal.com/gui/url/c92c1ff82b56eb60bfd1e159592d09f949f0ea2d195e0
   </tr>
   <tr>
     <td width="100" align="center">
+      <a href="https://github.com/oliver-lebaigue-bright-bench">
+        <img src="https://github.com/oliver-lebaigue-bright-bench.png?size=100&mask=circle" width="50" style="border-radius: 50%; border: 2px solid #555;"><br/>
+        <sub><b>Oliver Lebaigue</b></sub>
+      </a>
+    </td>
+    <td align="left">
+      <strong>Android Developer</strong>
+      Enhancing the app + various nice additions
+    </td>
+  </tr>
+  <tr>
+    <td width="100" align="center">
       <a href="https://github.com/rKyzen">
         <img src="https://github.com/rKyzen.png?size=100&mask=circle" width="50" style="border-radius: 50%; border: 2px solid #555;"><br/>
         <sub><b>rKyzen</b></sub><br/>
@@ -114,18 +126,6 @@ https://www.virustotal.com/gui/url/c92c1ff82b56eb60bfd1e159592d09f949f0ea2d195e0
     <td align="left">
       <strong>Android App Developer</strong><br/>
       Implemented the real-time music stream.
-    </td>
-  </tr>
-  <tr>
-    <td width="100" align="center">
-      <a href="https://github.com/oliver-lebaigue-bright-bench">
-        <img src="https://github.com/oliver-lebaigue-bright-bench.png?size=100&mask=circle" width="50" style="border-radius: 50%; border: 2px solid #555;"><br/>
-        <sub><b>Oliver Lebaigue</b></sub>
-      </a>
-    </td>
-    <td align="left">
-      <strong>Android Developer</strong>
-      Enhancing the app + various nice additions
     </td>
   </tr>
   <tr>
