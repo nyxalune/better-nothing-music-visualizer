@@ -1,7 +1,11 @@
 # <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Travel%20and%20places/Fire.png" alt="Fire" width="35" height="35" />Better Nothing Music Visualizer
 <img 
   src="https://img.shields.io/github/downloads/Aleks-Levet/better-nothing-music-visualizer/total?style=for-the-badge&logo=github&label=Total%20app%20downloads%20from%20github:&color=ff0000&labelColor=000000"
-  style="height:40px; border-radius:12px;">
+  style="height:40px;">
+  
+[<img height="80" alt="Get it on GitHub" src="./.github/assets/get-it-on-github.png" />](https://github.com/Aleks-Levet/better-nothing-music-visualizer/releases)
+   
+# नवीन परवाना, कृपया वाचा 
 ## 🌐 Read this in other languages:   🇬🇧 [English](README.md) | 🇮🇳 [हिन्दी](README_HI.md) | 🇹🇷 [Türkçe](README_TR.md)
 
 ## <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Smilies/Partying%20Face.png" alt="Partying Face" width="25" height="25" /> Android App आला आहे!
@@ -27,16 +31,17 @@
 ## 📲 समर्थित Nothing Phone मॉडेल्स
 सध्या हे मॉडेल्स समर्थित आहेत:
 - Nothing phone (1) 
-  - App साठी glyph debug mode **चालू** असणे आवश्यक आहे, हे एका *ADB command* द्वारे सेट करा: `adb shell settings put global nt_glyph_interface_debug_enable 1`. Nothing त्यांची API key दिल्यावर हे दुरुस्त केले जाईल.
+  - Needs glyph debug mode **ON** for the app, set through an *ADB command*: `adb shell settings put global nt_glyph_interface_debug_enable 1`. This will be fixed once Nothing gives us their API key.
 - Nothing phone (2)
 - Nothing phone (2a)
 - Nothing phone (2a plus)
 - Nothing phone (3a)
 - Nothing phone (3a pro)
 - Nothing Phone (4a)
-- Nothing Phone (4a pro)
-- Nothing phone (3) **(beta, अजून चांगले नाही)**
 
+**partial support:**
+- Nothing Phone (4a) pro
+- Nothing phone (3) 
 
 ### <img src="https://fonts.gstatic.com/s/e/notoemoji/latest/2699_fe0f/512.gif" alt="⚙" width="25" height="25"> हे तांत्रिकदृष्ट्या कसे कार्य करते
 - उच्च दर्जाचा audio stream कॅप्चर केला जातो
@@ -46,6 +51,11 @@
   हे वेगवेगळ्या frequency "zones" किती मोठ्या आवाजाच्या आहेत हे मोजते
 - animation अधिक smooth करताना responsiveness टिकवून ठेवण्यासाठी **Downward-only smoothing** लागू केले जाते (हे secret sauce आहे)
 - मग ते glyphs वर प्रदर्शित होण्यास तयार होते!
+
+## 🛠️ प्रीसेट्स
+व्हिज्युलायझरचे वर्तन, फ्रिक्वेन्सी रेंजपासून ते ॲनिमेशन स्मूथिंगपर्यंत, पूर्णपणे `zones.config` फाईलद्वारे नियंत्रित केले जाते. तुम्हाला विद्यमान प्रीसेट्समध्ये बदल करायचे असोत किंवा नवीन फोन मॉडेलसाठी सपोर्ट जोडायचा असो, तुम्हाला आवश्यक असलेली सर्व माहिती आमच्या कॉन्फिगरेशन गाईडमध्ये मिळेल.
+
+### 📖 [**zones.config चे सविस्तर डॉक्युमेंटेशन**] (ZONES_CONFIG.md)
 
 ## 📖 App कसा वापरायचा?
 1. **releases मधून नवीनतम APK डाउनलोड करा**.
@@ -74,20 +84,158 @@
 **VirusTotal scan ची link येथे आढळेल:**  
 https://www.virustotal.com/gui/url/c92c1ff82b56eb60bfd1e159592d09f949f0ea2d195e01f7f5adbef0e0b0385b?nocache=1
 
-### <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Symbols/Copyright.png" alt="Copyright" width="25" height="25" /> श्रेय:
-#### या प्रकल्पात सहभागी लोक:
-- [Aleks-Levet](https://github.com/Aleks-Levet) (संस्थापक आणि समन्वयक, मुख्य कल्पना, मालक)
-- [Nicouschulas](https://github.com/Nicouschulas) (Readme आणि Wiki सुधारणा)
-- [rKyzen(a.k.a Shivank Dan)](https://github.com/rKyzen) (real time music stream सह Android App developer)
-- [Oliver Lebaigue](https://github.com/oliver-lebaigue-bright-bench) (Developer)
-- [SebiAi](https://github.com/SebiAi) (Glyphmodder आणि glyph संबंधित मदत)
-- [Earnedel-lab](https://github.com/Earendel-lab) (Readme सुधारणा)
-- [あけ なるかみ](https://github.com/Luke20YT) (या script सोबत integration असलेले Music app बनवणारे Dev)
-- [Interlastic](https://github.com/Interlastic) (script सहज वापरण्यासाठी Discord Bot) (deprecated)
+### <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Symbols/Copyright.png" alt="Copyright" width="25" height="25" /> Credits:
+#### या प्रकल्पात सहभागी असलेल्या व्यक्तींची नावे खालीलप्रमाणे आहेत: 
+<table>
+  <tr>
+    <td width="100" align="center">
+      <a href="https://github.com/Aleks-Levet">
+        <img src="https://github.com/Aleks-Levet.png?size=100&mask=circle" width="50" style="border-radius: 50%; border: 2px solid #555;"><br/>
+        <sub><b>Aleks-Levet</b></sub>
+      </a>
+    </td>
+    <td align="left">
+      <strong>Founder, Coordinator & Developer</strong><br/>
+      Main idea and owner.
+    </td>
+  </tr>
+  <tr>
+    <td width="100" align="center">
+      <a href="https://github.com/rKyzen">
+        <img src="https://github.com/rKyzen.png?size=100&mask=circle" width="50" style="border-radius: 50%; border: 2px solid #555;"><br/>
+        <sub><b>rKyzen</b></sub><br/>
+        <i>(Shivank Dan)</i>
+      </a>
+    </td>
+    <td align="left">
+      <strong>Android App Developer</strong><br/>
+      Implemented the real-time music stream.
+    </td>
+  </tr>
+  <tr>
+    <td width="100" align="center">
+      <a href="https://github.com/oliver-lebaigue-bright-bench">
+        <img src="https://github.com/oliver-lebaigue-bright-bench.png?size=100&mask=circle" width="50" style="border-radius: 50%; border: 2px solid #555;"><br/>
+        <sub><b>Oliver Lebaigue</b></sub>
+      </a>
+    </td>
+    <td align="left">
+      <strong>Android Developer</strong>
+      Enhancing the app + various nice additions
+    </td>
+  </tr>
+  <tr>
+    <td width="100" align="center">
+      <a href="https://github.com/Nicouschulas">
+        <img src="https://github.com/Nicouschulas.png?size=100&mask=circle" width="50" style="border-radius: 50%; border: 2px solid #555;"><br/>
+        <sub><b>Nicouschulas</b></sub>
+      </a>
+    </td>
+    <td align="left">
+      <strong>Wiki & Documentation</strong><br/>
+      Readme & Wiki enhancements.
+    </td>
+  </tr>
+  <tr>
+    <td width="100" align="center">
+      <a href="https://github.com/SebiAi">
+        <img src="https://github.com/SebiAi.png?size=100&mask=circle" width="50" style="border-radius: 50%; border: 2px solid #555;"><br/>
+        <sub><b>SebiAi</b></sub>
+      </a>
+    </td>
+    <td align="left">
+      <strong>Glyph Specialist</strong><br/>
+      Glyphmodder and glyph related help.
+    </td>
+  </tr>
+  <tr>
+    <td width="100" align="center">
+      <a href="https://github.com/Earendel-lab">
+        <img src="https://github.com/Earendel-lab.png?size=100&mask=circle" width="50" style="border-radius: 50%; border: 2px solid #555;"><br/>
+        <sub><b>Earendel</b></sub>
+      </a>
+    </td>
+    <td align="left">
+      <strong>Documentation</strong><br/>
+      Readme enhancements.
+    </td>
+  </tr>
+  <tr>
+    <td width="100" align="center">
+      <a href="https://github.com/Luke20YT">
+        <img src="https://github.com/Luke20YT.png?size=100&mask=circle" width="50" style="border-radius: 50%; border: 2px solid #555;"><br/>
+        <sub><b>あけ なるかみ</b></sub><br/>
+        <i>(Luke20YT)</i>
+      </a>
+    </td>
+    <td align="left">
+      <strong>Integrator</strong><br/>
+      Creating a Music app with an integration with this script.
+    </td>
+  </tr>
+  <tr>
+    <td width="100" align="center">
+      <a href="https://github.com/Interlastic">
+        <img src="https://github.com/Interlastic.png?size=100&mask=circle" width="50" style="border-radius: 50%; border: 2px solid #555;"><br/>
+        <sub><b>Interlastic</b></sub>
+      </a>
+    </td>
+    <td align="left">
+      <strong>Tools</strong><br/>
+      Discord Bot to try the script easily (deprecated).
+    </td>
+  </tr>
+</table>
 
-<img alt="GitHub App Downloads" src="https://img.shields.io/github/downloads/Aleks-Levet/better-nothing-music-visualizer/total">
+### <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Travel%20and%20places/Star.png" alt="Star" width="25" height="25" />Star History
+<a href="https://www.star-history.com/?repos=Aleks-Levet%2Fbetter-nothing-music-visualizer&type=date&legend=top-left">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=Aleks-Levet/better-nothing-music-visualizer&type=date&theme=dark&legend=top-left" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=Aleks-Levet/better-nothing-music-visualizer&type=date&legend=top-left" />
+   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=Aleks-Levet/better-nothing-music-visualizer&type=date&legend=top-left" />
+ </picture>
+</a>
 
-### <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Travel%20and%20places/Star.png" alt="Star" width="25" height="25" /> Star History
+### <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Objects/Laptop.png" alt="Laptop" width="25" height="25" /> विकसक
 
+ 
+<table>
+  <tr>
+    <td width="100" align="center">
+      <a href="https://github.com/Aleks-Levet">
+        <img src="https://github.com/Aleks-Levet.png?size=100&mask=circle" width="50" style="border-radius: 50%; border: 2px solid #555;"><br/>
+        <sub><b>Aleks-Levet</b></sub>
+      </a>
+    </td>
+    <td align="left">
+      <strong>Founder, Coordinator & Developer</strong><br/>
+      Main idea and owner.
+    </td>
+  </tr>
+  <tr>
+    <td width="100" align="center">
+      <a href="https://github.com/rKyzen">
+        <img src="https://github.com/rKyzen.png?size=100&mask=circle" width="50" style="border-radius: 50%; border: 2px solid #555;"><br/>
+        <sub><b>rKyzen</b></sub><br/>
+        <i>(Shivank Dan)</i>
+      </a>
+    </td>
+    <td align="left">
+      <strong>Android App Developer</strong><br/>
+      Implemented the real-time music stream.
+    </td>
+  </tr>
+  <tr>
+    <td width="100" align="center">
+      <a href="https://github.com/oliver-lebaigue-bright-bench">
+        <img src="https://github.com/oliver-lebaigue-bright-bench.png?size=100&mask=circle" width="50" style="border-radius: 50%; border: 2px solid #555;"><br/>
+        <sub><b>Oliver Lebaigue</b></sub>
+      </a>
+    </td>
+    <td align="left">
+      <strong>Core Developer</strong>
+      Enhancing the app + various nice additions
+    </td>
+  </tr>
+</table>
 
-![Star History](https://api.star-history.com/svg?repos=Aleks-Levet/better-nothing-music-visualizer&type=Date)
