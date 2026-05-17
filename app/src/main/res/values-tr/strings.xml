@@ -48,6 +48,7 @@
     <string name="haptics_frequency_desc">Bu aralıktaki ses genliğine göre titreşir.</string>
     <string name="haptics_amplitude_label">Genlik: %.1fx</string>
     <string name="haptics_gamma_label">Gama (Tepki): %.1f</string>
+    <string name="haptics_speed_label">Hız: %.1f</string>
     <string name="haptics_richtap_freq_label">RichTap Frekansı: %d</string>
     <string name="experimental_features">Deneysel Özellikler</string>
     <string name="developer_mode">Geliştirici Modu</string>
@@ -60,7 +61,6 @@
     <string name="notification_flash_desc">Görselleştirici çalışırken yeni bir bildirim geldiğinde tüm Glifleri kısa süreliğine yakıp söndürür.</string>
     <string name="disable_glyphs_when_silent_title">Sessizken Glifleri devre dışı bırak</string>
     <string name="disable_glyphs_when_silent_desc">Ses algılanmadığında Glifleri tamamen kapatın ve oturumu serbest bırakın.</string>
-    <string name="settings_update_tip">İpucu: Yapılandırma güncellemelerini kontrol etmek için bu ekrandayken telefonunuzu sallayabilirsiniz!</string>
     <string name="start_visualizer">Görselleştiriciyi başlat</string>
     <string name="stop_visualizer">Görselleştiriciyi durdur</string>
     <string name="glyph_no_config">Hiçbir yapılandırma yüklenmedi. En son görselleştirici hazır ayarlarını indirmek için lütfen Ayarlar\'dan güncellemeleri kontrol edin.</string>
