@@ -48,6 +48,7 @@
     <string name="haptics_frequency_desc">Vibrates based on audio amplitude in this range.</string>
     <string name="haptics_amplitude_label">Amplitude: %.1fx</string>
     <string name="haptics_gamma_label">Gamma (Response): %.1f</string>
+    <string name="haptics_speed_label">Speed: %.1f</string>
     <string name="haptics_richtap_freq_label">RichTap Frequency: %d</string>
     <string name="experimental_features">Experimental Features</string>
     <string name="developer_mode">Developer Mode</string>
@@ -60,7 +61,6 @@
     <string name="notification_flash_desc">Flashes all Glyphs briefly when a new notification arrives while the visualizer is running.</string>
     <string name="disable_glyphs_when_silent_title">Disable Glyphs when silent</string>
     <string name="disable_glyphs_when_silent_desc">Completely turn off Glyphs and release the session when no audio is detected.</string>
-    <string name="settings_update_tip">Tip: You can shake your phone while on this screen to check for configuration updates!</string>
     <string name="start_visualizer">Start visualizer</string>
     <string name="stop_visualizer">Stop visualizer</string>
     <string name="glyph_no_config">No configuration loaded. Please check for updates in Settings to download the latest visualizer presets.</string>
