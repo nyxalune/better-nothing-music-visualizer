@@ -574,9 +574,9 @@ fun BetterVizTheme(
             androidx.compose.material3.darkColorScheme(
                 background = Color.Black,
                 surface = Color(0xFF0D0D0D),
-                primary = Color(0xFFEE0000),    // Authentic Nothing Red
-                secondary = Color(0xFFEE0000),
-                error = Color(0xFFEE0000),
+                primary = Color(0xFFD71921),    // Authentic Nothing Red
+                secondary = Color(0xFFD71921),
+                error = Color(0xFFD71921),
                 onBackground = Color.White,
                 onSurface = Color.White,
                 onPrimary = Color.White,
@@ -610,7 +610,7 @@ fun BetterVizTheme(
                 surface = Color(0xFFF5F5F5),
                 primary = Color(0xFF000000),
                 secondary = Color(0xFF626262),
-                error = Color(0xFFEE0000),
+                error = Color(0xFFD71921),
                 onBackground = Color.Black,
                 onSurface = Color.Black,
                 onPrimary = Color.White,

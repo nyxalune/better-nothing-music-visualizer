@@ -62,7 +62,7 @@ internal fun AboutScreen(
         CreditEntry("rKyzen (aka Shivank Dan)", stringResource(R.string.credit_rkyzen_role), "rKyzen"),
         CreditEntry("Nicouschulas", stringResource(R.string.credit_nicouschulas_role), "Nicouschulas"),
         CreditEntry("SebiAi", stringResource(R.string.credit_sebiai_role), "SebiAi"),
-        CreditEntry("Earnedel-lab", stringResource(R.string.credit_earnedel_role), "Earnedel-lab"),
+        CreditEntry("Earendel-lab", stringResource(R.string.credit_earnedel_role), "Earendel-lab"),
         CreditEntry("あけ なるかみ", stringResource(R.string.credit_ake_role), null),
         CreditEntry("Interlastic", stringResource(R.string.credit_interlastic_role), "Interlastic"),
     )
