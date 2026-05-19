@@ -1,6 +1,18 @@
 # Better Nothing Music Visualizer - TODO
 
 ## To Do
+- [ ] Change "check for updates" text in "Update" if there is an update available
+- [ ] Make the local file button smoler
+- [ ] M3E split and round those 2 /\ buttons
+- [ ] Remove latency compensations for microphone
+- [ ] M3E selector capture source
+- [ ] Make toggle card white accent color when on???
+- [ ] Make toogl cadr thinner
+About scren:
+- [ ] Change title "About and other" to "App info and updates"
+- [ ] Redesing about page for a proper hierarchical easy M3E design
+- [ ] Merge Git repo link card with app version card
+--- (someone do proper indentation)
 - [ ] Ask Oliver if i can replace these checkmarks by some easier bullet points?
 - [ ] Adapt ui depending on the audio source (Aleks)
 - [ ] Add shitty vizualizer audio source WITH DISCLAIMER THAT IT SUCKS
