@@ -435,8 +435,11 @@ public class AudioCaptureService extends Service {
 
         if (mCaptureSource == CaptureSource.MIC && sIsRunning) {
             startForeground(NOTIF_ID, buildNotification(), ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE);
-        } else if (mCaptureSource == CaptureSource.INTERNAL && sIsRunning && mProjection != null) {
-            startForeground(NOTIF_ID, buildNotification(), ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION);
+        } else if ((mCaptureSource == CaptureSource.INTERNAL || mCaptureSource == CaptureSource.SHIZUKU) && sIsRunning) {
+            // Android 14+ requires MEDIA_PROJECTION type for audio playback capture.
+            // We also include MICROPHONE as some systems expect it for audio capture services.
+            int type = ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION | ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE;
+            startForeground(NOTIF_ID, buildNotification(), type);
         } else {
             startForeground(NOTIF_ID, buildNotification(), ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE);
         }
@@ -632,10 +635,15 @@ public class AudioCaptureService extends Service {
     private MediaProjection getShizukuProjection() {
         try {
             String pkg = getPackageName();
+            int uid = getApplicationInfo().uid;
             // 1. Grant PROJECT_MEDIA AppOp via Shizuku shell (covers both names for compatibility)
             String[] cmds = {
                 "appops set " + pkg + " PROJECT_MEDIA allow",
-                "appops set " + pkg + " android:project_media allow"
+                "appops set " + pkg + " android:project_media allow",
+                "appops set --uid " + uid + " PROJECT_MEDIA allow",
+                "appops set --uid " + uid + " android:project_media allow",
+                "appops set " + pkg + " RECORD_AUDIO allow",
+                "appops set --uid " + uid + " RECORD_AUDIO allow"
             };
             
             for (String cmd : cmds) {
@@ -660,7 +668,7 @@ public class AudioCaptureService extends Service {
             }
             
             // Give the system a moment to propagate the appop grant
-            SystemClock.sleep(500);
+            SystemClock.sleep(1000);
 
             // 2. Obtain MediaProjection via Binder injection
             IBinder binder = SystemServiceHelper.getSystemService("media_projection");
@@ -704,7 +712,6 @@ public class AudioCaptureService extends Service {
                 return null;
             }
 
-            int uid = getApplicationInfo().uid;
             IBinder projectionBinder = (IBinder) createProjectionMethod.invoke(service, uid, pkg, 0, true);
             if (projectionBinder == null) {
                 Log.e(TAG, "createProjection returned null binder");
@@ -956,15 +963,17 @@ public class AudioCaptureService extends Service {
                 }
                 mProjection = projection;
             } else if (source == CaptureSource.SHIZUKU) {
-                // Use SPECIAL_USE for Shizuku to bypass some projection-related enforcement checks
-                // while still technically using the projection for capture
+                // Use MEDIA_PROJECTION for Shizuku to satisfy AudioPlaybackCaptureConfiguration requirements
                 mProjection = getShizukuProjection();
                 if (mProjection == null) {
                     Log.e(TAG, "Failed to obtain Shizuku MediaProjection");
                     sIsRunning = false;
                     return;
                 }
-                startForeground(NOTIF_ID, buildNotification(), ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE);
+                // Android 14+ requires MEDIA_PROJECTION type for audio playback capture.
+                // Including MICROPHONE helps with system compatibility for audio-related FGS.
+                int type = ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION | ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE;
+                startForeground(NOTIF_ID, buildNotification(), type);
             } else {
                 startForeground(NOTIF_ID, buildNotification(), ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE);
             }
