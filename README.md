@@ -7,6 +7,21 @@
    
 # NEW LICENCE, PLEASE READ IT
 
+## <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Objects/Books.png" alt="Books" width="25" height="25" /> Development Notice: Exam Season!
+
+Please note that core development on **Better Nothing Music Visualizer** will be slowing down temporarily over the next few weeks because our developers are currently busy writing their real-life exams! 📚✍️
+
+### 🛠️ A Perfect Time for Pull Requests!
+If you’ve been thinking about contributing, **now is the absolute best time to jump in!** Since the core team is wrapped up in studying, we would love your help keeping the momentum going.
+
+Whether you want to:
+*   Fix an open issue
+*   Add presets or expand configuration settings
+*   Clean up or optimize code
+
+Feel free to submit a **Pull Request (PR)**! We will review them as soon as we can get a breather from the textbooks. Thanks for your patience and support! 🚀
+
+
 ## 🌐 Read this in other languages: 
 🇮🇳 [हिन्दी](README_HI.md)
 🇮🇳 [Marathi](README-MR.md)
