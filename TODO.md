@@ -2,8 +2,7 @@
 
 ## To Do
 - [ ] Add author name in generated description of  community presets
-- [ ] Make the "save to community" button more obvious 
-- [ ] Add flashlight visualizer (same UI as Haptics, add it at the bottom of the haptics screen for now)
+- [ ] Make the "save to community" button more obvious
 - [ ] Make categories for this Todo list. (really need a list for something only Aleks should do and not anyone else, cuz he knows what he meant and has the exact vision of what he wants... Please it's not against you Oliver. Also need to make an Oliver reserved list)
 - [ ] **Change np1 preset with wider spectrum range (Aleks)**
 - [ ] Reduce bit depth haptics amplitude 
@@ -41,6 +40,7 @@ About screen:
 - [ ] Add Shizuku audio source (Oliver) - Added structure & UI toggle
 
 ## Done
+- [x] Add flashlight visualizer (same UI as Haptics, add it at the bottom of the haptics screen for now)
 - [x] Collapse experimental features in settings tab for lighter UI
 - [x] Rename OLED black theme to "Default theme"
 - [x] Auto dark light theme for Nothing and Material You theme

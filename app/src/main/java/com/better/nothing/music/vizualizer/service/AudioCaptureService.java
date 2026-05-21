@@ -9,6 +9,7 @@ import com.better.nothing.music.vizualizer.logic.AudioDeviceManager;
 import com.better.nothing.music.vizualizer.logic.ContinuousHapticEngine;
 import com.better.nothing.music.vizualizer.logic.RichTapHapticEngine;
 import com.better.nothing.music.vizualizer.logic.BeatDetectionHapticEngine;
+import com.better.nothing.music.vizualizer.logic.FlashlightEngine;
 import com.better.nothing.music.vizualizer.ui.MainActivity;
 
 import android.app.Notification;
@@ -38,7 +39,6 @@ import android.os.HandlerThread;
 import android.os.IBinder;
 import android.os.Process;
 import android.os.SystemClock;
-import android.os.VibrationEffect;
 import android.os.Vibrator;
 import android.os.VibratorManager;
 import android.service.quicksettings.TileService;
@@ -51,14 +51,11 @@ import com.nothing.ketchum.Common;
 import rikka.shizuku.Shizuku;
 import rikka.shizuku.ShizukuBinderWrapper;
 import rikka.shizuku.SystemServiceHelper;
-import android.os.IBinder;
-import android.os.IInterface;
 import com.nothing.ketchum.Glyph;
 import com.nothing.ketchum.GlyphException;
 import com.nothing.ketchum.GlyphManager;
 import com.nothing.ketchum.GlyphMatrixManager;
 
-import org.jtransforms.fft.DoubleFFT_1D;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -238,9 +235,16 @@ public class AudioCaptureService extends Service {
     private volatile float mHapticMinHz = 60;
     private volatile float mHapticMaxHz = 250;
     private volatile AudioProcessor.FrequencyRange mHapticRange;
+
+    private volatile boolean mFlashlightEnabled = false;
+    private volatile float mFlashlightMinHz = 60;
+    private volatile float mFlashlightMaxHz = 250;
+    private volatile AudioProcessor.FrequencyRange mFlashlightRange;
+
     private ContinuousHapticEngine mContinuousHapticEngine;
     private RichTapHapticEngine mRichTapHapticEngine;
     private BeatDetectionHapticEngine mBeatDetectionEngine;
+    private FlashlightEngine mFlashlightEngine;
 
     private AudioProcessor mAudioProcessor;
     private GlyphRenderer mGlyphRenderer;
@@ -288,14 +292,16 @@ public class AudioCaptureService extends Service {
         final float[] uniqueMagnitudes;
         final float[] magnitude;
         final float hapticPeak;
+        final float flashlightPeak;
         final AudioProcessor.VisualizerConfig config;
         final int configVersion;
         final long dueAtMs;
 
-        PendingFrame(float[] uniqueMagnitudes, float[] magnitude, float hapticPeak, AudioProcessor.VisualizerConfig config, int configVersion, long dueAtMs) {
+        PendingFrame(float[] uniqueMagnitudes, float[] magnitude, float hapticPeak, float flashlightPeak, AudioProcessor.VisualizerConfig config, int configVersion, long dueAtMs) {
             this.uniqueMagnitudes = uniqueMagnitudes;
             this.magnitude = magnitude;
             this.hapticPeak = hapticPeak;
+            this.flashlightPeak = flashlightPeak;
             this.config = config;
             this.configVersion = configVersion;
             this.dueAtMs = dueAtMs;
@@ -334,6 +340,7 @@ public class AudioCaptureService extends Service {
         mContinuousHapticEngine = new ContinuousHapticEngine(this);
         mRichTapHapticEngine = new RichTapHapticEngine(this);
         mBeatDetectionEngine = new BeatDetectionHapticEngine(this);
+        mFlashlightEngine = new FlashlightEngine(this);
         mAudioProcessor = new AudioProcessor();
         mAudioDeviceManager = new AudioDeviceManager(this, this::refreshLatencyForCurrentAudioRoute);
 
@@ -361,7 +368,16 @@ public class AudioCaptureService extends Service {
         }
         mHapticMinHz = appPrefs.getInt("haptic_freq_min", 60);
         mHapticMaxHz = appPrefs.getInt("haptic_freq_max", 250);
+
+        mFlashlightEnabled = appPrefs.getBoolean("flashlight_enabled", false);
+        mFlashlightMinHz = appPrefs.getInt("flashlight_freq_min", 60);
+        mFlashlightMaxHz = appPrefs.getInt("flashlight_freq_max", 250);
         
+        mFlashlightEngine.setFlashlightMultiplier(appPrefs.getFloat("flashlight_multiplier", 1.0f));
+        mFlashlightEngine.setFlashlightThreshold(appPrefs.getFloat("flashlight_threshold", 0.15f));
+        mFlashlightEngine.setFlashlightSmoothing(appPrefs.getFloat("flashlight_smoothing", 0.7f));
+        mFlashlightEngine.setFlashlightGamma(appPrefs.getFloat("flashlight_gamma", 2.2f));
+
         float hapticMultiplier = appPrefs.getFloat("haptic_multiplier", 1.0f);
         float hapticGamma = appPrefs.getFloat("haptic_gamma", 2.0f);
         int richTapFrequency = appPrefs.getInt("richtap_frequency", 50);
@@ -436,8 +452,6 @@ public class AudioCaptureService extends Service {
         if (mCaptureSource == CaptureSource.MIC && sIsRunning) {
             startForeground(NOTIF_ID, buildNotification(), ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE);
         } else if ((mCaptureSource == CaptureSource.INTERNAL || mCaptureSource == CaptureSource.SHIZUKU) && sIsRunning) {
-            // Android 14+ requires MEDIA_PROJECTION type for audio playback capture.
-            // We also include MICROPHONE as some systems expect it for audio capture services.
             int type = ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION | ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE;
             startForeground(NOTIF_ID, buildNotification(), type);
         } else {
@@ -620,7 +634,6 @@ public class AudioCaptureService extends Service {
             } else if (mCaptureSource == CaptureSource.SHIZUKU) {
                 startShizukuCapture();
             } else {
-                // Switching to internal requires activity token
                 stopCaptureLocked();
                 sIsRunning = false;
                 requestTileRefresh();
@@ -636,7 +649,6 @@ public class AudioCaptureService extends Service {
         try {
             String pkg = getPackageName();
             int uid = getApplicationInfo().uid;
-            // 1. Grant PROJECT_MEDIA AppOp via Shizuku shell (covers both names for compatibility)
             String[] cmds = {
                 "appops set " + pkg + " PROJECT_MEDIA allow",
                 "appops set " + pkg + " android:project_media allow",
@@ -648,7 +660,6 @@ public class AudioCaptureService extends Service {
             
             for (String cmd : cmds) {
                 try {
-                    // Use a more robust reflection lookup for Shizuku.newProcess
                     java.lang.reflect.Method newProcessMethod = null;
                     for (java.lang.reflect.Method m : Shizuku.class.getDeclaredMethods()) {
                         if (m.getName().equals("newProcess") && m.getParameterCount() == 3) {
@@ -667,10 +678,8 @@ public class AudioCaptureService extends Service {
                 }
             }
             
-            // Give the system a moment to propagate the appop grant
             SystemClock.sleep(1000);
 
-            // 2. Obtain MediaProjection via Binder injection
             IBinder binder = SystemServiceHelper.getSystemService("media_projection");
             if (binder == null) {
                 Log.e(TAG, "Could not get media_projection service binder");
@@ -679,7 +688,6 @@ public class AudioCaptureService extends Service {
 
             IBinder wrapped = new ShizukuBinderWrapper(binder);
 
-            // 3. Robust reflection to get IMediaProjectionManager
             Class<?> managerClass = Class.forName("android.media.projection.IMediaProjectionManager");
             Class<?> stubClass = Class.forName("android.media.projection.IMediaProjectionManager$Stub");
 
@@ -697,8 +705,6 @@ public class AudioCaptureService extends Service {
                 return null;
             }
 
-            // 4. Create the projection
-            // IMediaProjection createProjection(int uid, String packageName, int type, boolean permanent)
             java.lang.reflect.Method createProjectionMethod = null;
             for (java.lang.reflect.Method m : service.getClass().getMethods()) {
                 if (m.getName().equals("createProjection") && m.getParameterCount() == 4) {
@@ -718,7 +724,6 @@ public class AudioCaptureService extends Service {
                 return null;
             }
 
-            // 5. Wrap the projection binder
             Class<?> iProjectionClass = Class.forName("android.media.projection.IMediaProjection");
             Class<?> iProjectionStubClass = Class.forName("android.media.projection.IMediaProjection$Stub");
 
@@ -736,7 +741,6 @@ public class AudioCaptureService extends Service {
                 return null;
             }
 
-            // 6. Instantiate the MediaProjection object
             java.lang.reflect.Constructor<MediaProjection> constructor = MediaProjection.class.getConstructor(
                     Context.class, iProjectionClass);
             
@@ -752,12 +756,10 @@ public class AudioCaptureService extends Service {
         mWorkerHandler.post(() -> {
             try {
                 refreshPresetCatalog();
-                // If current preset is now missing, fall back
                 if (!mAvailablePresetKeys.contains(mPresetKey)) {
                     String fallback = resolvePresetKey(null, mAvailablePresetKeys);
                     applyPresetSelection(fallback);
                 } else {
-                    // Even if key is same, config content might have changed
                     mVisualizerConfig = loadVisualizerConfig(mPresetKey);
                     mPresetConfigVersion++;
                     resetVisualizerState();
@@ -791,7 +793,7 @@ public class AudioCaptureService extends Service {
         if (mLatencyCompensationMs != latencyMs) {
             mLatencyCompensationMs = latencyMs;
             mLatencySettingsVersion++;
-            mPresetConfigVersion++;  // Reload config with new FFT size
+            mPresetConfigVersion++;
         }
     }
 
@@ -803,7 +805,6 @@ public class AudioCaptureService extends Service {
     }
 
     public void setSpectrumGain(float gain) {
-        // Enforce 4.0 gain as requested by user
         if (mGlyphRenderer != null) {
             mGlyphRenderer.setSpectrumGain(4.0f);
         }
@@ -813,32 +814,18 @@ public class AudioCaptureService extends Service {
     public void setMaxBrightness(int brightness) {
         brightness = clampGlyphBrightness(brightness);
         final int targetBrightness = brightness;
-        boolean wasDisabled = mMaxBrightness <= 0;
-        final boolean reopeningAfterEnable = wasDisabled;
+        final boolean reopeningAfterEnable = mMaxBrightness <= 0 && targetBrightness > 0;
         mMaxBrightness = brightness;
         if (mGlyphRenderer != null) {
             mGlyphRenderer.setMaxBrightness(brightness);
         }
 
-        if (mWorkerHandler == null) {
-            if (targetBrightness <= 0) {
-                clearGlyphSession();
-            } else if (reopeningAfterEnable) {
-                clearGlyphSession();
-                ensureGlyphSession();
-                mLastSendMs = 0;
-            } else {
-                ensureGlyphSession();
-            }
-            return;
-        }
-
+        if (mWorkerHandler == null) return;
         mWorkerHandler.post(() -> {
             if (targetBrightness <= 0) {
                 clearGlyphSession();
                 return;
             }
-
             if (reopeningAfterEnable) {
                 clearGlyphSession();
                 ensureGlyphSession();
@@ -870,7 +857,6 @@ public class AudioCaptureService extends Service {
     public void setDisableGlyphsWhenSilent(boolean enabled) {
         mDisableGlyphsWhenSilent = enabled;
         if (!enabled && !mSessionOpen && mGM != null) {
-            // Re-open if we just disabled the "silent disable" feature
             mWorkerHandler.post(this::ensureGlyphSession);
         }
     }
@@ -929,6 +915,43 @@ public class AudioCaptureService extends Service {
         }
     }
 
+    public void setFlashlightEnabled(boolean enabled) {
+        mFlashlightEnabled = enabled;
+        if (!enabled && mFlashlightEngine != null) {
+            mFlashlightEngine.stopFlashlight();
+        }
+    }
+
+    public void setFlashlightFreqRange(float minHz, float maxHz) {
+        mFlashlightMinHz = minHz;
+        mFlashlightMaxHz = maxHz;
+        mHapticSettingsVersion++; 
+    }
+
+    public void setFlashlightMultiplier(float multiplier) {
+        if (mFlashlightEngine != null) {
+            mFlashlightEngine.setFlashlightMultiplier(multiplier);
+        }
+    }
+
+    public void setFlashlightGamma(float gamma) {
+        if (mFlashlightEngine != null) {
+            mFlashlightEngine.setFlashlightGamma(gamma);
+        }
+    }
+
+    public void setFlashlightThreshold(float threshold) {
+        if (mFlashlightEngine != null) {
+            mFlashlightEngine.setFlashlightThreshold(threshold);
+        }
+    }
+
+    public void setFlashlightSmoothing(float smoothing) {
+        if (mFlashlightEngine != null) {
+            mFlashlightEngine.setFlashlightSmoothing(smoothing);
+        }
+    }
+
     public void startCapture(int resultCode, Intent data) {
         startCaptureInternal(CaptureSource.INTERNAL, resultCode, data);
     }
@@ -963,15 +986,12 @@ public class AudioCaptureService extends Service {
                 }
                 mProjection = projection;
             } else if (source == CaptureSource.SHIZUKU) {
-                // Use MEDIA_PROJECTION for Shizuku to satisfy AudioPlaybackCaptureConfiguration requirements
                 mProjection = getShizukuProjection();
                 if (mProjection == null) {
                     Log.e(TAG, "Failed to obtain Shizuku MediaProjection");
                     sIsRunning = false;
                     return;
                 }
-                // Android 14+ requires MEDIA_PROJECTION type for audio playback capture.
-                // Including MICROPHONE helps with system compatibility for audio-related FGS.
                 int type = ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION | ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE;
                 startForeground(NOTIF_ID, buildNotification(), type);
             } else {
@@ -991,7 +1011,6 @@ public class AudioCaptureService extends Service {
             mCaptureExecutor.execute(() -> {
                 Process.setThreadPriority(Process.THREAD_PRIORITY_AUDIO);
                 try {
-                    // Give the system a moment to settle the foreground state
                     SystemClock.sleep(PROJECTION_SETTLE_DELAY_MS);
 
                     AudioRecord localRecord;
@@ -1028,10 +1047,9 @@ public class AudioCaptureService extends Service {
                                 bufferSize);
                     }
 
-                    // 3. Verify Initialization
                     if (localRecord.getState() != AudioRecord.STATE_INITIALIZED) {
                         localRecord.release();
-                        throw new IllegalStateException("AudioRecord failed to initialize. Check if another app is monopolizing audio.");
+                        throw new IllegalStateException("AudioRecord failed to initialize.");
                     }
 
                     synchronized (mCaptureLock) {
@@ -1103,11 +1121,11 @@ public class AudioCaptureService extends Service {
             return;
         }
 
-        // Initial FFT setup
         mAudioProcessor.updateFFTSize(mLatencyCompensationMs);
         float currentHzPerBin = mAudioProcessor.getHzPerBin();
         int fftSize = 4096;
         mHapticRange = new AudioProcessor.FrequencyRange(mHapticMinHz, mHapticMaxHz, currentHzPerBin, fftSize);
+        mFlashlightRange = new AudioProcessor.FrequencyRange(mFlashlightMinHz, mFlashlightMaxHz, currentHzPerBin, fftSize);
 
         short[] hop = new short[HOP];
         ArrayDeque<PendingFrame> pendingFrames = new ArrayDeque<>();
@@ -1132,41 +1150,31 @@ public class AudioCaptureService extends Service {
                 appliedLatencyVersion = latencyVersion;
                 appliedHapticVersion = hapticVersion;
 
-                // Update FFT parameters
                 mAudioProcessor.updateFFTSize(mLatencyCompensationMs);
                 float hzPerBin = mAudioProcessor.getHzPerBin();
-                int fftSizeInternal = 4096;
-                mHapticRange = new AudioProcessor.FrequencyRange(mHapticMinHz, mHapticMaxHz, hzPerBin, fftSizeInternal);
+                mHapticRange = new AudioProcessor.FrequencyRange(mHapticMinHz, mHapticMaxHz, hzPerBin, 4096);
+                mFlashlightRange = new AudioProcessor.FrequencyRange(mFlashlightMinHz, mFlashlightMaxHz, hzPerBin, 4096);
             }
 
             int read = record.read(hop, 0, HOP, AudioRecord.READ_BLOCKING);
-            if (read == AudioRecord.ERROR_DEAD_OBJECT) {
-                Log.e(TAG, "AudioRecord died while capturing");
-                return;
-            }
-            if (read == AudioRecord.ERROR_INVALID_OPERATION || read == AudioRecord.ERROR_BAD_VALUE) {
-                Log.w(TAG, "AudioRecord read returned " + read);
-                continue;
-            }
-            if (read <= 0) {
-                continue;
-            }
+            if (read <= 0) continue;
 
             AudioProcessor.AudioFrameResult result = mAudioProcessor.processAudioFrame(hop, config, mHapticRange);
-            if (result == null) {
-                continue; // Not enough data for FFT
+            if (result == null) continue;
+
+            float flashlightPeak = 0f;
+            if (mFlashlightEnabled) {
+                flashlightPeak = mAudioProcessor.computeRangeMagnitude(mFlashlightRange, result.magnitude);
             }
 
-            // If config changed while we were processing, discard and retry
-            if (presetVersion != mPresetConfigVersion || config != mVisualizerConfig) {
-                continue;
-            }
+            if (presetVersion != mPresetConfigVersion || config != mVisualizerConfig) continue;
 
             int delay = mCaptureSource == CaptureSource.MIC ? 0 : mLatencyCompensationMs;
             pendingFrames.addLast(new PendingFrame(
                     result.uniqueMagnitudes,
                     result.magnitude.clone(),
                     result.hapticPeak,
+                    flashlightPeak,
                     config,
                     presetVersion,
                     SystemClock.elapsedRealtime() + delay
@@ -1188,7 +1196,6 @@ public class AudioCaptureService extends Service {
                 mLatestMagnitudes = pendingFrame.magnitude;
             }
 
-            // Perform Haptics here so they are synced with the visual latency
             if (mHapticEnabled) {
                 if (mHapticMode == HapticMode.BASS_TO_AMPLITUDE) {
                     mContinuousHapticEngine.performHapticFeedback(pendingFrame.hapticPeak, pendingFrame.config);
@@ -1199,17 +1206,18 @@ public class AudioCaptureService extends Service {
                 }
             }
 
+            if (mFlashlightEnabled && mFlashlightEngine != null) {
+                mFlashlightEngine.performFlashlightFeedback(pendingFrame.flashlightPeak, pendingFrame.config);
+            }
+
             processFrame(pendingFrame.uniqueMagnitudes, pendingFrame.hapticPeak, pendingFrame.config, pendingFrame.configVersion);
         }
     }
 
     private void processFrame(float[] uniqueMagnitudes, float hapticPeak, AudioProcessor.VisualizerConfig config, int configVersion) {
-        if (config == null || configVersion != mPresetConfigVersion) {
-            return;
-        }
+        if (config == null || configVersion != mPresetConfigVersion) return;
 
         long now = SystemClock.elapsedRealtime();
-
         boolean hasActivity = false;
         float gain = mGlyphRenderer.getSpectrumGain();
         for (float mag : uniqueMagnitudes) {
@@ -1218,48 +1226,31 @@ public class AudioCaptureService extends Service {
                 break;
             }
         }
-        if (!hasActivity && hapticPeak * gain > 0.002f) {
-            hasActivity = true;
-        }
+        if (!hasActivity && hapticPeak * gain > 0.002f) hasActivity = true;
 
         if (hasActivity) {
             mLastAudioActivityMs = now;
-            if (!mSessionOpen) {
-                ensureGlyphSession();
-            }
+            if (!mSessionOpen) ensureGlyphSession();
         } else {
-            // Check for silence timeout if enabled
-            if (mDisableGlyphsWhenSilent && mSessionOpen) {
-                if (now - mLastAudioActivityMs > 2000) { // 2 seconds of silence
-                    clearGlyphSession();
-                }
+            if (mDisableGlyphsWhenSilent && mSessionOpen && (now - mLastAudioActivityMs > 2000)) {
+                clearGlyphSession();
             }
         }
 
-        if (now - mLastSendMs < MIN_SEND_INTERVAL_MS) {
-            return;
-        }
+        if (now - mLastSendMs < MIN_SEND_INTERVAL_MS) return;
 
-        // Check for notification flash
         if (now - mLastNotificationFlashMs < FLASH_DURATION_MS) {
             mGlyphRenderer.triggerNotificationFlash(now);
         }
 
         int[] frameColors = mGlyphRenderer.processFrame(uniqueMagnitudes, config, now);
-        if (frameColors == null) {
-            return; // No change
-        }
+        if (frameColors == null) return;
 
-        // Keep the preview/renderer state alive even if the hardware session is not ready yet.
-        if (!canPushGlyphFrames()) {
-            return;
-        }
+        if (!canPushGlyphFrames()) return;
 
         try {
             if (DeviceProfile.getMatrixWidth(mSelectedDevice) > 0) {
-                if (mGMM != null) {
-                    mGMM.setMatrixFrame(frameColors);
-                }
+                if (mGMM != null) mGMM.setMatrixFrame(frameColors);
             } else {
                 mGM.setFrameColors(frameColors);
             }
@@ -1269,29 +1260,20 @@ public class AudioCaptureService extends Service {
         }
     }
 
-
-
     public float[] getCurrentLightState() {
         synchronized (mCaptureLock) {
             return mGlyphRenderer.getCurrentLightState();
         }
     }
 
-
-
-
-
     private void resetVisualizerState() {
         mContinuousHapticEngine.stopHaptics();
         mRichTapHapticEngine.stopHaptics();
         mBeatDetectionEngine.stopHaptics();
+        if (mFlashlightEngine != null) mFlashlightEngine.stopFlashlight();
         mGlyphRenderer.resetState(mVisualizerConfig);
         mLastSendMs = 0L;
     }
-
-
-
-
 
     private void applyPresetSelection(String presetSelection) {
         try {
@@ -1313,81 +1295,39 @@ public class AudioCaptureService extends Service {
     }
 
     private String resolvePresetKey(String presetSelection, List<String> availablePresetKeys) {
-        if (availablePresetKeys == null || availablePresetKeys.isEmpty()) {
-            return DEFAULT_PRESET_KEY;
-        }
-        if (availablePresetKeys.contains(presetSelection)) {
-            return presetSelection;
-        }
-
+        if (availablePresetKeys == null || availablePresetKeys.isEmpty()) return DEFAULT_PRESET_KEY;
+        if (availablePresetKeys.contains(presetSelection)) return presetSelection;
         String preferred = chooseDefaultPresetKey(phoneModelForDevice(mSelectedDevice), availablePresetKeys);
-        if (availablePresetKeys.contains(preferred)) {
-            return preferred;
-        }
-
+        if (availablePresetKeys.contains(preferred)) return preferred;
         return availablePresetKeys.get(0);
     }
 
     private AudioProcessor.VisualizerConfig loadVisualizerConfig(String presetKey) throws IOException, JSONException {
         JSONObject root = loadZonesConfigRoot(this);
         JSONObject preset = root.optJSONObject(presetKey);
-        if (preset == null) {
-            throw new JSONException("Preset '" + presetKey + "' not found");
-        }
-
+        if (preset == null) throw new JSONException("Preset not found");
         JSONArray zonesArray = preset.optJSONArray("zones");
-        if (zonesArray == null || zonesArray.length() == 0) {
-            throw new JSONException("Preset '" + presetKey + "' has no zones");
-        }
+        if (zonesArray == null || zonesArray.length() == 0) throw new JSONException("No zones");
 
-        double decayAlpha = preset.has("decay-alpha")
-                ? preset.optDouble("decay-alpha", 0.8)
-                : root.optDouble("decay-alpha", 0.8);
-
+        double decayAlpha = preset.has("decay-alpha") ? preset.optDouble("decay-alpha", 0.8) : root.optDouble("decay-alpha", 0.8);
         AudioProcessor.ZoneSpec[] zones = parseZoneSpecs(zonesArray);
-
-        // Fixed FFT size for temporal snappiness
-        int fftSize = 4096;
-        float hzPerBin = (float) SAMPLE_RATE / fftSize;
-
-        return buildVisualizerConfig(
-                presetKey,
-                preset.optString("description", presetKey),
-                decayAlpha,
-                zones,
-                hzPerBin,
-                fftSize
-        );
+        return buildVisualizerConfig(presetKey, preset.optString("description", presetKey), decayAlpha, zones, (float) SAMPLE_RATE / 4096, 4096);
     }
 
-    private AudioProcessor.VisualizerConfig buildVisualizerConfig(
-            String presetKey,
-            String description,
-            double decayAlpha,
-            AudioProcessor.ZoneSpec[] zones,
-            float hzPerBin,
-            int fftSize
-    ) {
+    private AudioProcessor.VisualizerConfig buildVisualizerConfig(String presetKey, String description, double decayAlpha, AudioProcessor.ZoneSpec[] zones, float hzPerBin, int fftSize) {
         float adjustedDecay = 0.86f + ((float) decayAlpha / 10f);
         List<float[]> uniquePairs = new ArrayList<>();
         Set<String> seenPairs = new HashSet<>();
 
         for (AudioProcessor.ZoneSpec zone : zones) {
             String key = String.format(Locale.US, "%.4f|%.4f", zone.lowHz, zone.highHz);
-            if (seenPairs.add(key)) {
-                uniquePairs.add(new float[]{zone.lowHz, zone.highHz});
-            }
+            if (seenPairs.add(key)) uniquePairs.add(new float[]{zone.lowHz, zone.highHz});
         }
-
-        uniquePairs.sort((left, right) -> {
-            int lowCompare = Float.compare(left[0], right[0]);
-            return lowCompare != 0 ? lowCompare : Float.compare(left[1], right[1]);
-        });
+        uniquePairs.sort((left, right) -> Float.compare(left[0], right[0]));
 
         AudioProcessor.FrequencyRange[] uniqueRanges = new AudioProcessor.FrequencyRange[uniquePairs.size()];
         for (int i = 0; i < uniquePairs.size(); i++) {
-            float[] pair = uniquePairs.get(i);
-            uniqueRanges[i] = new AudioProcessor.FrequencyRange(pair[0], pair[1], hzPerBin, fftSize);
+            uniqueRanges[i] = new AudioProcessor.FrequencyRange(uniquePairs.get(i)[0], uniquePairs.get(i)[1], hzPerBin, fftSize);
         }
 
         int[][] zoneToRangeIndices = new int[zones.length][];
@@ -1395,27 +1335,13 @@ public class AudioCaptureService extends Service {
             AudioProcessor.ZoneSpec zone = zones[zoneIndex];
             ArrayList<Integer> overlaps = new ArrayList<>();
             for (int rangeIndex = 0; rangeIndex < uniqueRanges.length; rangeIndex++) {
-                AudioProcessor.FrequencyRange range = uniqueRanges[rangeIndex];
-                if (!(range.highHz < zone.lowHz || range.lowHz > zone.highHz)) {
-                    overlaps.add(rangeIndex);
-                }
+                if (!(uniqueRanges[rangeIndex].highHz < zone.lowHz || uniqueRanges[rangeIndex].lowHz > zone.highHz)) overlaps.add(rangeIndex);
             }
-
             int[] mapping = new int[overlaps.size()];
-            for (int i = 0; i < overlaps.size(); i++) {
-                mapping[i] = overlaps.get(i);
-            }
+            for (int i = 0; i < overlaps.size(); i++) mapping[i] = overlaps.get(i);
             zoneToRangeIndices[zoneIndex] = mapping;
         }
-
-        return new AudioProcessor.VisualizerConfig(
-                presetKey,
-                description,
-                adjustedDecay,
-                zones,
-                uniqueRanges,
-                zoneToRangeIndices
-        );
+        return new AudioProcessor.VisualizerConfig(presetKey, description, adjustedDecay, zones, uniqueRanges, zoneToRangeIndices);
     }
 
     private AudioProcessor.ZoneSpec[] parseZoneSpecs(JSONArray zonesArray) throws JSONException {
@@ -1424,576 +1350,153 @@ public class AudioCaptureService extends Service {
             JSONArray zoneArray = zonesArray.getJSONArray(i);
             float lowHz = (float) zoneArray.getDouble(0);
             float highHz = (float) zoneArray.getDouble(1);
-            if (lowHz > highHz) {
-                float tmp = lowHz;
-                lowHz = highHz;
-                highHz = tmp;
-            }
-
-            zones[i] = new AudioProcessor.ZoneSpec(
-                    lowHz,
-                    highHz,
-                    parseOptionalPercent(zoneArray, 3),
-                    parseOptionalPercent(zoneArray, 4)
-            );
+            if (lowHz > highHz) { float tmp = lowHz; lowHz = highHz; highHz = tmp; }
+            zones[i] = new AudioProcessor.ZoneSpec(lowHz, highHz, parseOptionalPercent(zoneArray, 3), parseOptionalPercent(zoneArray, 4));
         }
         return zones;
     }
 
     private void releaseAudioRecord() {
-        if (mAudioRecord == null) {
-            return;
+        if (mAudioRecord != null) {
+            try { mAudioRecord.stop(); } catch (Exception ignored) {}
+            mAudioRecord.release();
+            mAudioRecord = null;
         }
-
-        try {
-            mAudioRecord.stop();
-        } catch (Exception ignored) {
-        }
-        mAudioRecord.release();
-        mAudioRecord = null;
     }
 
     private void releaseProjection() {
-        if (mProjection == null) {
-            return;
+        if (mProjection != null) {
+            try { mProjection.unregisterCallback(mProjectionCallback); } catch (Exception ignored) {}
+            try { mProjection.stop(); } catch (Exception ignored) {}
+            mProjection = null;
         }
-
-        try {
-            mProjection.unregisterCallback(mProjectionCallback);
-        } catch (Exception ignored) {
-        }
-        try {
-            mProjection.stop();
-        } catch (Exception ignored) {
-        }
-        mProjection = null;
     }
 
     private void turnOffGlyphs() {
         if (mGM != null && mSessionOpen) {
             int glyphCount = resolveGlyphCount();
-            if (glyphCount > 0) {
-                try {
-                    mGM.setFrameColors(new int[glyphCount]);
-                } catch (Exception e) {
-                    Log.w(TAG, "Failed to clear glyph frame", e);
-                }
-            }
-
-            try {
-                mGM.turnOff();
-            } catch (Exception e) {
-                Log.w(TAG, "Failed to turn glyphs off", e);
-            }
+            if (glyphCount > 0) try { mGM.setFrameColors(new int[glyphCount]); } catch (Exception ignored) {}
+            try { mGM.turnOff(); } catch (Exception ignored) {}
         }
-
         if (mGMM != null) {
             int matrixSize = DeviceProfile.getMatrixWidth(mSelectedDevice) * DeviceProfile.getMatrixHeight(mSelectedDevice);
-            if (matrixSize > 0) {
-                try {
-                    mGMM.setMatrixFrame(new int[matrixSize]);
-                } catch (Exception e) {
-                    Log.w(TAG, "Failed to clear matrix frame", e);
-                }
-            }
+            if (matrixSize > 0) try { mGMM.setMatrixFrame(new int[matrixSize]); } catch (Exception ignored) {}
         }
     }
 
     private void ensureGlyphSession() {
-        if (mGM == null || mSessionOpen) {
-            return;
-        }
-        try {
-            mGM.openSession();
-            mSessionOpen = true;
-            Log.d(TAG, "Glyph session opened");
-        } catch (GlyphException e) {
-            Log.e(TAG, "Failed to open Glyph session", e);
-        }
+        if (mGM == null || mSessionOpen) return;
+        try { mGM.openSession(); mSessionOpen = true; } catch (GlyphException ignored) {}
     }
 
     private void clearGlyphSession() {
         turnOffGlyphs();
         if (mGM != null && mSessionOpen) {
-            try {
-                mGM.closeSession();
-            } catch (GlyphException e) {
-                Log.w(TAG, "Failed to close Glyph session", e);
-            }
+            try { mGM.closeSession(); } catch (GlyphException ignored) {}
             mSessionOpen = false;
         }
     }
 
     private boolean canPushGlyphFrames() {
-        if (DeviceProfile.getMatrixWidth(mSelectedDevice) > 0) {
-            return mGMM != null;
-        }
+        if (DeviceProfile.getMatrixWidth(mSelectedDevice) > 0) return mGMM != null;
         return mGM != null && mSessionOpen;
     }
 
-    private static int clampGlyphBrightness(int brightness) {
-        return Math.max(0, Math.min(MAX_GLYPH_BRIGHTNESS, brightness));
-    }
+    private static int clampGlyphBrightness(int brightness) { return Math.max(0, Math.min(MAX_GLYPH_BRIGHTNESS, brightness)); }
 
     private int resolveGlyphCount() {
-        if (mVisualizerConfig != null) {
-            return mVisualizerConfig.zones.length;
-        }
-        return DeviceProfile.getLedCount(mSelectedDevice);
+        return mVisualizerConfig != null ? mVisualizerConfig.zones.length : DeviceProfile.getLedCount(mSelectedDevice);
     }
 
     private Notification buildNotification() {
         ensureNotificationChannel();
-
-        PendingIntent contentIntent = PendingIntent.getActivity(
-                this,
-                0,
-                new Intent(this, MainActivity.class)
-                        .addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP),
-                PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT
-        );
-
-        PendingIntent stopIntent = PendingIntent.getService(
-                this,
-                1,
-                createStopIntent(this),
-                PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT
-        );
-
-        String content = mVisualizerConfig == null
-                ? "zones.config missing"
-                : mDetectedPhoneModel + " • " + mVisualizerConfig.presetKey + " • " + mVisualizerConfig.description;
-
-        return new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setContentTitle("Glyph Visualizer")
-                .setContentText(content)
-                .setSmallIcon(android.R.drawable.ic_media_play)
-                .setContentIntent(contentIntent)
-                .addAction(android.R.drawable.ic_media_pause, "Stop", stopIntent)
-                .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
-                .setCategory(NotificationCompat.CATEGORY_SERVICE)
-                .setOnlyAlertOnce(true)
-                .setOngoing(true)
-                .setSilent(true)
-                .build();
+        PendingIntent contentIntent = PendingIntent.getActivity(this, 0, new Intent(this, MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP), PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
+        PendingIntent stopIntent = PendingIntent.getService(this, 1, createStopIntent(this), PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
+        String content = mVisualizerConfig == null ? "zones.config missing" : mDetectedPhoneModel + " • " + mVisualizerConfig.presetKey + " • " + mVisualizerConfig.description;
+        return new NotificationCompat.Builder(this, CHANNEL_ID).setContentTitle("Glyph Visualizer").setContentText(content).setSmallIcon(android.R.drawable.ic_media_play).setContentIntent(contentIntent).addAction(android.R.drawable.ic_media_pause, "Stop", stopIntent).setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE).setCategory(NotificationCompat.CATEGORY_SERVICE).setOnlyAlertOnce(true).setOngoing(true).setSilent(true).build();
     }
 
     private void ensureNotificationChannel() {
         NotificationManager notificationManager = getSystemService(NotificationManager.class);
-        if (notificationManager == null || notificationManager.getNotificationChannel(CHANNEL_ID) != null) {
-            return;
-        }
-
-        NotificationChannel channel = new NotificationChannel(
-                CHANNEL_ID,
-                "Glyph Visualizer",
-                NotificationManager.IMPORTANCE_LOW
-        );
+        if (notificationManager == null || notificationManager.getNotificationChannel(CHANNEL_ID) != null) return;
+        NotificationChannel channel = new NotificationChannel(CHANNEL_ID, "Glyph Visualizer", NotificationManager.IMPORTANCE_LOW);
         channel.setDescription("Keeps the visualizer alive while audio capture is active");
         notificationManager.createNotificationChannel(channel);
     }
 
     private void refreshNotification() {
         NotificationManager notificationManager = getSystemService(NotificationManager.class);
-        if (notificationManager != null) {
-            notificationManager.notify(NOTIF_ID, buildNotification());
-        }
+        if (notificationManager != null) notificationManager.notify(NOTIF_ID, buildNotification());
     }
 
     private void requestTileRefresh() {
-        TileService.requestListeningState(
-                this,
-                new ComponentName(this, VisualizerTileService.class)
-        );
-        TileService.requestListeningState(
-                this,
-                new ComponentName(this, HapticsTileService.class)
-        );
+        TileService.requestListeningState(this, new ComponentName(this, VisualizerTileService.class));
+        TileService.requestListeningState(this, new ComponentName(this, HapticsTileService.class));
     }
 
     private void refreshPresetCatalog() throws IOException, JSONException {
         mDetectedPhoneModel = detectPhoneModel();
         String selectedPhoneModel = phoneModelForDevice(mSelectedDevice);
-        String phoneModelForCatalog = PHONE_MODEL_UNKNOWN.equals(selectedPhoneModel)
-                ? mDetectedPhoneModel
-                : selectedPhoneModel;
-
+        String phoneModelForCatalog = PHONE_MODEL_UNKNOWN.equals(selectedPhoneModel) ? mDetectedPhoneModel : selectedPhoneModel;
         JSONObject root = loadZonesConfigRoot(this);
         List<String> matching = getPresetKeysForPhoneModel(root, phoneModelForCatalog);
-        if (matching.isEmpty() && !PHONE_MODEL_UNKNOWN.equals(mDetectedPhoneModel)) {
-            matching = getPresetKeysForPhoneModel(root, mDetectedPhoneModel);
-        }
-        if (matching.isEmpty()) {
-            matching = getAllPresetKeys(root);
-        }
+        if (matching.isEmpty() && !PHONE_MODEL_UNKNOWN.equals(mDetectedPhoneModel)) matching = getPresetKeysForPhoneModel(root, mDetectedPhoneModel);
+        if (matching.isEmpty()) matching = getAllPresetKeys(root);
         mAvailablePresetKeys = matching;
     }
 
-    private static SharedPreferences getPreferences(Context context) {
-        return context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
-    }
+    private static SharedPreferences getPreferences(Context context) { return context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE); }
+    private static String latencyPreferenceKey(int device) { return PREF_LATENCY_PREFIX + Math.max(DeviceProfile.DEVICE_UNKNOWN, device); }
+    private static String routeLatencyPreferenceKey(int device, String routeKey) { return PREF_LATENCY_ROUTE_PREFIX + Math.max(DeviceProfile.DEVICE_UNKNOWN, device) + "_" + routeKey.trim().replaceAll("[^A-Za-z0-9._-]", "_"); }
 
-    private static String latencyPreferenceKey(int device) {
-        return PREF_LATENCY_PREFIX + Math.max(DeviceProfile.DEVICE_UNKNOWN, device);
-    }
-
-    private static String routeLatencyPreferenceKey(int device, String routeKey) {
-        String sanitizedRouteKey = routeKey
-                .trim()
-                .replaceAll("[^A-Za-z0-9._-]", "_");
-        return PREF_LATENCY_ROUTE_PREFIX
-                + Math.max(DeviceProfile.DEVICE_UNKNOWN, device)
-                + "_"
-                + sanitizedRouteKey;
-    }
-
-    public static String loadZonesConfigVersion(Context context) {
-        try {
-            JSONObject root = loadZonesConfigRoot(context);
-            return root.optString("version", "Unknown");
-        } catch (Exception e) {
-            return "Unknown";
-        }
-    }
-
-    private static JSONObject loadZonesConfigRoot(Context context) throws IOException, JSONException {
-        return new JSONObject(loadZonesConfigText(context));
-    }
-
+    public static String loadZonesConfigVersion(Context context) { try { return loadZonesConfigRoot(context).optString("version", "Unknown"); } catch (Exception e) { return "Unknown"; } }
+    private static JSONObject loadZonesConfigRoot(Context context) throws IOException, JSONException { return new JSONObject(loadZonesConfigText(context)); }
     private static String loadZonesConfigText(Context context) throws IOException {
-        File externalDir = context.getExternalFilesDir(null);
-        File[] candidates = new File[]{
-                new File(context.getFilesDir(), "zones.config"),
-                externalDir == null ? null : new File(externalDir, "zones.config"),
-                new File(context.getApplicationInfo().dataDir, "zones.config")
-        };
-
-        for (File candidate : candidates) {
-            if (candidate != null && candidate.isFile()) {
-                return readFile(candidate);
-            }
-        }
-
-        InputStream inputStream = null;
-        try {
-            inputStream = context.getAssets().open("zones.config");
-            return readFully(inputStream);
-        } catch (IOException ignored) {
-        } finally {
-            closeQuietly(inputStream);
-        }
-
-        throw new FileNotFoundException("zones.config not found");
+        File[] candidates = { new File(context.getFilesDir(), "zones.config"), context.getExternalFilesDir(null) == null ? null : new File(context.getExternalFilesDir(null), "zones.config"), new File(context.getApplicationInfo().dataDir, "zones.config") };
+        for (File candidate : candidates) if (candidate != null && candidate.isFile()) return readFile(candidate);
+        InputStream is = context.getAssets().open("zones.config");
+        try { return readFully(is); } finally { closeQuietly(is); }
     }
 
-    private static String readFile(File file) throws IOException {
-        FileInputStream inputStream = new FileInputStream(file);
-        try {
-            return readFully(inputStream);
-        } finally {
-            closeQuietly(inputStream);
-        }
-    }
-
-    private static String readFully(InputStream inputStream) throws IOException {
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        byte[] buffer = new byte[4096];
-        int read;
-        while ((read = inputStream.read(buffer)) != -1) {
-            outputStream.write(buffer, 0, read);
-        }
-        return outputStream.toString(StandardCharsets.UTF_8);
-    }
-
-    private static void closeQuietly(Closeable closeable) {
-        if (closeable == null) {
-            return;
-        }
-        try {
-            closeable.close();
-        } catch (IOException ignored) {
-        }
-    }
-
-    private static List<String> getAllPresetKeys(JSONObject root) {
-        ArrayList<String> presets = new ArrayList<>();
-        JSONArray names = root.names();
-        if (names == null) {
-            return presets;
-        }
-
-        for (int i = 0; i < names.length(); i++) {
-            String key = names.optString(i, "");
-            if (isPresetEntry(root, key)) {
-                presets.add(key);
-            }
-        }
-        Collections.sort(presets);
-        return presets;
-    }
-
-    private static List<PresetInfo> buildPresetInfos(JSONObject root, List<String> keys) {
-        ArrayList<PresetInfo> presets = new ArrayList<>();
-        for (String key : keys) {
-            JSONObject preset = root.optJSONObject(key);
-            if (preset != null) {
-                presets.add(new PresetInfo(key, preset.optString("description", key)));
-            }
-        }
-        return presets;
-    }
-
-    private static List<String> getPresetKeysForPhoneModel(JSONObject root, String phoneModel) {
-        ArrayList<String> presets = new ArrayList<>();
-        if (PHONE_MODEL_UNKNOWN.equals(phoneModel)) {
-            return presets;
-        }
-
-        JSONArray names = root.names();
-        if (names == null) {
-            return presets;
-        }
-
-        for (int i = 0; i < names.length(); i++) {
-            String key = names.optString(i, "");
-            if (!isPresetEntry(root, key)) {
-                continue;
-            }
-            JSONObject preset = root.optJSONObject(key);
-            if (preset != null && phoneModel.equalsIgnoreCase(preset.optString("phone_model", ""))) {
-                presets.add(key);
-            }
-        }
-        Collections.sort(presets);
-        return presets;
-    }
-
-    private static boolean isPresetEntry(JSONObject root, String key) {
-        if (key == null || key.isEmpty()) {
-            return false;
-        }
-        if ("version".equals(key)
-                || "amp".equals(key)
-                || "decay-alpha".equals(key)
-                || "decay_alpha".equals(key)
-                || "what-is-decay-alpha".equals(key)
-                || "what-is-decay".equals(key)) {
-            return false;
-        }
-
-        JSONObject preset = root.optJSONObject(key);
-        return preset != null && preset.optJSONArray("zones") != null;
-    }
-
+    private static String readFile(File file) throws IOException { FileInputStream is = new FileInputStream(file); try { return readFully(is); } finally { closeQuietly(is); } }
+    private static String readFully(InputStream is) throws IOException { ByteArrayOutputStream os = new ByteArrayOutputStream(); byte[] buf = new byte[4096]; int r; while ((r = is.read(buf)) != -1) os.write(buf, 0, r); return os.toString(StandardCharsets.UTF_8); }
+    private static void closeQuietly(Closeable c) { if (c != null) try { c.close(); } catch (IOException ignored) {} }
+    private static List<String> getAllPresetKeys(JSONObject root) { ArrayList<String> res = new ArrayList<>(); JSONArray names = root.names(); if (names != null) for (int i = 0; i < names.length(); i++) { String key = names.optString(i, ""); if (isPresetEntry(root, key)) res.add(key); } Collections.sort(res); return res; }
+    private static List<PresetInfo> buildPresetInfos(JSONObject root, List<String> keys) { ArrayList<PresetInfo> res = new ArrayList<>(); for (String key : keys) { JSONObject p = root.optJSONObject(key); if (p != null) res.add(new PresetInfo(key, p.optString("description", key))); } return res; }
+    private static List<String> getPresetKeysForPhoneModel(JSONObject root, String phoneModel) { ArrayList<String> res = new ArrayList<>(); if (PHONE_MODEL_UNKNOWN.equals(phoneModel)) return res; JSONArray names = root.names(); if (names != null) for (int i = 0; i < names.length(); i++) { String key = names.optString(i, ""); if (!isPresetEntry(root, key)) continue; JSONObject p = root.optJSONObject(key); if (p != null && phoneModel.equalsIgnoreCase(p.optString("phone_model", ""))) res.add(key); } Collections.sort(res); return res; }
+    private static boolean isPresetEntry(JSONObject root, String key) { if (key == null || key.isEmpty() || "version".equals(key) || "amp".equals(key) || key.startsWith("decay")) return false; JSONObject p = root.optJSONObject(key); return p != null && p.optJSONArray("zones") != null; }
     private static String chooseDefaultPresetKey(String phoneModel, List<String> presetKeys) {
-        if (presetKeys == null || presetKeys.isEmpty()) {
-            return DEFAULT_PRESET_KEY;
-        }
-
-        List<String> preferredKeys = switch (phoneModel) {
-            case PHONE_MODEL_PHONE1 -> Arrays.asList("np1s", "np1");
-            case PHONE_MODEL_PHONE2 -> Collections.singletonList("np2");
-            case PHONE_MODEL_PHONE2A -> Collections.singletonList("np2a");
-            case PHONE_MODEL_PHONE3A -> Arrays.asList("np3as", "np3a");
-            case PHONE_MODEL_PHONE3 -> Collections.singletonList("np3test");
-            case PHONE_MODEL_PHONE4A -> Collections.singletonList("np4a");
-            case PHONE_MODEL_PHONE4A_PRO -> Collections.singletonList("np4ap-test");
-            default -> Collections.emptyList();
-        };
-
-        for (String preferredKey : preferredKeys) {
-            if (presetKeys.contains(preferredKey)) {
-                return preferredKey;
-            }
-        }
+        if (presetKeys == null || presetKeys.isEmpty()) return DEFAULT_PRESET_KEY;
+        List<String> prefs = switch (phoneModel) { case PHONE_MODEL_PHONE1 -> Arrays.asList("np1s", "np1"); case PHONE_MODEL_PHONE2 -> Collections.singletonList("np2"); case PHONE_MODEL_PHONE2A -> Collections.singletonList("np2a"); case PHONE_MODEL_PHONE3A -> Arrays.asList("np3as", "np3a"); case PHONE_MODEL_PHONE3 -> Collections.singletonList("np3test"); case PHONE_MODEL_PHONE4A -> Collections.singletonList("np4a"); case PHONE_MODEL_PHONE4A_PRO -> Collections.singletonList("np4ap-test"); default -> Collections.emptyList(); };
+        for (String p : prefs) if (presetKeys.contains(p)) return p;
         return presetKeys.get(0);
     }
-
-    private static String phoneModelForDevice(int device) {
-        return switch (device) {
-            case DeviceProfile.DEVICE_NP1 -> PHONE_MODEL_PHONE1;
-            case DeviceProfile.DEVICE_NP2 -> PHONE_MODEL_PHONE2;
-            case DeviceProfile.DEVICE_NP2A -> PHONE_MODEL_PHONE2A;
-            case DeviceProfile.DEVICE_NP3A -> PHONE_MODEL_PHONE3A;
-            case DeviceProfile.DEVICE_NP4A -> PHONE_MODEL_PHONE4A;
-            case DeviceProfile.DEVICE_NP4APRO -> PHONE_MODEL_PHONE4A_PRO;
-            case DeviceProfile.DEVICE_NP3 -> PHONE_MODEL_PHONE3;
-            default -> PHONE_MODEL_UNKNOWN;
-        };
-    }
-
+    private static String phoneModelForDevice(int device) { return switch (device) { case DeviceProfile.DEVICE_NP1 -> PHONE_MODEL_PHONE1; case DeviceProfile.DEVICE_NP2 -> PHONE_MODEL_PHONE2; case DeviceProfile.DEVICE_NP2A -> PHONE_MODEL_PHONE2A; case DeviceProfile.DEVICE_NP3A -> PHONE_MODEL_PHONE3A; case DeviceProfile.DEVICE_NP4A -> PHONE_MODEL_PHONE4A; case DeviceProfile.DEVICE_NP4APRO -> PHONE_MODEL_PHONE4A_PRO; case DeviceProfile.DEVICE_NP3 -> PHONE_MODEL_PHONE3; default -> PHONE_MODEL_UNKNOWN; }; }
     private static String detectPhoneModel() {
-        if (Common.is20111()) {
-            return PHONE_MODEL_PHONE1;
-        }
-        if (Common.is22111()) {
-            return PHONE_MODEL_PHONE2;
-        }
-        if (Common.is23111() || Common.is23113()) {
-            return PHONE_MODEL_PHONE2A;
-        }
-        if (Common.is24111()) {
-            return PHONE_MODEL_PHONE3A;
-        }
-        if (Common.is25111p()) {
-            return PHONE_MODEL_PHONE4A_PRO;
-        }
-        if (Common.is25111()) {
-            return PHONE_MODEL_PHONE4A;
-        }
-        if (Common.is23112()) {
-            return PHONE_MODEL_PHONE3;
-        }
-
-        String buildText = (
-                Build.MANUFACTURER + " "
-                        + Build.BRAND + " "
-                        + Build.MODEL + " "
-                        + Build.DEVICE + " "
-                        + Build.PRODUCT
-        ).toLowerCase(Locale.US);
-
-        if (buildText.contains("phone 4a pro")) {
-            return PHONE_MODEL_PHONE4A_PRO;
-        }
-        if (buildText.contains("phone 4a")) {
-            return PHONE_MODEL_PHONE4A;
-        }
-        if (buildText.contains("phone 3a")) {
-            return PHONE_MODEL_PHONE3A;
-        }
-        if (buildText.contains("phone 3")) {
-            return PHONE_MODEL_PHONE3;
-        }
-        if (buildText.contains("phone 2a")) {
-            return PHONE_MODEL_PHONE2A;
-        }
-        if (buildText.contains("phone 2")) {
-            return PHONE_MODEL_PHONE2;
-        }
-        if (buildText.contains("phone 1")) {
-            return PHONE_MODEL_PHONE1;
-        }
+        if (Common.is20111()) return PHONE_MODEL_PHONE1; if (Common.is22111()) return PHONE_MODEL_PHONE2; if (Common.is23111() || Common.is23113()) return PHONE_MODEL_PHONE2A; if (Common.is24111()) return PHONE_MODEL_PHONE3A; if (Common.is25111p()) return PHONE_MODEL_PHONE4A_PRO; if (Common.is25111()) return PHONE_MODEL_PHONE4A; if (Common.is23112()) return PHONE_MODEL_PHONE3;
+        String b = (Build.MANUFACTURER + " " + Build.BRAND + " " + Build.MODEL + " " + Build.DEVICE + " " + Build.PRODUCT).toLowerCase(Locale.US);
+        if (b.contains("phone 4a pro")) return PHONE_MODEL_PHONE4A_PRO; if (b.contains("phone 4a")) return PHONE_MODEL_PHONE4A; if (b.contains("phone 3a")) return PHONE_MODEL_PHONE3A; if (b.contains("phone 3")) return PHONE_MODEL_PHONE3; if (b.contains("phone 2a")) return PHONE_MODEL_PHONE2A; if (b.contains("phone 2")) return PHONE_MODEL_PHONE2; if (b.contains("phone 1")) return PHONE_MODEL_PHONE1;
         return PHONE_MODEL_UNKNOWN;
     }
-
-    private static float parseOptionalPercent(JSONArray zoneArray, int index) {
-        if (index >= zoneArray.length()) {
-            return Float.NaN;
-        }
-
-        Object raw = zoneArray.opt(index);
-        if (raw == null || raw == JSONObject.NULL) {
-            return Float.NaN;
-        }
-
-        try {
-            float value;
-            if (raw instanceof Number number) {
-                value = number.floatValue();
-            } else {
-                String text = String.valueOf(raw).trim();
-                if (text.endsWith("%")) {
-                    text = text.substring(0, text.length() - 1).trim();
-                }
-                value = Float.parseFloat(text);
-            }
-
-            if (value >= 0f && value <= 1f) {
-                value *= 100f;
-            }
-            return value;
-        } catch (Exception ignored) {
-            return Float.NaN;
-        }
-    }
-
-
-
-    private void refreshLatencyForCurrentAudioRoute() {
-        SharedPreferences appPreferences = getSharedPreferences(APP_PREFS_NAME, Context.MODE_PRIVATE);
-        if (!appPreferences.getBoolean("auto_device_enabled", true)) {
-            return;
-        }
-
-        AudioRouteInfo routeInfo = resolveCurrentAudioRoute();
-        String routeKey = routeInfo != null ? routeInfo.storageKey : null;
-        setLatencyCompensationMs(loadLatencyCompensationMs(this, mSelectedDevice, routeKey));
-    }
-
+    private static float parseOptionalPercent(JSONArray arr, int idx) { if (idx >= arr.length()) return Float.NaN; Object r = arr.opt(idx); if (r == null || r == JSONObject.NULL) return Float.NaN; try { float v; if (r instanceof Number n) v = n.floatValue(); else { String t = String.valueOf(r).trim(); if (t.endsWith("%")) t = t.substring(0, t.length() - 1).trim(); v = Float.parseFloat(t); } if (v >= 0f && v <= 1f) v *= 100f; return v; } catch (Exception ignored) { return Float.NaN; } }
+    private void refreshLatencyForCurrentAudioRoute() { SharedPreferences p = getSharedPreferences(APP_PREFS_NAME, MODE_PRIVATE); if (!p.getBoolean("auto_device_enabled", true)) return; AudioRouteInfo r = resolveCurrentAudioRoute(); setLatencyCompensationMs(loadLatencyCompensationMs(this, mSelectedDevice, r != null ? r.storageKey : null)); }
     private AudioRouteInfo resolveCurrentAudioRoute() {
-        if (mAudioManager == null) {
-            return null;
-        }
-
-        AudioDeviceInfo[] outputs = mAudioManager.getDevices(AudioManager.GET_DEVICES_OUTPUTS);
-        AudioDeviceInfo preferredOutput = null;
-        for (AudioDeviceInfo device : outputs) {
-            if (isBluetoothOutput(device)) {
-                preferredOutput = device;
-                break;
-            }
-        }
-        if (preferredOutput == null) {
-            for (AudioDeviceInfo device : outputs) {
-                if (isWiredOutput(device)) {
-                    preferredOutput = device;
-                    break;
-                }
-            }
-        }
-        if (preferredOutput == null) {
-            for (AudioDeviceInfo device : outputs) {
-                if (device.getType() == AudioDeviceInfo.TYPE_BUILTIN_SPEAKER) {
-                    preferredOutput = device;
-                    break;
-                }
-            }
-        }
-        if (preferredOutput == null && outputs.length > 0) {
-            preferredOutput = outputs[0];
-        }
-        return preferredOutput != null ? toAudioRouteInfo(preferredOutput) : null;
+        if (mAudioManager == null) return null;
+        AudioDeviceInfo[] os = mAudioManager.getDevices(AudioManager.GET_DEVICES_OUTPUTS);
+        AudioDeviceInfo pref = null;
+        for (AudioDeviceInfo d : os) if (isBluetoothOutput(d)) { pref = d; break; }
+        if (pref == null) for (AudioDeviceInfo d : os) if (isWiredOutput(d)) { pref = d; break; }
+        if (pref == null) for (AudioDeviceInfo d : os) if (d.getType() == AudioDeviceInfo.TYPE_BUILTIN_SPEAKER) { pref = d; break; }
+        if (pref == null && os.length > 0) pref = os[0];
+        return pref != null ? toAudioRouteInfo(pref) : null;
     }
-
-    private static boolean isBluetoothOutput(AudioDeviceInfo device) {
-        int type = device.getType();
-        return type == AudioDeviceInfo.TYPE_BLUETOOTH_A2DP
-                || type == AudioDeviceInfo.TYPE_BLE_HEADSET
-                || type == AudioDeviceInfo.TYPE_BLE_SPEAKER
-                || type == AudioDeviceInfo.TYPE_BLE_BROADCAST;
+    private static boolean isBluetoothOutput(AudioDeviceInfo d) { int t = d.getType(); return t == AudioDeviceInfo.TYPE_BLUETOOTH_A2DP || t == AudioDeviceInfo.TYPE_BLE_HEADSET || t == AudioDeviceInfo.TYPE_BLE_SPEAKER || t == AudioDeviceInfo.TYPE_BLE_BROADCAST; }
+    private static boolean isWiredOutput(AudioDeviceInfo d) { int t = d.getType(); return t == AudioDeviceInfo.TYPE_WIRED_HEADPHONES || t == AudioDeviceInfo.TYPE_WIRED_HEADSET || t == AudioDeviceInfo.TYPE_USB_HEADSET; }
+    private static AudioRouteInfo toAudioRouteInfo(AudioDeviceInfo d) {
+        String n = d.getType() == AudioDeviceInfo.TYPE_BUILTIN_SPEAKER ? "Internal Speaker" : String.valueOf(d.getProductName());
+        String nn = n.toLowerCase(Locale.US).replaceAll("[^a-z0-9._-]+", "_").replaceAll("^_+|_+$", "");
+        if (nn.isEmpty()) nn = "unknown_output";
+        String a = d.getAddress(); String na = null; if (!a.isBlank()) na = a.toLowerCase(Locale.US).replaceAll("[^a-z0-9._-]+", "_").replaceAll("^_+|_+$", "");
+        return new AudioRouteInfo(d.getType() + "_" + (na != null && !na.isEmpty() ? na : nn), n);
     }
-
-    private static boolean isWiredOutput(AudioDeviceInfo device) {
-        int type = device.getType();
-        return type == AudioDeviceInfo.TYPE_WIRED_HEADPHONES
-                || type == AudioDeviceInfo.TYPE_WIRED_HEADSET
-                || type == AudioDeviceInfo.TYPE_USB_HEADSET;
-    }
-
-    private static AudioRouteInfo toAudioRouteInfo(AudioDeviceInfo device) {
-        String routeName = device.getType() == AudioDeviceInfo.TYPE_BUILTIN_SPEAKER
-                ? "Internal Speaker"
-                : String.valueOf(device.getProductName());
-        String normalizedName = routeName.toLowerCase(Locale.US)
-                .replaceAll("[^a-z0-9._-]+", "_")
-                .replaceAll("^_+|_+$", "");
-        if (normalizedName.isEmpty()) {
-            normalizedName = "unknown_output";
-        }
-
-        String address = device.getAddress();
-        String normalizedAddress = null;
-        if (!address.isBlank()) {
-            normalizedAddress = address.toLowerCase(Locale.US)
-                    .replaceAll("[^a-z0-9._-]+", "_")
-                    .replaceAll("^_+|_+$", "");
-        }
-
-        String routeKey = device.getType() + "_" + (normalizedAddress != null && !normalizedAddress.isEmpty()
-                ? normalizedAddress
-                : normalizedName);
-        return new AudioRouteInfo(routeKey, routeName);
-    }
-
 }

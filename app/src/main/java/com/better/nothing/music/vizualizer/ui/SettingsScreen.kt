@@ -563,7 +563,6 @@ internal fun SettingsScreen(
             }
         }
 
-        BodyText(text = stringResource(R.string.more_settings_coming))
         Spacer(modifier = Modifier.height(70.dp))
     }
 }

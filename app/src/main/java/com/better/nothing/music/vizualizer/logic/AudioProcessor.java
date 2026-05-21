@@ -138,7 +138,7 @@ public class AudioProcessor {
         return uniqueMagnitudes;
     }
 
-    private float computeRangeMagnitude(FrequencyRange range, float[] magnitude) {
+    public float computeRangeMagnitude(FrequencyRange range, float[] magnitude) {
         if (range == null || magnitude == null || magnitude.length == 0) {
             return 0f;
         }

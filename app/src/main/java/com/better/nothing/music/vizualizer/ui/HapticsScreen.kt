@@ -73,6 +73,20 @@ fun HapticsScreen(
     onRichTapFrequencyChanged: (Int) -> Unit,
     hapticAmplitude: Float,
     isBeatDetected: Boolean,
+    flashlightEnabled: Boolean,
+    onFlashlightEnabledChanged: (Boolean) -> Unit,
+    flashlightFreqMin: Float,
+    flashlightFreqMax: Float,
+    onFlashlightFreqRangeChanged: (Float, Float) -> Unit,
+    flashlightMultiplier: Float,
+    onFlashlightMultiplierChanged: (Float) -> Unit,
+    flashlightThreshold: Float,
+    onFlashlightThresholdChanged: (Float) -> Unit,
+    flashlightSmoothing: Float,
+    onFlashlightSmoothingChanged: (Float) -> Unit,
+    flashlightGamma: Float,
+    onFlashlightGammaChanged: (Float) -> Unit,
+    flashlightAmplitude: Float,
 ) {
     val scrollState = rememberScrollState()
     val haptics = LocalHapticFeedback.current
@@ -312,6 +326,209 @@ fun HapticsScreen(
                 }
             }
         }
+
+        // --- Flashlight Visualizer Section ---
+        AnimatedToggleCard(
+            title = "Flashlight Visualizer",
+            checked = flashlightEnabled,
+            onCheckedChange = { enabled ->
+                haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                onFlashlightEnabledChanged(enabled)
+            },
+            modifier = Modifier.fillMaxWidth(),
+        )
+
+        AnimatedVisibility(
+            visible = flashlightEnabled,
+            enter = fadeIn(animationSpec = tween(durationMillis = 320)) +
+                slideInVertically(
+                    animationSpec = tween(durationMillis = 420),
+                    initialOffsetY = { fullHeight -> fullHeight / 3 }
+                ),
+            exit = fadeOut(animationSpec = tween(durationMillis = 220)) +
+                slideOutVertically(
+                    animationSpec = tween(durationMillis = 280),
+                    targetOffsetY = { fullHeight -> fullHeight / 5 }
+                )
+        ) {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(22.dp)
+            ) {
+                Card(
+                    shape = RoundedCornerShape(28.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Column(
+                        modifier = Modifier.padding(20.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Text(
+                            text = "Frequency Range: ${flashlightFreqMin.toInt()} - ${flashlightFreqMax.toInt()} Hz",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+
+                        val currentRange = invLerpLog(flashlightFreqMin, 20f, 1000f)..invLerpLog(flashlightFreqMax, 20f, 1000f)
+
+                        ExpressiveRangeSlider(
+                            value = currentRange,
+                            onValueChange = { newRange ->
+                                val newMin = lerpLog(newRange.start, 20f, 1000f)
+                                val newMax = lerpLog(newRange.endInclusive, 20f, 1000f)
+
+                                if (newMax - newMin >= 10f) {
+                                    onFlashlightFreqRangeChanged(newMin, newMax)
+                                }
+                            },
+                            valueRange = 0f..1f,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+
+                        BodyText(
+                            text = "The Hz range that the flashlight will react to. Lower for bass, higher for snare/vocals.",
+                            size = 12.sp
+                        )
+                    }
+                }
+
+                Card(
+                    shape = RoundedCornerShape(28.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Column(
+                        modifier = Modifier.padding(20.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Text(
+                            text = "Sensitivity Threshold: ${String.format("%.2f", flashlightThreshold)}",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        ExpressiveSlider(
+                            value = flashlightThreshold,
+                            onValueChange = onFlashlightThresholdChanged,
+                            valueRange = 0f..0.8f,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        BodyText(text = "Higher threshold filters out background noise/drums.", size = 11.sp)
+                    }
+                }
+
+                Card(
+                    shape = RoundedCornerShape(28.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Column(
+                        modifier = Modifier.padding(20.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Text(
+                            text = "Smoothing: ${String.format("%.2f", flashlightSmoothing)}",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        ExpressiveSlider(
+                            value = flashlightSmoothing,
+                            onValueChange = onFlashlightSmoothingChanged,
+                            valueRange = 0f..0.95f,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        BodyText(text = "Higher smoothing makes the light pulse softly instead of strobing.", size = 11.sp)
+                    }
+                }
+
+                Card(
+                    shape = RoundedCornerShape(28.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Column(
+                        modifier = Modifier.padding(20.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Text(
+                            text = "Intensity Gamma: ${String.format("%.1f", flashlightGamma)}",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        ExpressiveSlider(
+                            value = flashlightGamma,
+                            onValueChange = onFlashlightGammaChanged,
+                            valueRange = 1.0f..4.0f,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                }
+
+                Card(
+                    shape = RoundedCornerShape(28.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Column(
+                        modifier = Modifier.padding(20.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Text(
+                            text = "Amplitude Multiplier: $flashlightMultiplier",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        ExpressiveSlider(
+                            value = flashlightMultiplier,
+                            onValueChange = onFlashlightMultiplierChanged,
+                            valueRange = 0.5f..1.5f,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                }
+
+                Card(
+                    shape = RoundedCornerShape(28.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Column(
+                        modifier = Modifier.padding(20.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Text(
+                            text = "Flashlight Monitor",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+
+                        val animatedAmplitude by animateFloatAsState(
+                            targetValue = flashlightAmplitude * 4,
+                            label = "flashlightAmplitude"
+                        )
+
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(120.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Canvas(modifier = Modifier.size(100.dp)) {
+                                val baseRadius = size.minDimension * 0.15f
+                                val dynamicRadius = (size.minDimension * 0.45f) * animatedAmplitude
+
+                                drawCircle(
+                                    color = Color.Yellow.copy(alpha = 0.8f),
+                                    radius = (baseRadius + dynamicRadius).coerceAtMost(size.minDimension / 2)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         Spacer(modifier = Modifier.height(70.dp))
     }
 }
