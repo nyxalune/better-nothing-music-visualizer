@@ -87,6 +87,34 @@ internal fun AboutScreen(
         }
         ScreenTitle(text = stringResource(R.string.about_title))
 
+        Card(
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable {
+                    viewModel.showTimeline()
+                },
+        ) {
+            Row(
+                modifier = Modifier.padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(
+                    text = "Project Timeline",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.weight(1f)
+                )
+                Text(
+                    text = "View Roadmap",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = Color(0xFFAAAAAA),
+                )
+            }
+        }
+
         BodyText(
             text = stringResource(R.string.about_intro)
         )

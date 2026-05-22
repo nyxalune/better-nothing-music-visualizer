@@ -638,6 +638,12 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
     fun showAbout() { _isShowingAbout.value = true }
     fun hideAbout() { _isShowingAbout.value = false }
 
+    private val _isShowingTimeline = MutableStateFlow(false)
+    val isShowingTimeline = _isShowingTimeline.asStateFlow()
+
+    fun showTimeline() { _isShowingTimeline.value = true }
+    fun hideTimeline() { _isShowingTimeline.value = false }
+
     private val _isShowingCommunity = MutableStateFlow(false)
     val isShowingCommunity = _isShowingCommunity.asStateFlow()
 
@@ -1378,6 +1384,7 @@ class MainActivity : ComponentActivity() {
                 val selectedDevice by viewModel.selectedDevice.collectAsStateWithLifecycle()
                 val isEditingPreset by viewModel.isEditingPreset.collectAsStateWithLifecycle()
                 val isShowingAbout by viewModel.isShowingAbout.collectAsStateWithLifecycle()
+                val isShowingTimeline by viewModel.isShowingTimeline.collectAsStateWithLifecycle()
                 val showUpdateDialog by viewModel.showUpdateDialog.collectAsStateWithLifecycle()
                 val appUpdateStatus by viewModel.appUpdateStatus.collectAsStateWithLifecycle()
 
@@ -1431,6 +1438,20 @@ class MainActivity : ComponentActivity() {
                     ) {
                         Box(modifier = Modifier.background(MaterialTheme.colorScheme.background)) {
                             AboutScreen(viewModel = viewModel, onDismiss = viewModel::hideAbout)
+                        }
+                    }
+                }
+
+                if (isShowingTimeline) {
+                    androidx.compose.ui.window.Dialog(
+                        onDismissRequest = viewModel::hideTimeline,
+                        properties = androidx.compose.ui.window.DialogProperties(
+                            usePlatformDefaultWidth = false,
+                            decorFitsSystemWindows = false
+                        )
+                    ) {
+                        Box(modifier = Modifier.background(MaterialTheme.colorScheme.background)) {
+                            TimelineScreen(onDismiss = viewModel::hideTimeline)
                         }
                     }
                 }

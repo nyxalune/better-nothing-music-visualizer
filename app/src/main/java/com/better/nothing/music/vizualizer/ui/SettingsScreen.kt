@@ -185,13 +185,6 @@ internal fun SettingsScreen(
                     }
                 }
             }
-
-            Text(
-                text = stringResource(R.string.theme_help_text),
-                style = MaterialTheme.typography.bodySmall,
-                color = Color.Gray,
-                modifier = Modifier.padding(top = 8.dp)
-            )
         }
 
         // ── Experimental Features ───────────────────────────────────────────
