@@ -1,0 +1,32 @@
+{
+    "Metadata": {
+        "Version": 2,
+        "Created": "2022-04-26",
+        "Description": "Visualizer Continuous Loop"
+    },
+    "PatternList": [
+        {
+            "AbsoluteTime": 0,
+            "Pattern": [
+                {
+                    "Event": {
+                        "Type": "continuous",
+                        "RelativeTime": 0,
+                        "Duration": 3600000,
+                        "Parameters": {
+                            "Intensity": 100,
+                            "Frequency": 50,
+                            "Curve": [
+                                { "Time": 0, "Intensity": 0.0, "Frequency": 50 },
+                                { "Time": 100, "Intensity": 1.0, "Frequency": 50 }
+                                { "Time": 1000, "Intensity": 1.0, "Frequency": 50 },
+                                { "Time": 1100, "Intensity": 0.0, "Frequency": 50 }
+                            ]
+                        },
+                        "Index": 0
+                    }
+                }
+            ]
+        }
+    ]
+}

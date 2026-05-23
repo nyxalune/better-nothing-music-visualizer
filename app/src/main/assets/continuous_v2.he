@@ -1,0 +1,27 @@
+{
+  "Metadata": {
+    "Version": 2,
+    "Description": "RichTap Continuous Vibration HE 2.0"
+  },
+  "PatternList": [
+    {
+      "Pattern": {
+        "Events": [
+          {
+            "Type": "Continuous",
+            "RelativeTime": 0,
+            "Duration": 2000,
+            "Parameters": {
+                "Intensity": 100,
+                "Frequency": 50,
+                "Curve": [
+                    { "Time": 0, "Intensity": 1.0, "Frequency": 0 },
+                    { "Time": 2000, "Intensity": 1.0, "Frequency": 0 }
+                ]
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

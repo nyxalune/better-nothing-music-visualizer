@@ -1,0 +1,222 @@
+package com.better.nothing.music.vizualizer.logic;
+
+import android.content.Context;
+import android.os.CombinedVibration;
+import android.os.SystemClock;
+import android.os.VibrationEffect;
+import android.os.Vibrator;
+import android.os.VibratorManager;
+import android.util.Log;
+
+import androidx.annotation.Nullable;
+
+import java.util.Objects;
+
+/**
+ * Drop-in haptic controller for a visualizer-style amplitude stream.
+ * <p>
+ * Manifest:
+ * <uses-permission android:name="android.permission.VIBRATE" />
+ * <p>
+ * Notes:
+ * - minSdk 14 compatible.
+ * - Uses VibratorManager on API 31+.
+ * - Keeps a repeating waveform alive and only resubmits when the amplitude changes.
+ * - Android 16 envelope APIs exist, but they do not give you a mutable "live motor";
+ *   repeating waveform is the practical continuous solution across your API range.
+ */
+public final class ContinuousHapticEngine {
+
+    private static final String TAG = "ContinuousHapticEngine";
+
+    // Tune this to match your input cadence.
+    private static final int HAPTIC_STEP_MS = 100; 
+
+    // Don't spam the vibrator service faster than this.
+    private static final long MIN_RESUBMIT_INTERVAL_MS = 25L;
+
+    // Minimum change in amplitude to trigger a resubmit (0-255).
+    private static final int AMPLITUDE_THRESHOLD = 2;
+
+    // Mapping / shaping
+    private static final float DEFAULT_DECAY = 0.85f;
+    private static final float DEFAULT_GAMMA = 2.0f;
+    private static final float EPSILON = 0.0001f;
+    
+    // Faster falloff for haptics (approx. 1s to half-life) to keep it dynamic.
+    private static final float PEAK_FALLOFF = 0.99f; 
+    private static final float SPECTRUM_GAIN = 4.0f;
+
+    // Keep the motor from going completely dead for tiny non-zero values.
+    private static final int MAX_AMPLITUDE = 255;
+
+    private final Vibrator vibrator;
+    @Nullable
+    private final VibratorManager vibratorManager;
+
+    // Single repeating waveform: immediate start at requested amplitude.
+    private final long[] timings = new long[]{HAPTIC_STEP_MS};
+    private final int[] amplitudes = new int[]{0};
+
+    private float hapticMultiplier = 1.0f;
+    private float hapticGamma = DEFAULT_GAMMA;
+
+    private float decayedState = 0f;
+    private float peakTracker = EPSILON;
+
+    private int lastAmplitude = -1;
+    private long lastSubmitMs = 0L;
+    private boolean waveformActive = false;
+
+    public ContinuousHapticEngine(Context context) {
+        Context appContext = Objects.requireNonNull(context, "context").getApplicationContext();
+
+        VibratorManager vm = (VibratorManager) appContext.getSystemService(Context.VIBRATOR_MANAGER_SERVICE);
+        this.vibratorManager = vm;
+        this.vibrator = (vm != null) ? vm.getDefaultVibrator() : nullSafeVibrator(appContext);
+    }
+
+    public synchronized void setHapticMultiplier(float multiplier) {
+        this.hapticMultiplier = Math.max(0f, multiplier);
+    }
+
+    public synchronized void setHapticGamma(float gamma) {
+        this.hapticGamma = Math.max(0.1f, gamma);
+    }
+
+    public synchronized void performHapticFeedback(float rawPeak, @Nullable AudioProcessor.VisualizerConfig config) {
+        if (vibrator == null || !vibrator.hasVibrator()) {
+            return;
+        }
+
+        final float decay = (config != null) ? config.decay : DEFAULT_DECAY;
+
+        // 1. Same base gain as LEDs
+        float current = Math.max(0f, rawPeak) * SPECTRUM_GAIN;
+
+        // 2. Instant-attack peak follower
+        if (current > decayedState) {
+            decayedState = current;
+        } else {
+            decayedState = (decay * decayedState) + ((1f - decay) * current);
+        }
+
+        if (decayedState < EPSILON) {
+            decayedState = 0f;
+            stopHapticsInternal();
+            return;
+        }
+
+        // 3. Peak tracking for auto-normalization
+        // Faster falloff for haptics ensures we don't get "stuck" with low vibration
+        // after a single loud sound.
+        peakTracker = Math.max(decayedState, peakTracker * PEAK_FALLOFF);
+        if (peakTracker < EPSILON) peakTracker = EPSILON;
+
+        // 4. Normalize to recent peak
+        float normalized = decayedState / peakTracker;
+
+        // 5. Apply User Gamma and Multiplier
+        // REMOVED the extra quadratic step (normalized * normalized) to prevent 
+        // crushing low-end detail. Now strictly follows the Gamma slider.
+        float shaped = (float) Math.pow(normalized, hapticGamma) * hapticMultiplier;
+        
+        int amplitude = Math.round(Math.min(1.0f, shaped) * MAX_AMPLITUDE);
+
+        amplitude = clampInt(amplitude, 0, MAX_AMPLITUDE);
+
+        if (amplitude <= 0) {
+            stopHapticsInternal();
+            return;
+        }
+
+        final long now = SystemClock.elapsedRealtime();
+        
+        // Skip if it's strictly the same to save overhead
+        if (waveformActive && amplitude == lastAmplitude) {
+            return;
+        }
+        
+        // Only resubmit if change is significant OR enough time has passed
+        // This prevents the "jitter" of tiny updates while remaining responsive.
+        boolean significantChange = Math.abs(amplitude - lastAmplitude) >= AMPLITUDE_THRESHOLD;
+        boolean cooldownOver = (now - lastSubmitMs) >= MIN_RESUBMIT_INTERVAL_MS;
+
+        if (waveformActive && !significantChange && (now - lastSubmitMs) < 100) {
+            return;
+        }
+        
+        if (waveformActive && !cooldownOver) {
+            return;
+        }
+
+        Log.d(TAG, String.format(java.util.Locale.US, "Haptic Peak: %.4f | Amp: %d | Multi: %.1f", rawPeak, amplitude, hapticMultiplier));
+        submitContinuousWaveform(amplitude);
+    }
+
+    public synchronized void stopHaptics() {
+        stopHapticsInternal();
+        decayedState = 0f;
+        peakTracker = EPSILON;
+    }
+
+    private void submitContinuousWaveform(int amplitude) {
+        if (vibrator == null || !vibrator.hasVibrator()) {
+            return;
+        }
+
+        amplitudes[0] = clampInt(amplitude, 0, MAX_AMPLITUDE);
+
+        try {
+            // Repeat from index 0 to keep it alive
+            VibrationEffect effect = VibrationEffect.createWaveform(timings, amplitudes, 0);
+            vibrate(effect);
+
+            waveformActive = true;
+            lastAmplitude = amplitude;
+            lastSubmitMs = SystemClock.elapsedRealtime();
+        } catch (RuntimeException e) {
+            Log.w(TAG, "Failed to submit haptic waveform", e);
+            stopHapticsInternal();
+        }
+    }
+
+    private void vibrate(VibrationEffect effect) {
+        if (vibratorManager != null) {
+            vibratorManager.vibrate(CombinedVibration.createParallel(effect));
+        } else {
+            vibrator.vibrate(effect);
+        }
+    }
+
+    private void stopHapticsInternal() {
+        if (!waveformActive) {
+            lastAmplitude = -1;
+            lastSubmitMs = 0L;
+            return;
+        }
+
+        try {
+            if (vibratorManager != null) {
+                vibratorManager.cancel();
+            } else if (vibrator != null) {
+                vibrator.cancel();
+            }
+        } catch (RuntimeException e) {
+            Log.w(TAG, "Failed to stop haptics", e);
+        }
+
+        waveformActive = false;
+        lastAmplitude = -1;
+        lastSubmitMs = 0L;
+    }
+
+    private static Vibrator nullSafeVibrator(Context context) {
+        VibratorManager vm = (VibratorManager) context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE);
+        return (vm != null) ? vm.getDefaultVibrator() : null;
+    }
+
+    private static int clampInt(int value, int min, int max) {
+        return Math.max(min, Math.min(max, value));
+    }
+}
