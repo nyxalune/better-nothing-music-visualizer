@@ -4,38 +4,26 @@ import com.better.nothing.music.vizualizer.R
 import com.better.nothing.music.vizualizer.BuildConfig
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.Icons
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Timeline
+import androidx.compose.material.icons.filled.Code
 
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -72,14 +60,14 @@ internal fun AboutScreen(
             .fillMaxSize()
             .padding(horizontal = 8.dp)
             .verticalScroll(scrollState),
-        verticalArrangement = Arrangement.spacedBy(22.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         if (onDismiss == null) {
             Spacer(modifier = Modifier.height(50.dp))
         } else {
             Spacer(modifier = Modifier.height(16.dp))
-            androidx.compose.material3.IconButton(onClick = onDismiss) {
-                androidx.compose.material3.Icon(
+            IconButton(onClick = onDismiss) {
+                Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = "Back"
                 )
@@ -87,227 +75,174 @@ internal fun AboutScreen(
         }
         ScreenTitle(text = stringResource(R.string.about_title))
 
-        Card(
-            shape = RoundedCornerShape(24.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable {
-                    viewModel.showTimeline()
-                },
+        ExpressiveCard(
+            modifier = Modifier.clickable { viewModel.showTimeline() },
+            containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.05f)
         ) {
             Row(
-                modifier = Modifier.padding(16.dp),
+                modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                Text(
-                    text = "Project Timeline",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.weight(1f)
-                )
-                Text(
-                    text = "View Roadmap",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = Color(0xFFAAAAAA),
-                )
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                    modifier = Modifier.size(40.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(Icons.Default.Timeline, null, tint = MaterialTheme.colorScheme.primary)
+                    }
+                }
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("Project Timeline", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Text("View the app roadmap", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                }
+                Icon(Icons.Default.ChevronRight, null, tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f))
             }
         }
 
-        BodyText(
-            text = stringResource(R.string.about_intro)
-        )
+        ExpressiveCard {
+            BodyText(text = stringResource(R.string.about_intro), size = 15.sp)
+        }
 
-        Card(
-            shape = RoundedCornerShape(24.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable {
-                    uriHandler.openUri("https://github.com/Aleks-Levet/better-nothing-music-visualizer")
-                },
+        ExpressiveCard(
+            modifier = Modifier.clickable { uriHandler.openUri("https://github.com/Aleks-Levet/better-nothing-music-visualizer") }
         ) {
             Row(
-                modifier = Modifier.padding(16.dp),
+                modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                Text(
-                    text = stringResource(R.string.github_repository),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.weight(1f)
-                )
-                Text(
-                    text = stringResource(R.string.view_source),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = Color(0xFFAAAAAA),
-                )
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f),
+                    modifier = Modifier.size(40.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(Icons.Default.Code, null, tint = MaterialTheme.colorScheme.secondary)
+                    }
+                }
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(stringResource(R.string.github_repository), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Text("Support development on GitHub", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                }
+                Icon(Icons.Default.ChevronRight, null, tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f))
             }
         }
 
-        Card(
-            shape = RoundedCornerShape(24.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Column(
-                modifier = Modifier.padding(20.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
+        ExpressiveCard {
+            CardHeader(title = "App Status")
+            
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
                     text = stringResource(R.string.version_info, BuildConfig.VERSION_NAME),
-                    style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.onBackground,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
                 )
                 Text(
                     text = stringResource(R.string.zones_config_version, configVersion),
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.primary,
                 )
-                BodyText(
-                    text = stringResource(R.string.media_projection_info),
-                    size = 14.sp,
-                    lineHeight = 20.sp,
-                )
+            }
 
-                Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
-                when (val status = appUpdateStatus) {
-                    is MainViewModel.AppUpdateStatus.Idle -> {
-                        Button(
-                            onClick = { viewModel.checkAppUpdate() },
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(12.dp)
-                        ) {
-                            Text(stringResource(R.string.check_for_app_updates))
-                        }
+            BodyText(
+                text = stringResource(R.string.media_projection_info),
+                size = 13.sp,
+                lineHeight = 18.sp,
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            when (val status = appUpdateStatus) {
+                is MainViewModel.AppUpdateStatus.Idle, is MainViewModel.AppUpdateStatus.Error -> {
+                    Button(
+                        onClick = { viewModel.checkAppUpdate() },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text(stringResource(R.string.check_for_app_updates))
                     }
-                    is MainViewModel.AppUpdateStatus.Checking -> {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.Center
-                        ) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(20.dp),
-                                strokeWidth = 2.dp
-                            )
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Text(
-                                text = stringResource(R.string.checking_for_updates),
-                                style = MaterialTheme.typography.bodyMedium
-                            )
-                        }
+                    if (status is MainViewModel.AppUpdateStatus.Error) {
+                        Text(status.message, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.error)
                     }
-                    is MainViewModel.AppUpdateStatus.Available -> {
-                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Text(
-                                text = stringResource(R.string.update_available, status.version),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = Color(0xFFFF4444),
-                                fontWeight = FontWeight.Bold
-                            )
-                            Button(
-                                onClick = { uriHandler.openUri(status.url) },
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(12.dp),
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = MaterialTheme.colorScheme.primary
-                                )
-                            ) {
-                                Text(stringResource(R.string.update_now))
-                            }
-                        }
+                }
+                is MainViewModel.AppUpdateStatus.Checking -> {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().height(48.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text(stringResource(R.string.checking_for_updates), style = MaterialTheme.typography.labelLarge)
                     }
-                    is MainViewModel.AppUpdateStatus.UpToDate -> {
+                }
+                is MainViewModel.AppUpdateStatus.Available -> {
+                    Button(
+                        onClick = { uriHandler.openUri(status.url) },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                    ) {
+                        Text(stringResource(R.string.update_now) + " (${status.version})")
+                    }
+                }
+                is MainViewModel.AppUpdateStatus.UpToDate -> {
+                    Surface(
+                        color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
                         Text(
                             text = stringResource(R.string.app_up_to_date),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = Color.Gray
+                            modifier = Modifier.padding(12.dp),
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.secondary,
+                            textAlign = TextAlign.Center
                         )
-                    }
-                    is MainViewModel.AppUpdateStatus.Error -> {
-                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Text(
-                                text = status.message,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.error
-                            )
-                            Button(
-                                onClick = { viewModel.checkAppUpdate() },
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(12.dp)
-                            ) {
-                                Text(stringResource(R.string.check_for_app_updates))
-                            }
-                        }
                     }
                 }
             }
         }
 
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            BodyText(text = stringResource(R.string.about_section_why), size = 20.sp)
-            BodyText(text = stringResource(R.string.about_why_1))
-            BodyText(text = stringResource(R.string.about_why_2))
-            BodyText(text = stringResource(R.string.about_why_3))
-            BodyText(text = stringResource(R.string.about_why_4))
+        SectionHeader(text = stringResource(R.string.about_section_why))
+        ExpressiveCard {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                BodyText(text = stringResource(R.string.about_why_1), size = 14.sp)
+                BodyText(text = stringResource(R.string.about_why_2), size = 14.sp)
+                BodyText(text = stringResource(R.string.about_why_3), size = 14.sp)
+                BodyText(text = stringResource(R.string.about_why_4), size = 14.sp)
+            }
         }
 
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            BodyText(text = stringResource(R.string.credits), size = 20.sp)
-            credits.forEach { credit ->
-                Card(
-                    shape = RoundedCornerShape(24.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .let { base ->
-                            if (credit.githubUsername != null) {
-                                base.clickable {
-                                    uriHandler.openUri("https://github.com/${credit.githubUsername}")
-                                }
-                            } else {
-                                base
-                            }
-                        },
+        SectionHeader(text = stringResource(R.string.credits))
+        credits.forEach { credit ->
+            ExpressiveCard(
+                modifier = Modifier.let { m ->
+                    if (credit.githubUsername != null) {
+                        m.clickable { uriHandler.openUri("https://github.com/${credit.githubUsername}") }
+                    } else m
+                }
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    Column(
-                        modifier = Modifier.padding(18.dp),
-                        verticalArrangement = Arrangement.spacedBy(6.dp),
-                    ) {
-                        Text(
-                            text = credit.name,
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.onBackground,
-                            fontWeight = FontWeight.SemiBold,
-                        )
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(credit.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                         if (credit.role.isNotBlank()) {
-                            BodyText(
-                                text = credit.role,
-                                size = 14.sp,
-                                lineHeight = 20.sp,
-                            )
+                            Text(credit.role, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f))
                         }
                         if (credit.githubUsername != null) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            ) {
-                                Text(
-                                    text = "@${credit.githubUsername}",
-                                    style = MaterialTheme.typography.labelLarge,
-                                    color = MaterialTheme.colorScheme.primary,
-                                )
-                                Text(
-                                    text = stringResource(R.string.open_github_profile),
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = Color(0xFFAAAAAA),
-                                )
-                            }
+                            Text("@${credit.githubUsername}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
                         }
+                    }
+                    if (credit.githubUsername != null) {
+                        Icon(Icons.Default.ChevronRight, null, tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f))
                     }
                 }
             }

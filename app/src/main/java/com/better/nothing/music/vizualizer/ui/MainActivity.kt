@@ -170,6 +170,17 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
         }
     }
 
+    private val _m3eEnabled = MutableStateFlow(true)
+    val m3eEnabled = _m3eEnabled.asStateFlow()
+
+    fun setM3EEnabled(enabled: Boolean) {
+        _m3eEnabled.value = enabled
+        viewModelScope.launch(Dispatchers.IO) {
+            ctx.getSharedPreferences("viz_prefs", Context.MODE_PRIVATE)
+                .edit { putBoolean("m3e_enabled", enabled) }
+        }
+    }
+
     // ── Tab ───────────────────────────────────────────────────────────────────
     private val _selectedTab = MutableStateFlow(Tab.Audio)
     val selectedTab = _selectedTab.asStateFlow()
@@ -1095,6 +1106,7 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
                 _notificationFlashEnabled.value = prefs.getBoolean("notification_flash_enabled", false)
                 _configVersion.value = AudioCaptureService.loadZonesConfigVersion(ctx)
                 _disableGlyphsWhenSilent.value = prefs.getBoolean("disable_glyphs_when_silent", false)
+                _m3eEnabled.value = prefs.getBoolean("m3e_enabled", true)
 
                 val theme = prefs.getString("selected_theme", "Default") ?: "Default"
                 _selectedTheme.value = when (theme) {
@@ -1344,8 +1356,9 @@ class MainActivity : ComponentActivity() {
         setContent {
             val selectedTheme by viewModel.selectedTheme.collectAsStateWithLifecycle()
             val selectedFont by viewModel.selectedFont.collectAsStateWithLifecycle()
+            val m3eEnabled by viewModel.m3eEnabled.collectAsStateWithLifecycle()
 
-            BetterVizTheme(themeName = selectedTheme, fontName = selectedFont) {
+            BetterVizTheme(themeName = selectedTheme, fontName = selectedFont, m3eEnabled = m3eEnabled) {
                 // Collect each StateFlow independently. Compose only recomposes the
                 // subtree(s) that actually read a value when it changes — collecting
                 // them as separate `by` delegates achieves this granularity.

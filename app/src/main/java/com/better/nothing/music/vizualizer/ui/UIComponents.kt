@@ -27,15 +27,9 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CornerBasedShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.GraphicEq
@@ -44,31 +38,7 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.Vibration
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.LocalContentColor
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarDefaults
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationBarItemDefaults
-import androidx.compose.material3.RangeSlider
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.Shapes
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
-import androidx.compose.material3.Slider
-import androidx.compose.material3.SliderDefaults
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.Text
-import androidx.compose.material3.Typography
-import androidx.compose.material3.dynamicDarkColorScheme
-import androidx.compose.material3.dynamicLightColorScheme
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
@@ -104,10 +74,98 @@ import androidx.compose.ui.unit.sp
 
 @Composable
 fun ScreenTitle(text: String) {
+    Column(modifier = Modifier.padding(bottom = 8.dp)) {
+        Text(
+            text  = text,
+            style = MaterialTheme.typography.displayLarge,
+            color = MaterialTheme.colorScheme.onBackground,
+            letterSpacing = (-1).sp
+        )
+        // Add a subtle accent line or dot pattern
+        Box(
+            modifier = Modifier
+                .padding(top = 4.dp)
+                .width(40.dp)
+                .height(4.dp)
+                .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(2.dp))
+        )
+    }
+}
+
+@Composable
+fun ExpressiveCard(
+    modifier: Modifier = Modifier,
+    shape: CornerBasedShape = MaterialTheme.shapes.large,
+    containerColor: Color = MaterialTheme.colorScheme.surface,
+    border: BorderStroke? = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.1f)),
+    content: @Composable ColumnScope.() -> Unit
+) {
+    val m3eEnabled = LocalM3EEnabled.current
+    Card(
+        modifier = modifier
+            .padding(vertical = LocalAppSpacing.current.between / 2),
+        shape = if (m3eEnabled) shape else RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = containerColor),
+        border = border,
+        elevation = CardDefaults.cardElevation(defaultElevation = if (m3eEnabled) 2.dp else 0.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .padding(if (m3eEnabled) LocalAppSpacing.current.inner else 12.dp)
+                .animateContentSize(
+                    animationSpec = if (m3eEnabled) {
+                        spring(
+                            dampingRatio = Spring.DampingRatioLowBouncy,
+                            stiffness = Spring.StiffnessLow
+                        )
+                    } else {
+                        spring(
+                            dampingRatio = Spring.DampingRatioNoBouncy,
+                            stiffness = Spring.StiffnessMedium
+                        )
+                    }
+                ),
+            content = content
+        )
+    }
+}
+
+@Composable
+fun ColumnScope.CardHeader(
+    title: String,
+    modifier: Modifier = Modifier,
+    trailingContent: @Composable (RowScope.() -> Unit)? = null
+) {
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.primary,
+            fontWeight = FontWeight.Bold
+        )
+        if (trailingContent != null) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                trailingContent()
+            }
+        }
+    }
+    Spacer(modifier = Modifier.height(LocalAppSpacing.current.between))
+}
+
+@Composable
+fun SectionHeader(
+    text: String,
+    modifier: Modifier = Modifier
+) {
     Text(
-        text  = text,
-        style = MaterialTheme.typography.displayLarge,
+        text = text,
+        style = MaterialTheme.typography.headlineMedium,
         color = MaterialTheme.colorScheme.onBackground,
+        modifier = modifier.padding(vertical = 8.dp)
     )
 }
 
@@ -140,34 +198,57 @@ fun NativeFilterChip(
     label: String,
     selected: Boolean,
     onClick: () -> Unit,
+    modifier: Modifier = Modifier,
     onLongClick: (() -> Unit)? = null,
     trailingIcon: @Composable (() -> Unit)? = null,
 ) {
     val haptics = LocalHapticFeedback.current
+    val backgroundColor by animateColorAsState(
+        targetValue = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+        animationSpec = tween(300),
+        label = "chip_bg"
+    )
+    val contentColor by animateColorAsState(
+        targetValue = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+        animationSpec = tween(300),
+        label = "chip_content"
+    )
+    val scale by animateFloatAsState(
+        targetValue = if (selected) 1.05f else 1f,
+        animationSpec = spring(Spring.DampingRatioMediumBouncy, Spring.StiffnessLow),
+        label = "chip_scale"
+    )
+
     Surface(
-        shape = RoundedCornerShape(8.dp),
-        color = if (selected) MaterialTheme.colorScheme.primary else Color.Transparent,
-        contentColor = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
-        border = if (selected) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-        modifier = Modifier.combinedClickable(
-            onClick = {
-                haptics.performHapticFeedback(HapticFeedbackType.SegmentTick)
-                onClick()
-            },
-            onLongClick = onLongClick?.let {
-                {
-                    haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                    it()
+        shape = RoundedCornerShape(12.dp),
+        color = backgroundColor,
+        contentColor = contentColor,
+        border = if (selected) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)),
+        modifier = modifier
+            .graphicsLayer(scaleX = scale, scaleY = scale)
+            .combinedClickable(
+                onClick = {
+                    haptics.performHapticFeedback(HapticFeedbackType.SegmentTick)
+                    onClick()
+                },
+                onLongClick = onLongClick?.let {
+                    {
+                        haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                        it()
+                    }
                 }
-            }
-        )
+            )
     ) {
         Row(
-            Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+            Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Text(text = label, style = MaterialTheme.typography.labelLarge)
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium
+            )
             trailingIcon?.invoke()
         }
     }
@@ -184,7 +265,7 @@ fun StartStopButton(
     val haptics           = LocalHapticFeedback.current
 
     val scale by animateFloatAsState(
-        targetValue   = if (isPressed) 0.9f else 1.1f,
+        targetValue   = if (isPressed) 0.92f else 1.0f,
         animationSpec = spring(
             dampingRatio = Spring.DampingRatioMediumBouncy,
             stiffness    = Spring.StiffnessLow
@@ -193,54 +274,68 @@ fun StartStopButton(
     )
 
     val containerColor by animateColorAsState(
-        targetValue   = if (running) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.secondary,
+        targetValue   = if (running) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
         animationSpec = tween(600, easing = EaseInOutCubic),
         label         = "containerColor"
     )
 
     val contentColor by animateColorAsState(
-        targetValue   = if (running) MaterialTheme.colorScheme.onError else MaterialTheme.colorScheme.onSecondary,
+        targetValue   = if (running) MaterialTheme.colorScheme.onError else MaterialTheme.colorScheme.onPrimary,
         animationSpec = tween(600, easing = EaseInOutCubic),
         label         = "contentColor"
     )
 
-    FloatingActionButton(
-        onClick           = {
-            haptics.performHapticFeedback(HapticFeedbackType.GestureThresholdActivate)
-            onClick()
-        },
-        interactionSource = interactionSource,
-        shape             = RoundedCornerShape(15.dp),
-        modifier          = modifier
+    val glowAlpha by animateFloatAsState(
+        targetValue = if (running) 0.4f else 0.0f,
+        animationSpec = tween(1000, easing = EaseInOutCubic),
+        label = "glowAlpha"
+    )
+
+    Box(
+        modifier = modifier
             .graphicsLayer(scaleX = scale, scaleY = scale)
-            .height(56.dp)
-            .padding(5.dp),
-        containerColor = containerColor,
-        contentColor   = contentColor,
+            .padding(8.dp),
+        contentAlignment = Alignment.Center
     ) {
-        Row(
-            modifier             = Modifier.padding(horizontal = 16.dp),
-            verticalAlignment    = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        FloatingActionButton(
+            onClick           = {
+                haptics.performHapticFeedback(HapticFeedbackType.GestureThresholdActivate)
+                onClick()
+            },
+            interactionSource = interactionSource,
+            shape             = RoundedCornerShape(18.dp),
+            modifier          = Modifier
+                .height(56.dp)
+                .widthIn(min = 160.dp),
+            containerColor = containerColor,
+            contentColor   = contentColor,
+            elevation = FloatingActionButtonDefaults.bottomAppBarFabElevation(0.dp)
         ) {
-            AnimatedContent(
-                targetState  = running,
-                transitionSpec = { (scaleIn() + fadeIn()).togetherWith(scaleOut() + fadeOut()) },
-                label        = "iconTransition"
-            ) { isRunning ->
-                Icon(
-                    imageVector     = if (isRunning) Icons.Filled.Stop else Icons.Filled.PlayArrow,
-                    contentDescription = null,
-                    modifier        = Modifier.size(24.dp)
+            Row(
+                modifier             = Modifier.padding(horizontal = 24.dp),
+                verticalAlignment    = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
+                AnimatedContent(
+                    targetState  = running,
+                    transitionSpec = { (scaleIn() + fadeIn()).togetherWith(scaleOut() + fadeOut()) },
+                    label        = "iconTransition"
+                ) { isRunning ->
+                    Icon(
+                        imageVector     = if (isRunning) Icons.Filled.Stop else Icons.Filled.PlayArrow,
+                        contentDescription = null,
+                        modifier        = Modifier.size(24.dp)
+                    )
+                }
+                Spacer(Modifier.width(12.dp))
+                Text(
+                    text  = stringResource(if (running) R.string.stop_visualizer else R.string.start_visualizer).uppercase(),
+                    style = MaterialTheme.typography.labelLarge.copy(
+                        fontWeight    = FontWeight.Bold,
+                        letterSpacing = 1.sp
+                    )
                 )
             }
-            Text(
-                text  = stringResource(if (running) R.string.stop_visualizer else R.string.start_visualizer),
-                style = MaterialTheme.typography.labelLarge.copy(
-                    fontWeight    = FontWeight.Medium,
-                    letterSpacing = 0.5.sp
-                )
-            )
         }
     }
 }
@@ -251,51 +346,65 @@ fun NativeBottomBar(
     visibleTabs: List<Tab>,
     onTabSelected: (Tab) -> Unit,
 ) {
-    NavigationBar(
-        modifier = Modifier
-            .heightIn(50.dp)
-            .animateContentSize(
-                animationSpec = spring(
-                    dampingRatio = Spring.DampingRatioMediumBouncy,
-                    stiffness = Spring.StiffnessLow
-                )
-            ),
-        containerColor = MaterialTheme.colorScheme.surface,
-        tonalElevation = 0.dp,
-        windowInsets = NavigationBarDefaults.windowInsets
+    Surface(
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f),
+        tonalElevation = 8.dp,
+        modifier = Modifier.fillMaxWidth()
     ) {
-        visibleTabs.forEach { tab ->
-            val isSelected = tab == selectedTab
-            NavigationBarItem(
-                selected = isSelected,
-                onClick = {
-                    if (!isSelected) {
-                        onTabSelected(tab)
-                    }
-                },
-                label = {
-                    Text(
-                        text = tab.label,
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
-                    )
-                },
-                icon = {
-                    when (tab) {
-                        Tab.Audio -> Icon(Icons.AutoMirrored.Filled.VolumeUp, tab.label)
-                        Tab.Glyphs -> Icon(painter = painterResource(R.drawable.ic_nav_glyphs), contentDescription = tab.label)
-                        Tab.Haptics -> Icon(Icons.Filled.Vibration, tab.label)
-                        Tab.Settings -> Icon(Icons.Filled.Settings, tab.label)
-                    }
-                },
-                colors = NavigationBarItemDefaults.colors(
-                    indicatorColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                    selectedIconColor = MaterialTheme.colorScheme.onBackground,
-                    selectedTextColor = MaterialTheme.colorScheme.onBackground,
-                    unselectedIconColor = MaterialTheme.colorScheme.onSurface,
-                    unselectedTextColor = MaterialTheme.colorScheme.onSurface
+        NavigationBar(
+            modifier = Modifier
+                .height(80.dp)
+                .padding(horizontal = 8.dp),
+            containerColor = Color.Transparent,
+            tonalElevation = 0.dp,
+            windowInsets = NavigationBarDefaults.windowInsets
+        ) {
+            visibleTabs.forEach { tab ->
+                val isSelected = tab == selectedTab
+                val iconScale by animateFloatAsState(
+                    targetValue = if (isSelected) 1.2f else 1.0f,
+                    animationSpec = spring(Spring.DampingRatioMediumBouncy, Spring.StiffnessLow),
+                    label = "nav_icon_scale"
                 )
-            )
+
+                NavigationBarItem(
+                    selected = isSelected,
+                    onClick = {
+                        if (!isSelected) {
+                            onTabSelected(tab)
+                        }
+                    },
+                    label = {
+                        Text(
+                            text = tab.label,
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    },
+                    icon = {
+                        Box(contentAlignment = Alignment.Center) {
+                            val iconModifier = Modifier
+                                .size(24.dp)
+                                .graphicsLayer(scaleX = iconScale, scaleY = iconScale)
+
+                            when (tab) {
+                                Tab.Audio -> Icon(Icons.AutoMirrored.Filled.VolumeUp, tab.label, modifier = iconModifier)
+                                Tab.Glyphs -> Icon(painter = painterResource(R.drawable.ic_nav_glyphs), contentDescription = tab.label, modifier = iconModifier)
+                                Tab.Haptics -> Icon(Icons.Filled.Vibration, tab.label, modifier = iconModifier)
+                                Tab.Settings -> Icon(Icons.Filled.Settings, tab.label, modifier = iconModifier)
+                            }
+                        }
+                    },
+                    colors = NavigationBarItemDefaults.colors(
+                        indicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
+                        selectedIconColor = MaterialTheme.colorScheme.primary,
+                        unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                        selectedTextColor = MaterialTheme.colorScheme.primary,
+                        unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                )
+            }
         }
     }
 }
@@ -364,7 +473,7 @@ fun ExpressiveSlider(
 
     // The "Expressive" factor (1.0 to 1.8)
     val animationFactor by animateFloatAsState(
-        targetValue = if (isActive) 2.1f else 1.0f,
+        targetValue = if (isActive && LocalM3EEnabled.current) 2.1f else 1.0f,
         animationSpec = spring(
             dampingRatio = Spring.DampingRatioMediumBouncy,
             stiffness = Spring.StiffnessLow
@@ -466,13 +575,13 @@ fun ExpressiveRangeSlider(
 
     // Animation and Haptic logic remains the same...
     val animationFactor by animateFloatAsState(
-        targetValue = if (isAnyActive) 2.1f else 1.0f,
+        targetValue = if (isAnyActive && LocalM3EEnabled.current) 2.1f else 1.0f,
         animationSpec = spring(Spring.DampingRatioMediumBouncy, Spring.StiffnessLow),
         label = "track_bloom"
     )
 
-    val startThumbFactor by animateFloatAsState(if (startActive || startDragged) 2.1f else 1.0f)
-    val endThumbFactor by animateFloatAsState(if (endActive || endDragged) 2.1f else 1.0f)
+    val startThumbFactor by animateFloatAsState(if ((startActive || startDragged) && LocalM3EEnabled.current) 2.1f else 1.0f)
+    val endThumbFactor by animateFloatAsState(if ((endActive || endDragged) && LocalM3EEnabled.current) 2.1f else 1.0f)
 
     val view = LocalView.current
     RangeSlider(
@@ -554,11 +663,13 @@ data class AppSpacing(
 )
 
 val LocalAppSpacing = staticCompositionLocalOf { AppSpacing() }
+val LocalM3EEnabled = staticCompositionLocalOf { true }
 
 @Composable
 fun BetterVizTheme(
     themeName: String = "Default",
     fontName: String = "NDot",
+    m3eEnabled: Boolean = true,
     content: @Composable () -> Unit
 ) {
     val useNType = fontName == "NType"
@@ -716,7 +827,10 @@ fun BetterVizTheme(
             fontWeight = FontWeight.Medium
         ),
     )
-    CompositionLocalProvider(LocalAppSpacing provides AppSpacing()) {
+    CompositionLocalProvider(
+        LocalAppSpacing provides AppSpacing(),
+        LocalM3EEnabled provides m3eEnabled
+    ) {
         MaterialTheme(
             colorScheme = colorScheme,
             shapes = Shapes(

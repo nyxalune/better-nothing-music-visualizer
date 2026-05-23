@@ -30,9 +30,11 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Public
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -136,46 +138,59 @@ internal fun GlyphsScreen(
                     onMaxBrightnessChanged = onMaxBrightnessChanged
                 )
 
-                Text(
-                    text = stringResource(R.string.gamma_control),
-                    style = MaterialTheme.typography.headlineMedium,
-                    color = MaterialTheme.colorScheme.onBackground,
-                )
-
-                Row(
+                ExpressiveCard(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(14.dp),
-                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    GammaPreviewCard(gammaValue = gammaValue)
-                    BodyText(
-                        text = stringResource(R.string.gamma_description),
-                        modifier = Modifier.weight(1f),
-                        size = 14.sp,
-                        lineHeight = 22.sp,
-                    )
+                    CardHeader(title = stringResource(R.string.gamma_control))
+                    
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(14.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        GammaPreviewCard(gammaValue = gammaValue)
+                        BodyText(
+                            text = stringResource(R.string.gamma_description),
+                            modifier = Modifier.weight(1f),
+                            size = 14.sp,
+                            lineHeight = 22.sp,
+                        )
+                    }
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    GammaCard(gammaValue = gammaValue, onGammaChanged = onGammaChanged)
                 }
 
-                GammaCard(gammaValue = gammaValue, onGammaChanged = onGammaChanged)
-
                 Row(
-                    modifier = Modifier.fillMaxWidth().padding(top = 20.dp),
+                    modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
                         text = stringResource(R.string.visualizer_presets),
-                        style = MaterialTheme.typography.headlineMedium,
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onBackground,
                     )
-                    TextButton(
+                    Button(
                         onClick = { viewModel.showCommunity() },
-                        colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.primary)
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                            contentColor = MaterialTheme.colorScheme.primary
+                        ),
+                        shape = RoundedCornerShape(12.dp),
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
                     ) {
-                        Icon(Icons.Default.Public, contentDescription = null)
+                        Icon(Icons.Default.Public, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(8.dp))
-                        Text("Community")
+                        Text("Explore Community", style = MaterialTheme.typography.labelLarge)
                     }
+                }
+
+                val favorites by viewModel.favoritePresets.collectAsStateWithLifecycle()
+                val sortedPresets = remember(presets, favorites) {
+                    presets.sortedByDescending { favorites.contains(it.key) }
                 }
 
                 FlowRow(
@@ -183,9 +198,7 @@ internal fun GlyphsScreen(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    val favorites by viewModel.favoritePresets.collectAsStateWithLifecycle()
-                    
-                    presets.forEach { preset ->
+                    sortedPresets.forEach { preset ->
                         key(preset.key) {
                             val isFavorite = favorites.contains(preset.key)
                             NativeFilterChip(
@@ -199,7 +212,7 @@ internal fun GlyphsScreen(
                                             Icons.Default.Star,
                                             contentDescription = null,
                                             modifier = Modifier.size(16.dp),
-                                            tint = if (preset.key == selectedPreset) Color.Black else MaterialTheme.colorScheme.primary
+                                            tint = if (preset.key == selectedPreset) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.primary
                                         )
                                     }
                                 }
@@ -214,9 +227,8 @@ internal fun GlyphsScreen(
                     )
                 }
 
-                Card(
-                    shape = RoundedCornerShape(28.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                ExpressiveCard(
+                    containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.6f),
                     modifier = Modifier
                         .fillMaxWidth()
                         .animateContentSize(
@@ -234,22 +246,29 @@ internal fun GlyphsScreen(
                         Text(
                             text = description ?: stringResource(R.string.glyph_no_config),
                             style = MaterialTheme.typography.bodyLarge.copy(lineHeight = 22.sp),
-                            color = Color(0xFFFFFFFF),
-                            modifier = Modifier
-                                .padding(20.dp)
-                                .fillMaxWidth(),
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.9f),
+                            modifier = Modifier.fillMaxWidth(),
                         )
                     }
                 }
 
                 if (isRunning) {
                     val vizState by viewModel.visualizerState.collectAsStateWithLifecycle()
+                    val previewHeight = when (selectedDevice) {
+                        com.better.nothing.music.vizualizer.model.DeviceProfile.DEVICE_NP2 -> 530.dp
+                        com.better.nothing.music.vizualizer.model.DeviceProfile.DEVICE_NP1,
+                        com.better.nothing.music.vizualizer.model.DeviceProfile.DEVICE_NP3,
+                        com.better.nothing.music.vizualizer.model.DeviceProfile.DEVICE_NP4A,
+                        com.better.nothing.music.vizualizer.model.DeviceProfile.DEVICE_NP4APRO -> 560.dp
+                        else -> 400.dp
+                    }
                     GlyphPreview(
                         vizState = vizState,
                         device = selectedDevice,
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .height(400.dp)
+                            .width(380.dp)
+                            .height(previewHeight)
+                            .align(Alignment.CenterHorizontally)
                     )
                 }
             }
@@ -288,45 +307,27 @@ fun BrightnessCard(
 
     val posValue = remember(maxBrightness, lastNonZero) { linearToPos(if (maxBrightness > 0) maxBrightness else lastNonZero) }
 
-    Card(
-        shape = RoundedCornerShape(28.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+    ExpressiveCard(
         modifier = Modifier.fillMaxWidth(),
     ) {
-        Spacer(modifier = Modifier.height(12.dp))
-        Column(
-            modifier = Modifier.padding(horizontal = 20.dp, vertical = 0.dp),
-            verticalArrangement = Arrangement.spacedBy(17.dp),
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Brightness:",
-                    color = MaterialTheme.colorScheme.primary,
-                    style = MaterialTheme.typography.titleMedium
-                )
-                Spacer(modifier = Modifier.weight(1f))
-                Spacer(modifier = Modifier.width(12.dp))
-                Text(
-                    text = "${if (maxBrightness > 0) maxBrightness else lastNonZero}/${MAX_BRIGHTNESS}" + (if (maxBrightness == 4095) " (default)" else ""),
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-            }
-            ExpressiveSlider(
-                value = posValue,
-                onValueChange = { newPos ->
-                    val newLinearValue = posToLinear(newPos)
-                    onLastNonZeroChanged(newLinearValue)
-                    if (enabled) onMaxBrightnessChanged(newLinearValue)
-                },
-                valueRange = 0f..1f,
-                modifier = Modifier.fillMaxWidth(),
+        CardHeader(title = "Brightness:") {
+            Text(
+                text = "${if (maxBrightness > 0) maxBrightness else lastNonZero}/${MAX_BRIGHTNESS}" + (if (maxBrightness == 4095) " (default)" else ""),
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
+                style = MaterialTheme.typography.bodyMedium,
             )
-            Spacer(modifier = Modifier.height(6.dp))
         }
+        
+        ExpressiveSlider(
+            value = posValue,
+            onValueChange = { newPos ->
+                val newLinearValue = posToLinear(newPos)
+                onLastNonZeroChanged(newLinearValue)
+                if (enabled) onMaxBrightnessChanged(newLinearValue)
+            },
+            valueRange = 0f..1f,
+            modifier = Modifier.fillMaxWidth(),
+        )
     }
 }
 
@@ -336,41 +337,23 @@ fun GammaCard(
     gammaValue: Float,
     onGammaChanged: (Float) -> Unit,
 ) {
-    Card(
-        shape    = RoundedCornerShape(28.dp),
-        colors   = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+    ExpressiveCard(
         modifier = Modifier.fillMaxWidth(),
     ) {
-        Spacer(modifier = Modifier.height(12.dp))
-        Column(
-            modifier = Modifier.padding(horizontal = 20.dp, vertical = 0.dp),
-            verticalArrangement = Arrangement.spacedBy(17.dp),
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = stringResource(R.string.light_gamma),
-                    color = MaterialTheme.colorScheme.primary,
-                    style = MaterialTheme.typography.titleMedium
-                )
-                Spacer(modifier = Modifier.weight(1f))
-                Spacer(modifier = Modifier.width(12.dp))
-                Text(
-                    text = String.format("%.1f", gammaValue),
-                    color = MaterialTheme.colorScheme.primary,
-                    style = MaterialTheme.typography.titleMedium
-                )
-            }
-            ExpressiveSlider(
-                value = gammaValue,
-                onValueChange = onGammaChanged,
-                valueRange = 0.4f..3.5f,
-                modifier = Modifier.fillMaxWidth(),
+        CardHeader(title = stringResource(R.string.light_gamma)) {
+            Text(
+                text = String.format("%.1f", gammaValue),
+                color = MaterialTheme.colorScheme.primary,
+                style = MaterialTheme.typography.titleMedium
             )
-            Spacer(modifier = Modifier.height(6.dp))
         }
+        
+        ExpressiveSlider(
+            value = gammaValue,
+            onValueChange = onGammaChanged,
+            valueRange = 0.4f..3.5f,
+            modifier = Modifier.fillMaxWidth(),
+        )
     }
 }
 
