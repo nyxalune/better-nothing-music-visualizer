@@ -17,6 +17,7 @@ import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
@@ -399,6 +400,12 @@ private fun drawEditorGlyphs(scope: DrawScope, device: Int, selectedIndices: Lis
 
     when (device) {
         DeviceProfile.DEVICE_NP1 -> {
+            // Camera Plate
+            paths["p12_cam_plate"]?.let {
+                scope.drawPath(it, Color.White.copy(alpha = 0.05f))
+                scope.drawPath(it, Color.White.copy(alpha = 0.15f), style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1f))
+            }
+
             paths["p1_cam"]?.let { scope.drawPath(it, getColor(0), alpha = getAlpha(0)) }
             paths["p1_slash"]?.let { scope.drawPath(it, getColor(1), alpha = getAlpha(1)) }
             paths["p1_ring_bl"]?.let { scope.drawPath(it, getColor(2), alpha = getAlpha(2)) }
@@ -409,9 +416,15 @@ private fun drawEditorGlyphs(scope: DrawScope, device: Int, selectedIndices: Lis
             paths["p1_battery"]?.let { drawPathSegmentedVertical(scope, it, (7..14).toList(), selectedIndices, selectedColor, normalColor, baseAlpha) }
         }
         DeviceProfile.DEVICE_NP2 -> {
-            paths["p2_0"]?.let { scope.drawPath(it, getColor(0), alpha = getAlpha(0)) }
-            paths["p2_1"]?.let { scope.drawPath(it, getColor(1), alpha = getAlpha(1)) }
-            paths["p2_2"]?.let { scope.drawPath(it, getColor(2), alpha = getAlpha(2)) }
+            scope.withTransform({
+                translate(3f, -6f)
+            }) {
+                // Camera Plate
+                paths["p2_cam_plate"]?.let {
+                    drawPath(it, Color.White.copy(alpha = 0.05f))
+                    drawPath(it, Color.White.copy(alpha = 0.15f), style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1f))
+                }
+            }
 
             // NP2 Progress glyph (3-18) is a single sequence of 16 segments in its arc
             paths["p2_ring"]?.let { drawPathSegmentedVertical(scope, it, (3..18).toList(), selectedIndices, selectedColor, normalColor, baseAlpha) }
@@ -436,6 +449,11 @@ private fun drawEditorGlyphs(scope: DrawScope, device: Int, selectedIndices: Lis
                 translate(-2f, 7f)
                 scale(1.03f, 1.03f, pivot = Offset.Zero)
             }) {
+                // Camera Plate
+                paths["p3a_cam_plate"]?.let {
+                    drawPath(it, Color.White.copy(alpha = 0.06f))
+                }
+
                 paths["p3a_large"]?.let { drawPathSegmentedVertical(this, it, (0..19).toList(), selectedIndices, selectedColor, normalColor, baseAlpha) }
                 paths["p3a_medium"]?.let { drawPathSegmentedVertical(this, it, (20..30).toList(), selectedIndices, selectedColor, normalColor, baseAlpha) }
                 paths["p3a_small"]?.let { drawPathSegmentedVertical(this, it, (31..35).toList(), selectedIndices, selectedColor, normalColor, baseAlpha, vertical = false) }
@@ -447,6 +465,14 @@ private fun drawEditorGlyphs(scope: DrawScope, device: Int, selectedIndices: Lis
         }
         DeviceProfile.DEVICE_NP4APRO, DeviceProfile.DEVICE_NP3 -> {
             val isPro = device == DeviceProfile.DEVICE_NP4APRO
+
+            if (isPro) {
+                paths["p4ap_island"]?.let {
+                    scope.drawPath(it, Color.White.copy(alpha = 0.05f))
+                    scope.drawPath(it, Color.White.copy(alpha = 0.15f), style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1f))
+                }
+            }
+
             val matrixW = if (isPro) 13 else 25
             val matrixH = if (isPro) 13 else 25
             val pixelSize = if (isPro) 8f else 4.5f
@@ -455,8 +481,12 @@ private fun drawEditorGlyphs(scope: DrawScope, device: Int, selectedIndices: Lis
             val gridWidth = matrixW * pixelSize + (matrixW - 1) * pixelGap
             val gridHeight = matrixH * pixelSize + (matrixH - 1) * pixelGap
 
-            val startX = (182f - gridWidth) / 2
-            val startY = (382f - gridHeight) / 2
+            // Adjust these to move the matrix
+            val matrixCenterX = if (isPro) 135f else 91f
+            val matrixCenterY = if (isPro) 47f else 191f
+
+            val startX = matrixCenterX - gridWidth / 2f
+            val startY = matrixCenterY - gridHeight / 2f
 
             for (idx in 0 until (matrixW * matrixH)) {
                 val row = idx / matrixW
@@ -552,6 +582,35 @@ private fun getGlyphPaths(parser: PathParser): Map<String, Path> {
         put("p1_dot", parser.parsePathString("M90.991,371C92.68,371 94.041,369.63 94.041,367.95L94.041,366.115C94.041,364.427 92.671,363.065 90.991,363.065C89.311,363.065 87.941,364.435 87.941,366.115L87.941,367.95C87.941,369.63 89.311,371 90.991,371Z").toPath())
         put("p1_battery", parser.parsePathString("M90.991,356.73C92.68,356.73 94.041,355.36 94.041,353.68L94.041,311.801C94.041,310.112 92.671,308.751 90.991,308.751C89.311,308.751 87.941,310.121 87.941,311.801L87.941,353.68C87.941,355.368 89.311,356.73 90.991,356.73Z").toPath())
         
+        // --- Phone (1) & (2) Camera Plate ---
+        val p12CamRadius = 28f
+        val p12CamX = 6f
+        val p12CamY = 7f
+        put("p12_cam_plate", Path().apply {
+            addRoundRect(
+                androidx.compose.ui.geometry.RoundRect(
+                    left = p12CamX,
+                    top = p12CamY,
+                    right = p12CamX + 56f,
+                    bottom = p12CamY + 86f,
+                    cornerRadius = CornerRadius(p12CamRadius)
+                )
+            )
+        })
+
+        // --- Phone (2) Camera Plate (Taller) ---
+        put("p2_cam_plate", Path().apply {
+            addRoundRect(
+                androidx.compose.ui.geometry.RoundRect(
+                    left = p12CamX,
+                    top = p12CamY,
+                    right = p12CamX + 56f,
+                    bottom = p12CamY + 90f,
+                    cornerRadius = CornerRadius(p12CamRadius)
+                )
+            )
+        })
+
         // --- Phone (2) ---
         put("p2_0", parser.parsePathString("M17.883,51.449l-0,-25.117c-0,-9.107 7.233,-16.58 16.353,-16.892c9.119,-0.311 16.836,6.662 17.46,15.751c0.042,0.64 0.578,1.141 1.219,1.141l3.686,0c0.337,0 0.657,-0.139 0.891,-0.381c0.234,-0.241 0.354,-0.569 0.337,-0.906c-0.71,-12.451 -11.195,-22.077 -23.671,-21.73c-12.477,0.354 -22.41,10.549 -22.41,23.017l0,25.117c0,0.674 0.546,1.226 1.229,1.226l3.677,0c0.675,0 1.229,-0.544 1.229,-1.226Z").toPath())
         put("p2_1", parser.parsePathString("M51.975,48.161c-0,-0.674 0.544,-1.226 1.228,-1.226l3.677,-0c0.675,-0 1.229,0.544 1.229,1.226l0,17.817c0,8.657 -4.863,16.589 -12.589,20.511c-7.726,3.931 -17.01,3.197 -24.018,-1.901c-0.277,-0.198 -0.449,-0.501 -0.493,-0.829c-0.043,-0.329 0.052,-0.674 0.268,-0.933l2.336,-2.851c0.407,-0.502 1.134,-0.597 1.661,-0.225c5.166,3.663 11.94,4.139 17.564,1.235c5.624,-2.903 9.154,-8.692 9.154,-15.016l-0,-17.816l-0.017,0.008Z").toPath())
@@ -577,6 +636,35 @@ private fun getGlyphPaths(parser: PathParser): Map<String, Path> {
 
         put("p4a_bar", parser.parsePathString("M40.5,300.5L142.5,300.5").toPath())
         put("p4a_dot", parser.parsePathString("M91,330.5A5,5 0 1,1 90.99,330.5Z").toPath())
+
+
+        // --- Phone (4a) Pro Camera Bump ---
+        val p4apCamRadius = 28f
+        put("p4ap_island", Path().apply {
+            addRoundRect(
+                androidx.compose.ui.geometry.RoundRect(
+                    left = 5.5f,
+                    top = 5f,
+                    right = 176.5f,
+                    bottom = 135f,
+                    cornerRadius = CornerRadius(p4apCamRadius)
+                )
+            )
+        })
+
+        // --- Phone (3a) Camera Plate ---
+        val p3aCamRadius = 18f
+        put("p3a_cam_plate", Path().apply {
+            addRoundRect(
+                androidx.compose.ui.geometry.RoundRect(
+                    left = 78f,
+                    top = 57f,
+                    right = 122f,
+                    bottom = 93f,
+                    cornerRadius = CornerRadius(p3aCamRadius)
+                )
+            )
+        })
     }
 }
 

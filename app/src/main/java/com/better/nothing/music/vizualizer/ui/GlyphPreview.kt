@@ -129,25 +129,65 @@ fun GlyphPreviewContent(
             put("p4a_bar", parser.parsePathString("M40.5,300.5L142.5,300.5").toPath())
             put("p4a_dot", parser.parsePathString("M91,330.5A5,5 0 1,1 90.99,330.5Z").toPath())
 
-            // --- Phone (4a) Pro Camera Bump ---
-            put("p4ap_island", parser.parsePathString("M32,20h116a32,32 0 0 1 32,32v86a32,32 0 0 1 -32,32h-116a32,32 0 0 1 -32,-32v-86a32,32 0 0 1 32,-32z").toPath())
-            // Left Cluster - Vertical Stack
-            put("p4ap_cam_top_outer", parser.parsePathString("M50,55m-20,0a20,20 0 1,1 40,0a20,20 0 1,1 -40,0").toPath())
-            put("p4ap_cam_top_inner", parser.parsePathString("M50,55m-12,0a12,12 0 1,1 24,0a12,12 0 1,1 -24,0").toPath())
-            
-            // Lower Camera Pill (Horizontal)
-            put("p4ap_cam_pill_outer", parser.parsePathString("M32,100h40a20,20 0 0 1 0,40h-40a20,20 0 0 1 0,-40z").toPath())
-            put("p4ap_cam_bot_l_inner", parser.parsePathString("M32,120m-12,0a12,12 0 1,1 24,0a12,12 0 1,1 -24,0").toPath())
-            put("p4ap_cam_bot_r_inner", parser.parsePathString("M72,120m-12,0a12,12 0 1,1 24,0a12,12 0 1,1 -24,0").toPath())
-            
-            // Accent - Moved to far lower right
-            put("p4ap_accent", parser.parsePathString("M160,145h8v8h-8z").toPath())
-            // Internal Routing Channels
-            put("p4ap_detail_lines", parser.parsePathString("M35,30h110M35,35h110M35,140h110M100,30v120").toPath())
+            // --- Phone (1) & (2) Camera Plate ---
+            val p12CamRadius = 28f
+            val p12CamX = 6f
+            val p12CamY = 7f
+            put("p12_cam_plate", Path().apply {
+                addRoundRect(
+                    androidx.compose.ui.geometry.RoundRect(
+                        left = p12CamX,
+                        top = p12CamY,
+                        right = p12CamX + 52f,
+                        bottom = p12CamY + 86f,
+                        cornerRadius = CornerRadius(p12CamRadius)
+                    )
+                )
+            })
 
-            // --- Phone (3a) Camera Patterns ---
+            // --- Phone (2) Camera Plate (Taller) ---
+            put("p2_cam_plate", Path().apply {
+                addRoundRect(
+                    androidx.compose.ui.geometry.RoundRect(
+                        left = p12CamX,
+                        top = p12CamY,
+                        right = p12CamX + 52f,
+                        bottom = p12CamY + 90f,
+                        cornerRadius = CornerRadius(p12CamRadius)
+                    )
+                )
+            })
+
+            // --- Phone (4a) Pro Camera Bump ---
+            val p4apCamRadius = 28f
+            put("p4ap_island", Path().apply {
+                addRoundRect(
+                    androidx.compose.ui.geometry.RoundRect(
+                        left = 5.5f,
+                        top = 5f,
+                        right = 176.5f,
+                        bottom = 135f,
+                        cornerRadius = CornerRadius(p4apCamRadius)
+                    )
+                )
+            })
+            
+            // --- Phone (3a) Camera Plate ---
+            val p3aCamRadius = 18f
+            put("p3a_cam_plate", Path().apply {
+                addRoundRect(
+                    androidx.compose.ui.geometry.RoundRect(
+                        left = 78f,
+                        top = 57f,
+                        right = 122f, // 78 + 26 + 18
+                        bottom = 93f, // 57 + 36
+                        cornerRadius = CornerRadius(p3aCamRadius)
+                    )
+                )
+            })
+
+            // --- Phone (3a) Other Details (Hidden in Preview) ---
             put("p3a_cam_ring", parser.parsePathString("M91,21c29.8,0 54,24.2 54,54s-24.2,54 -54,54s-54,-24.2 -54,-54s24.2,-54 54,-54zm0,1c-29.3,0 -53,23.7 -53,53s23.7,53 53,53s53,-23.7 53,-53s-23.7,-53 -53,-53z").toPath())
-            put("p3a_cam_plate", parser.parsePathString("M78,57h26a18,18 0 0 1 0,36h-26a18,18 0 0 1 0,-36z").toPath())
             put("p3a_cam_lens_l", parser.parsePathString("M78,67a8,8 0 1,0 0,16a8,8 0 1,0 0,-16z").toPath())
             put("p3a_cam_lens_r", parser.parsePathString("M104,67a8,8 0 1,0 0,16a8,8 0 1,0 0,-16z").toPath())
             put("p3a_cam_flash", parser.parsePathString("M118,45a3,3 0 1,0 0,6a3,3 0 1,0 0,-6z").toPath())
@@ -227,6 +267,12 @@ fun GlyphPreviewContent(
 
                 when (device) {
                     DeviceProfile.DEVICE_NP1 -> {
+                        // Camera Plate
+                        paths["p12_cam_plate"]?.let {
+                            drawPath(it, Color.White.copy(alpha = 0.05f))
+                            drawPath(it, Color.White.copy(alpha = 0.15f), style = Stroke(width = 1f))
+                        }
+
                         if (vizState.size <= 5) {
                             paths["p1_cam"]?.let { drawSmoothPath(it, getA(0)) }
                             paths["p1_slash"]?.let { drawSmoothPath(it, getA(1)) }
@@ -251,6 +297,16 @@ fun GlyphPreviewContent(
                         withTransform({
                             translate(0f, 6f) // Refined shift down
                         }) {
+                            withTransform({
+                                translate(3f, -6f)
+                            }) {
+                                // Camera Plate
+                                paths["p2_cam_plate"]?.let {
+                                    drawPath(it, Color.White.copy(alpha = 0.05f))
+                                    drawPath(it, Color.White.copy(alpha = 0.15f), style = Stroke(width = 1f))
+                                }
+                            }
+
                             paths["p2_0"]?.let { drawSmoothPath(it, getA(0)) }
                             paths["p2_1"]?.let { drawSmoothPath(it, getA(1)) }
                             paths["p2_2"]?.let { drawSmoothPath(it, getA(2)) }
@@ -284,14 +340,9 @@ fun GlyphPreviewContent(
                             translate(-2f, 7f)
                             scale(1.03f, 1.03f, pivot = Offset.Zero)
                         }) {
-                            // Camera patterns
+                            // Camera plate (the "gray card")
                             val camAlpha = 0.1f
-                            paths["p3a_cam_ring"]?.let { drawPath(it, Color.White.copy(alpha = camAlpha)) }
                             paths["p3a_cam_plate"]?.let { drawPath(it, Color.White.copy(alpha = camAlpha * 0.6f)) }
-                            paths["p3a_cam_lens_l"]?.let { drawPath(it, Color.Black) }
-                            paths["p3a_cam_lens_r"]?.let { drawPath(it, Color.Black) }
-                            paths["p3a_cam_flash"]?.let { drawPath(it, Color.White.copy(alpha = camAlpha)) }
-                            paths["p3a_cam_tracks"]?.let { drawPath(it, Color.White.copy(alpha = camAlpha * 0.4f), style = Stroke(width = 0.5f)) }
 
                             paths["p3a_large"]?.let {
                                 drawPathAddressable(this, it, color, (0..19).toList(), vizState, baseOpacity, scale, glowPaint)
@@ -316,6 +367,11 @@ fun GlyphPreviewContent(
 
                     DeviceProfile.DEVICE_NP4APRO, DeviceProfile.DEVICE_NP3 -> {
                         val isPro = device == DeviceProfile.DEVICE_NP4APRO
+                        
+                        // --- Matrix Position Settings ---
+                        val matrixCenterX = if (isPro) 135f else 135f // X-center for Phone (4a) Pro vs Phone (3)
+                        val matrixCenterY = if (isPro) 47f else 62f   // Y-center for Phone (4a) Pro vs Phone (3)
+                        
                         val matrixW = if (isPro) 13 else 25
                         val matrixH = if (isPro) 13 else 25
                         val pixelSize = if (isPro) 4f else 2.25f
@@ -324,40 +380,15 @@ fun GlyphPreviewContent(
                         val gridWidth = matrixW * pixelSize + (matrixW - 1) * pixelGap
                         val gridHeight = matrixH * pixelSize + (matrixH - 1) * pixelGap
 
-                        // Matrix re-balanced and moved UP
-                        val startX = 135f - gridWidth / 2f
-                        val startY = 62f - gridHeight / 2f
+                        val startX = matrixCenterX - gridWidth / 2f
+                        val startY = matrixCenterY - gridHeight / 2f
 
                         if (isPro) {
-                            val camAlpha = 0.15f
                             // Island
                             paths["p4ap_island"]?.let { 
                                 drawPath(it, Color.White.copy(alpha = 0.05f))
                                 drawPath(it, Color.White.copy(alpha = 0.15f), style = Stroke(width = 1f)) 
                             }
-                            
-                            // Internal Routing Channels
-                            paths["p4ap_detail_lines"]?.let { 
-                                drawPath(it, Color.White.copy(alpha = 0.05f), style = Stroke(width = 0.5f)) 
-                            }
-
-                            // Camera Top
-                            paths["p4ap_cam_top_outer"]?.let { 
-                                drawPath(it, Color(0xFF1A1A1A))
-                                drawPath(it, Color.White.copy(alpha = camAlpha), style = Stroke(width = 1f))
-                            }
-                            paths["p4ap_cam_top_inner"]?.let { drawPath(it, Color.Black) }
-
-                            // Lower Camera Pill
-                            paths["p4ap_cam_pill_outer"]?.let { 
-                                drawPath(it, Color(0xFF1A1A1A))
-                                drawPath(it, Color.White.copy(alpha = camAlpha), style = Stroke(width = 1f))
-                            }
-                            paths["p4ap_cam_bot_l_inner"]?.let { drawPath(it, Color.Black) }
-                            paths["p4ap_cam_bot_r_inner"]?.let { drawPath(it, Color.Black) }
-
-                            // Accent
-                            paths["p4ap_accent"]?.let { drawPath(it, Color.Red.copy(alpha = 0.8f)) }
                         }
 
                         val centerX = startX + gridWidth / 2f
