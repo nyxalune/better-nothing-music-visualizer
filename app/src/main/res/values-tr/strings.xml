@@ -51,6 +51,21 @@
     <string name="haptics_gamma_label">Gama (Tepki): %.1f</string>
     <string name="haptics_speed_label">Hız: %.1f</string>
     <string name="haptics_richtap_freq_label">RichTap Frekansı: %d</string>
+
+    <!-- Flashlight Screen -->
+    <string name="flashlight_title">Fener</string>
+    <string name="flashlight_header">Fener görselleştirici</string>
+    <string name="flashlight_sync_title">Fener Senkronizasyonu</string>
+    <string name="flashlight_frequency_label">Frekans: %1$d - %2$d Hz</string>
+    <string name="flashlight_frequency_desc">Fenerin tepki vereceği Hz aralığı. Bas için düşük, trampet/vokal için yüksek.</string>
+    <string name="flashlight_sensitivity_label">Hassasiyet Eşiği: %.2f</string>
+    <string name="flashlight_sensitivity_desc">Daha yüksek eşik, arka plan gürültüsünü/davulları filtreler.</string>
+    <string name="flashlight_smoothing_label">Yumuşatma: %.2f</string>
+    <string name="flashlight_smoothing_desc">Daha yüksek yumuşatma, ışığın titremek yerine yumuşakça yanıp sönmesini sağlar.</string>
+    <string name="flashlight_gamma_label">Yoğunluk Gaması: %.1f</string>
+    <string name="flashlight_multiplier_label">Genlik Çarpanı: %.1fx</string>
+    <string name="flashlight_monitor_label">Fener Monitörü</string>
+
     <string name="experimental_features">Deneysel Özellikler</string>
     <string name="developer_mode">Geliştirici Modu</string>
     <string name="developer_mode_description">Gelişmiş test ve cihaz taklidi (spoofing) özelliklerini etkinleştirin.</string>
