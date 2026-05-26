@@ -1,8 +1,11 @@
 package com.better.nothing.music.vizualizer.ui
 
 import android.annotation.SuppressLint
+import android.widget.Toast
 import com.better.nothing.music.vizualizer.R
 import com.better.nothing.music.vizualizer.service.AudioCaptureService
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.animateContentSize
@@ -32,11 +35,15 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CloudDownload
+import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material.icons.filled.Public
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Sync
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
@@ -269,6 +276,106 @@ internal fun GlyphsScreen(
                             .width(380.dp)
                             .height(previewHeight)
                             .align(Alignment.CenterHorizontally)
+                    )
+                }
+
+                // ── Zones Configuration ──────────────────────────────────────────────
+                val context = LocalContext.current
+                val configStatus by viewModel.configUpdateStatus.collectAsStateWithLifecycle()
+                val configVersion by viewModel.configVersion.collectAsStateWithLifecycle()
+                val remoteVersion by viewModel.remoteConfigVersion.collectAsStateWithLifecycle()
+
+                LaunchedEffect(Unit) {
+                    viewModel.checkRemoteConfigVersion()
+                }
+
+                LaunchedEffect(configStatus) {
+                    when (val status = configStatus) {
+                        is MainViewModel.ConfigUpdateStatus.Success -> {
+                            Toast.makeText(context, status.message, Toast.LENGTH_SHORT).show()
+                            viewModel.resetConfigUpdateStatus()
+                        }
+                        is MainViewModel.ConfigUpdateStatus.Error -> {
+                            Toast.makeText(context, status.message, Toast.LENGTH_LONG).show()
+                            viewModel.resetConfigUpdateStatus()
+                        }
+                        else -> {}
+                    }
+                }
+
+                ExpressiveCard {
+                    CardHeader(title = "Visualizer Configuration")
+
+                    BodyText(
+                        text = "The zones.config file defines how frequencies map to Glyph LEDs. Updating from GitHub ensures support for new devices and presets.",
+                        size = 13.sp
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Surface(
+                        shape = RoundedCornerShape(16.dp),
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(12.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column {
+                                Text(
+                                    text = "Version: $configVersion",
+                                    style = MaterialTheme.typography.labelLarge,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                                if (remoteVersion != null && remoteVersion != "Unknown") {
+                                    val isUpdateAvailable = remoteVersion != configVersion
+                                    Text(
+                                        text = if (isUpdateAvailable) "Latest: $remoteVersion" else "Up to date",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = if (isUpdateAvailable) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.secondary
+                                    )
+                                }
+                            }
+
+                            if (remoteVersion != null && remoteVersion != "Unknown" && remoteVersion != configVersion) {
+                                Surface(
+                                    color = MaterialTheme.colorScheme.error.copy(alpha = 0.1f),
+                                    shape = RoundedCornerShape(8.dp)
+                                ) {
+                                    Text(
+                                        text = "UPDATE AVAILABLE",
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.error,
+                                        fontWeight = FontWeight.ExtraBold
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    val filePickerLauncher = rememberLauncherForActivityResult(
+                        ActivityResultContracts.GetContent()
+                    ) { uri ->
+                        uri?.let { viewModel.importZonesConfig(uri) }
+                    }
+
+                    val isUpdateAvailable = remoteVersion != null && remoteVersion != "Unknown" && remoteVersion != configVersion
+
+                    ExpressiveSplitButton(
+                        primaryText = if (isUpdateAvailable) "Update Now" else "Check GitHub",
+                        primaryIcon = if (configStatus is MainViewModel.ConfigUpdateStatus.Updating) Icons.Default.Sync else Icons.Default.CloudDownload,
+                        onPrimaryClick = { viewModel.updateZonesConfig() },
+                        secondaryText = "Local",
+                        secondaryIcon = Icons.Default.FolderOpen,
+                        onSecondaryClick = { filePickerLauncher.launch("*/*") },
+                        enabled = configStatus is MainViewModel.ConfigUpdateStatus.Idle,
+                        modifier = Modifier.fillMaxWidth()
                     )
                 }
             }
