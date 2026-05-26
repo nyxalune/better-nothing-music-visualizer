@@ -40,7 +40,6 @@ About screen:
 - [ ] Hide glyph tab if device is not a Nothing Phone
 
 ## Done
-- [x] Move the config update card in the glyph tab
 - [x] Ask Oliver if i can replace these checkmarks by some easier bullet points?
 - [x] Add flashlight visualizer (same UI as Haptics, add it at the bottom of the haptics screen for now)
 - [x] Collapse experimental features in settings tab for lighter UI

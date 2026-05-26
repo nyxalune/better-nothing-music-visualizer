@@ -12,6 +12,10 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
@@ -41,6 +45,7 @@ internal fun AboutScreen(
     val uriHandler = LocalUriHandler.current
     val configVersion by viewModel.configVersion.collectAsStateWithLifecycle()
     val appUpdateStatus by viewModel.appUpdateStatus.collectAsStateWithLifecycle()
+    var depressedClickCount by remember { mutableIntStateOf(0) }
 
     LaunchedEffect(Unit) {
         if (appUpdateStatus is MainViewModel.AppUpdateStatus.Idle) {
@@ -90,7 +95,15 @@ internal fun AboutScreen(
                 Surface(
                     shape = RoundedCornerShape(16.dp),
                     color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                    modifier = Modifier.size(56.dp)
+                    modifier = Modifier
+                        .size(56.dp)
+                        .clickable {
+                            depressedClickCount++
+                            if (depressedClickCount >= 10) {
+                                viewModel.onDevDepressed()
+                                depressedClickCount = 0
+                            }
+                        }
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(

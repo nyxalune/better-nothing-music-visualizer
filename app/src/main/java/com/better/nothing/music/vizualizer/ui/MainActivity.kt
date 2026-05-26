@@ -75,6 +75,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -87,10 +88,17 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
 import androidx.lifecycle.AndroidViewModel
@@ -136,6 +144,13 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
     private val communityRepository = CommunityRepository()
     private val analytics = AnalyticsHelper(application)
 
+    private val _thanksMessage = MutableStateFlow<String?>(null)
+    val thanksMessage = _thanksMessage.asStateFlow()
+
+    fun dismissThanksMessage() {
+        _thanksMessage.value = null
+    }
+
     private val _favoritePresets = MutableStateFlow<Set<String>>(emptySet())
     val favoritePresets = _favoritePresets.asStateFlow()
 
@@ -148,6 +163,22 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
         
         val savedSource = prefs.getString("capture_source", AudioCaptureService.CaptureSource.INTERNAL.name)
         _captureSource.value = AudioCaptureService.CaptureSource.valueOf(savedSource ?: AudioCaptureService.CaptureSource.INTERNAL.name)
+
+        // Track app openings and show thanks messages
+        val openCount = prefs.getInt("app_open_count", 0) + 1
+        prefs.edit().putInt("app_open_count", openCount).apply()
+
+        viewModelScope.launch {
+            if (BuildConfig.DEBUG) {
+                _thanksMessage.value = "DEBUG MODE: thanks for everything!\n\n(Showing this every open because this is a debug build)"
+            } else {
+                if (openCount == 1) {
+                    _thanksMessage.value = "thanks for downloading\n\nthanks for installing"
+                } else if (openCount == 2) {
+                    _thanksMessage.value = "thanks for using the app"
+                }
+            }
+        }
     }
 
     fun toggleFavorite(presetKey: String) {
@@ -674,14 +705,24 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
 
     fun sharePresetToCommunity(name: String, author: String, zones: List<AudioProcessor.ZoneSpec>) {
         viewModelScope.launch {
-            val preset = CommunityPreset(
-                name = name,
-                author = author,
-                phoneModel = phoneModelForDevice(selectedDevice.value),
-                zones = zones.map { ZoneData.fromZoneSpec(it) }
-            )
-            communityRepository.uploadPreset(preset)
-            analytics.logPresetShared(name)
+            try {
+                val preset = CommunityPreset(
+                    name = name,
+                    author = author,
+                    phoneModel = phoneModelForDevice(selectedDevice.value),
+                    zones = zones.map { ZoneData.fromZoneSpec(it) }
+                )
+                communityRepository.uploadPreset(preset)
+                analytics.logPresetShared(name)
+                withContext(Dispatchers.Main) {
+                    _thanksMessage.value = "thanks for participating to the community"
+                }
+            } catch (e: Exception) {
+                Log.e("MainViewModel", "Failed to share preset", e)
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(ctx, "Failed to share: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
+            }
         }
     }
 
@@ -1247,6 +1288,12 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
             _selectedPreset.value = infos.firstOrNull()?.key.orEmpty()
         }
     }
+
+    // ── Thanks Messages ──────────────────────────────────────────────────────
+    fun onDevDepressed() {
+        _thanksMessage.value = "thanks for everything"
+    }
+
     override fun onCleared() {
         ctx.getSharedPreferences("viz_prefs", Context.MODE_PRIVATE).unregisterOnSharedPreferenceChangeListener(prefListener)
         super.onCleared()
@@ -1499,6 +1546,48 @@ class MainActivity : ComponentActivity() {
                 val isShowingCommunity by viewModel.isShowingCommunity.collectAsStateWithLifecycle()
                 val communityPresets by viewModel.communityPresets.collectAsStateWithLifecycle()
                 val communityError by viewModel.communityError.collectAsStateWithLifecycle()
+                val thanksMessage by viewModel.thanksMessage.collectAsStateWithLifecycle()
+
+                if (thanksMessage != null) {
+                    androidx.compose.material3.AlertDialog(
+                        onDismissRequest = viewModel::dismissThanksMessage,
+                        icon = {
+                            Icon(
+                                painter = painterResource(R.drawable.app_icon),
+                                contentDescription = null,
+                                modifier = Modifier.size(48.dp),
+                                tint = Color.Unspecified
+                            )
+                        },
+                        title = { 
+                            androidx.compose.material3.Text(
+                                "Better Nothing", 
+                                style = MaterialTheme.typography.headlineSmall,
+                                fontWeight = FontWeight.Bold
+                            ) 
+                        },
+                        text = { 
+                            androidx.compose.material3.Text(
+                                thanksMessage!!,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.fillMaxWidth(),
+                                style = MaterialTheme.typography.bodyLarge
+                            ) 
+                        },
+                        confirmButton = {
+                            androidx.compose.material3.Button(
+                                onClick = viewModel::dismissThanksMessage,
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                androidx.compose.material3.Text("You're welcome!")
+                            }
+                        },
+                        shape = RoundedCornerShape(24.dp),
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        tonalElevation = 6.dp
+                    )
+                }
                 
                 if (isShowingCommunity) {
                     androidx.compose.ui.window.Dialog(
