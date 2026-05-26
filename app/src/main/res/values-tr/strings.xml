@@ -87,7 +87,7 @@
     <string name="glyph_debug_instruction">Komutu ADB yüklü bir bilgisayardan bir kez çalıştırın, eğer Glifler hala yanıt vermiyorsa uygulamayı yeniden açın.</string>
 
     <!-- About Screen -->
-    <string name="about_title">Hakkında ve diğerleri</string>
+    <string name="about_title">Uygulama bilgileri ve güncellemeler</string>
     <string name="about_description">ACİLEN ADAMAKILLI BİR HAKKINDA EKRANINA İHTİYACIMIZ VAR!! O zamana kadar lütfen bilgi için GitHub\'a göz atın.</string>
     <string name="about_intro">Better Nothing Müzik Görselleştirici, yüksek kaliteli ve gerçek zamanlı frekans analizi ile Glyph Arayüzü\'nün tüm potansiyelini ortaya çıkarır.</string>
     <string name="about_section_why">Neden Nothing\'in uygulamasından daha iyiyiz:</string>
