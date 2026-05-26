@@ -16,7 +16,6 @@
 - [ ] Add shitty visualizer audio source WITH DISCLAIMER THAT IT SUCKS
 - [ ] Add one-shot spam haptics engine (from Oliver)
 - [ ] Zebra breathing mode
-- [ ] Alternating strobe mode blinking of the glyphs (10ms)
 - [ ] Global "UI shift" variable (float 0.0 to 1.0, reactive to 50-150 Hz)
 - [ ] Refine beat detection engine haptics
 - [ ] Ask RichTap what is going on
@@ -38,11 +37,12 @@
 - [ ] Add Shizuku audio source (Oliver) - Added structure & UI toggle
 
 ## Done
+- [x] Alternating strobe mode blinking of the glyphs (10ms)
 - [x] Make toggle card white accent color when on
 - [x] Make toggle card thinner
 - [x] Add author name in generated description of community presets
 - [x] Make the "save to community" button more obvious
-- [x] Add time count for the vizualizer
+- [x] Add time count for the visualizer
 - [x] Change title "About and other" to "App info and updates"
 - [x] remove latency compensation from microphone input
 - [x] Make categories for this Todo list.
