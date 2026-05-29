@@ -5,7 +5,11 @@
   
 [<img height="80" alt="Get it on GitHub" src="./.github/assets/get-it-on-github.png" />](https://github.com/Aleks-Levet/better-nothing-music-visualizer/releases)
    
-# NEW LICENCE, PLEASE READ IT
+## 💬 Join Our Discord Server
+
+Click the banner below to join our Discord server and connect with the community: (the serve is not ready yet as of writing, but still, join)
+
+[![Discord Server](https://discord.com/api/guilds/1509496060094054531/widget.png?style=banner3)](https://discord.gg/h7DYNttc8K)
 
 ## <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Objects/Books.png" alt="Books" width="25" height="25" /> Development Notice: Exam Season!
 
