@@ -103,6 +103,8 @@
     <string name="credits">Emeği Geçenler</string>
     <string name="open_github_profile">GitHub profilini aç</string>
     <string name="check_for_app_updates">Uygulama Güncellemelerini Kontrol Et</string>
+    <string name="discord_server">Discord Sunucusu</string>
+    <string name="join_discord">Discord\'daki topluluğumuza katılın</string>
     <string name="checking_for_updates">Güncellemeler kontrol ediliyor...</string>
     <string name="app_up_to_date">Uygulama güncel</string>
     <string name="update_available">Güncelleme mevcut: %s</string>
