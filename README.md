@@ -7,7 +7,7 @@
    
 ## 💬 Join Our Discord Server
 
-Click the banner below to join our Discord server and connect with the community: (the serve is not ready yet as of writing, but still, join)
+Click the banner below to join our Discord server and connect with the community: (the server is not ready yet as of writing, but you're still welcome to join in advance)
 
 [![Discord Server](https://discord.com/api/guilds/1509496060094054531/widget.png?style=banner3)](https://discord.gg/h7DYNttc8K)
 
@@ -28,7 +28,7 @@ Feel free to submit a **Pull Request (PR)**! We will review them as soon as we c
 
 ## 🌐 Read this in other languages: 
 🇮🇳 [हिन्दी](README_HI.md)
-🇮🇳 [Marathi](README-MR.md)
+🇮🇳 [Marathi](README_MR.md)
 🇹🇷 [Türkçe](README_TR.md)
 
 ## <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Smilies/Partying%20Face.png" alt="Partying Face" width="25" height="25" /> The Android App is here!
@@ -112,99 +112,99 @@ https://www.virustotal.com/gui/url/c92c1ff82b56eb60bfd1e159592d09f949f0ea2d195e0
 #### Here are the people involved in this project:
 <table>
   <tr>
-    <td width="100" align="center">
+    <td>
       <a href="https://github.com/Aleks-Levet">
-        <img src="https://github.com/Aleks-Levet.png?size=100&mask=circle" width="50" style="border-radius: 50%; border: 2px solid #555;"><br/>
+        <img src="https://github.com/Aleks-Levet.png?size=100&mask=circle" alt="aleks-levet-pfp" width="50" style="border-radius: 50%; border: 2px solid #555;"><br/>
         <sub><b>Aleks-Levet</b></sub>
       </a>
     </td>
-    <td align="left">
+    <td>
       <strong>Founder, Coordinator & Developer</strong><br/>
       Main idea and owner.
     </td>
   </tr>
   <tr>
-    <td width="100" align="center">
+    <td>
       <a href="https://github.com/oliver-lebaigue-bright-bench">
-        <img src="https://github.com/oliver-lebaigue-bright-bench.png?size=100&mask=circle" width="50" style="border-radius: 50%; border: 2px solid #555;"><br/>
+        <img src="https://github.com/oliver-lebaigue-bright-bench.png?size=100&mask=circle" alt="oliver-lebaigue-pfp" width="50" style="border-radius: 50%; border: 2px solid #555;"><br/>
         <sub><b>Oliver Lebaigue</b></sub>
       </a>
     </td>
-    <td align="left">
+    <td>
       <strong>Android Developer</strong>
       Enhancing the app + various nice additions
     </td>
   </tr>
   <tr>
-    <td width="100" align="center">
+    <td>
       <a href="https://github.com/rKyzen">
-        <img src="https://github.com/rKyzen.png?size=100&mask=circle" width="50" style="border-radius: 50%; border: 2px solid #555;"><br/>
+        <img src="https://github.com/rKyzen.png?size=100&mask=circle" alt="rkyzen-pfp" width="50" style="border-radius: 50%; border: 2px solid #555;"><br/>
         <sub><b>rKyzen</b></sub><br/>
         <i>(Shivank Dan)</i>
       </a>
     </td>
-    <td align="left">
+    <td>
       <strong>Android App Developer</strong><br/>
       Implemented the real-time music stream.
     </td>
   </tr>
   <tr>
-    <td width="100" align="center">
+    <td>
       <a href="https://github.com/Nicouschulas">
-        <img src="https://github.com/Nicouschulas.png?size=100&mask=circle" width="50" style="border-radius: 50%; border: 2px solid #555;"><br/>
+        <img src="https://github.com/Nicouschulas.png?size=100&mask=circle" alt="Nicouschulas-pfp" width="50" style="border-radius: 50%; border: 2px solid #555;"><br/>
         <sub><b>Nicouschulas</b></sub>
       </a>
     </td>
-    <td align="left">
+    <td>
       <strong>Wiki & Documentation</strong><br/>
       Readme & Wiki enhancements.
     </td>
   </tr>
   <tr>
-    <td width="100" align="center">
+    <td>
       <a href="https://github.com/SebiAi">
-        <img src="https://github.com/SebiAi.png?size=100&mask=circle" width="50" style="border-radius: 50%; border: 2px solid #555;"><br/>
+        <img src="https://github.com/SebiAi.png?size=100&mask=circle" alt="sebiai-pfp" width="50" style="border-radius: 50%; border: 2px solid #555;"><br/>
         <sub><b>SebiAi</b></sub>
       </a>
     </td>
-    <td align="left">
+    <td>
       <strong>Glyph Specialist</strong><br/>
       Glyphmodder and glyph related help.
     </td>
   </tr>
   <tr>
-    <td width="100" align="center">
+    <td>
       <a href="https://github.com/Earendel-lab">
-        <img src="https://github.com/Earendel-lab.png?size=100&mask=circle" width="50" style="border-radius: 50%; border: 2px solid #555;"><br/>
+        <img src="https://github.com/Earendel-lab.png?size=100&mask=circle" alt="earnendel-lab-pfp" width="50" style="border-radius: 50%; border: 2px solid #555;"><br/>
         <sub><b>Earendel</b></sub>
       </a>
     </td>
-    <td align="left">
+    <td>
       <strong>Documentation</strong><br/>
       Readme enhancements.
     </td>
   </tr>
   <tr>
-    <td width="100" align="center">
+    <td>
       <a href="https://github.com/Luke20YT">
-        <img src="https://github.com/Luke20YT.png?size=100&mask=circle" width="50" style="border-radius: 50%; border: 2px solid #555;"><br/>
+        <img src="https://github.com/Luke20YT.png?size=100&mask=circle" alt="luke20yt-pfp" width="50" style="border-radius: 50%; border: 2px solid #555;"><br/>
         <sub><b>あけ なるかみ</b></sub><br/>
         <i>(Luke20YT)</i>
       </a>
     </td>
-    <td align="left">
+    <td>
       <strong>Integrator</strong><br/>
       Creating a Music app with an integration with this script.
     </td>
   </tr>
   <tr>
-    <td width="100" align="center">
+    <td>
       <a href="https://github.com/Interlastic">
-        <img src="https://github.com/Interlastic.png?size=100&mask=circle" width="50" style="border-radius: 50%; border: 2px solid #555;"><br/>
+        <img src="https://github.com/Interlastic.png?size=100&mask=circle" alt="interlastic-pfp" width="50" style="border-radius: 50%; border: 2px solid #555;"><br/>
         <sub><b>Interlastic</b></sub>
       </a>
     </td>
-    <td align="left">
+    <td>
       <strong>Tools</strong><br/>
       Discord Bot to try the script easily (deprecated).
     </td>
