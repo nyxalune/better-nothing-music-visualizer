@@ -47,19 +47,6 @@
     <string name="haptics_gamma_label">Gamma (Response): %.1f</string>
     <string name="haptics_speed_label">Speed: %.1f</string>
     <string name="haptics_richtap_freq_label">RichTap Frequency: %d</string>
-    <!-- Flashlight Screen -->
-    <string name="flashlight_title">Flashlight</string>
-    <string name="flashlight_header">Flashlight visualizer</string>
-    <string name="flashlight_sync_title">Flashlight Sync</string>
-    <string name="flashlight_frequency_label">Frequency: %1$d - %2$d Hz</string>
-    <string name="flashlight_frequency_desc">The Hz range that the flashlight will react to. Lower for bass, higher for snare/vocals.</string>
-    <string name="flashlight_sensitivity_label">Sensitivity Threshold: %.2f</string>
-    <string name="flashlight_sensitivity_desc">Higher threshold filters out background noise/drums.</string>
-    <string name="flashlight_smoothing_label">Smoothing: %.2f</string>
-    <string name="flashlight_smoothing_desc">Higher smoothing makes the light pulse softly instead of strobing.</string>
-    <string name="flashlight_gamma_label">Intensity Gamma: %.1f</string>
-    <string name="flashlight_multiplier_label">Amplitude Multiplier: %.1fx</string>
-    <string name="flashlight_monitor_label">Flashlight Monitor</string>
     <string name="experimental_features">Experimental Features</string>
     <string name="developer_mode">Developer Mode</string>
     <string name="developer_mode_description">Enable advanced testing and device spoofing features.</string>
@@ -96,8 +83,6 @@
     <string name="credits">Credits</string>
     <string name="open_github_profile">Open GitHub profile</string>
     <string name="check_for_app_updates">Check for App Updates</string>
-    <string name="discord_server">Discord Server</string>
-    <string name="join_discord">Join our community on Discord</string>
     <string name="checking_for_updates">Checking for updates...</string>
     <string name="app_up_to_date">App is up to date</string>
     <string name="update_available">Update available: %s</string>
