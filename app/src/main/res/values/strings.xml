@@ -103,6 +103,8 @@
     <string name="credits">Credits</string>
     <string name="open_github_profile">Open GitHub profile</string>
     <string name="check_for_app_updates">Check for App Updates</string>
+    <string name="discord_server">Discord Server</string>
+    <string name="join_discord">Join our community on Discord</string>
     <string name="checking_for_updates">Checking for updates...</string>
     <string name="app_up_to_date">App is up to date</string>
     <string name="update_available">Update available: %s</string>

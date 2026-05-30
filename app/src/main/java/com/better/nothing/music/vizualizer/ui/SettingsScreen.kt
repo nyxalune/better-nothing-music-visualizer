@@ -19,6 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
 import androidx.compose.material.icons.Icons
@@ -49,6 +50,7 @@ internal fun SettingsScreen(
 
     val selectedTheme by viewModel.selectedTheme.collectAsStateWithLifecycle()
     val selectedFont by viewModel.selectedFont.collectAsStateWithLifecycle()
+    val uriHandler = LocalUriHandler.current
 
     Column(
         modifier = Modifier
@@ -59,6 +61,33 @@ internal fun SettingsScreen(
     ) {
         Spacer(modifier = Modifier.height(50.dp))
         ScreenTitle(text = stringResource(R.string.settings_title))
+
+        // ── Links & Info ────────────────────────────────────────────────────
+        FlowRow(
+            modifier = Modifier.fillMaxWidth(),
+            maxItemsInEachRow = 2,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            LinkCard(
+                title = stringResource(R.string.about_title),
+                icon = Icons.Default.Info,
+                onClick = { viewModel.showAbout() },
+                modifier = Modifier.weight(1f)
+            )
+            LinkCard(
+                title = stringResource(R.string.discord_server),
+                icon = Icons.Default.Public,
+                onClick = { uriHandler.openUri("https://discord.gg/h7DYNttc8K") },
+                modifier = Modifier.weight(1f)
+            )
+            LinkCard(
+                title = stringResource(R.string.github_repository),
+                icon = Icons.Default.Code,
+                onClick = { uriHandler.openUri("https://github.com/Aleks-Levet/better-nothing-music-visualizer") },
+                modifier = Modifier.weight(1f)
+            )
+        }
 
         // ── Typography ──────────────────────────────────────────────────────
         ExpressiveCard {
@@ -392,49 +421,40 @@ internal fun SettingsScreen(
             }
         }
 
-        // ── About ────────────────────────────────────────────
-        ExpressiveCard(
-            modifier = Modifier.clickable { viewModel.showAbout() }
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                Surface(
-                    shape = RoundedCornerShape(12.dp),
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                    modifier = Modifier.size(48.dp)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            imageVector = Icons.Default.Info,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                }
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = stringResource(R.string.about_title),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        text = "Credits, version info and legal",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                    )
-                }
-                Icon(
-                    Icons.Default.ChevronRight,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
-                )
-            }
-        }
-
         Spacer(modifier = Modifier.height(70.dp))
+    }
+}
+
+@Composable
+private fun LinkCard(
+    title: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(16.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+        contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = modifier.height(64.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Icon(icon, contentDescription = null, modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.primary)
+            Text(
+                text = title,
+                style = MaterialTheme.typography.labelSmall,
+                maxLines = 2,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.weight(1f),
+                lineHeight = 14.sp
+            )
+            Icon(Icons.Default.ChevronRight, null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f))
+        }
     }
 }
 
