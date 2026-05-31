@@ -11,10 +11,7 @@
 
 ### Logic/Features
 * Reduce bit depth haptics amplitude 
-* Use rotating rounded polygon for the haptic viz visual (boost rotate and change shape when beat detected)
 * Add one-shot spam haptics engine (from Oliver)
-* Zebra breathing mode
-* Alternating strobe mode blinking of the glyphs (10ms)
 * Refine beat detection engine haptics
 * Ask RichTap what is going on
 * Remove notification detection
@@ -34,6 +31,7 @@
 * RichTap haptics (currently not working)
 
 ## Done
+* Use rotating rounded polygon for the haptic viz visual (boost rotate and change shape when beat detected)
 * Change that app theme carrousel thing cuz it sucks
 * Global "UI shift" variable (float 0.0 to 1.0, reactive to 50-150 Hz)
 * Add Shizuku audio source (Oliver) - Added structure & UI toggle
