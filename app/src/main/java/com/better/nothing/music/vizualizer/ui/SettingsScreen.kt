@@ -127,37 +127,14 @@ internal fun SettingsScreen(
             ) {
                 themeOptions.forEach { (key, label, icon) ->
                     val isSelected = selectedTheme == key
-                    val backgroundColor by animateColorAsState(
-                        if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                    )
-                    val contentColor by animateColorAsState(
-                        if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-
-                    Surface(
+                    OptionTile(
+                        label = label,
+                        icon = icon,
+                        isSelected = isSelected,
                         onClick = { viewModel.setSelectedTheme(key) },
-                        shape = RoundedCornerShape(16.dp),
-                        color = backgroundColor,
-                        contentColor = contentColor,
-                        border = if (isSelected) BorderStroke(1.dp, contentColor.copy(alpha = 0.5f)) else null,
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(64.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Icon(icon, contentDescription = null, modifier = Modifier.size(20.dp))
-                            Text(
-                                text = label,
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                maxLines = 1
-                            )
-                        }
-                    }
+                        modifier = Modifier.height(64.dp),
+                        maxLines = 1
+                    )
                 }
             }
         }

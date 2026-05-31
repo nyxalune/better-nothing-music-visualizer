@@ -1394,10 +1394,11 @@ class MainActivity : ComponentActivity() {
                 pendingData = null
                 hasPendingToken = false
             } else if (pendingVisualizerStart) {
-                if (viewModel.captureSource.value == AudioCaptureService.CaptureSource.MIC) {
-                    service?.startMicCapture()
-                } else if (viewModel.captureSource.value == AudioCaptureService.CaptureSource.SHIZUKU) {
-                    service?.startShizukuCapture()
+                when (viewModel.captureSource.value) {
+                    AudioCaptureService.CaptureSource.MIC -> service?.startMicCapture()
+                    AudioCaptureService.CaptureSource.VIZUALIZER -> service?.startVizualizerCapture()
+                    AudioCaptureService.CaptureSource.SHIZUKU -> service?.startShizukuCapture()
+                    else -> {}
                 }
                 pendingVisualizerStart = false
             }
@@ -1947,7 +1948,8 @@ class MainActivity : ComponentActivity() {
             stopEverything()
         } else {
             when (viewModel.captureSource.value) {
-                AudioCaptureService.CaptureSource.MIC -> startMicVisualizer()
+                AudioCaptureService.CaptureSource.MIC,
+                AudioCaptureService.CaptureSource.VIZUALIZER -> startStandardVisualizer()
                 AudioCaptureService.CaptureSource.SHIZUKU -> startShizukuVisualizer()
                 else -> requestProjection()
             }
@@ -1988,7 +1990,7 @@ class MainActivity : ComponentActivity() {
         viewModel.setRunning(true)
     }
 
-    private fun startMicVisualizer() {
+    private fun startStandardVisualizer() {
         if (ContextCompat.checkSelfPermission(
                 this, Manifest.permission.RECORD_AUDIO
             ) != PackageManager.PERMISSION_GRANTED
@@ -2004,7 +2006,11 @@ class MainActivity : ComponentActivity() {
         if (!bound) bindService(serviceIntent, serviceConnection, BIND_AUTO_CREATE)
         if (bound && service != null) {
             applyServiceSettings()
-            service?.startMicCapture()
+            if (viewModel.captureSource.value == AudioCaptureService.CaptureSource.VIZUALIZER) {
+                service?.startVizualizerCapture()
+            } else {
+                service?.startMicCapture()
+            }
         } else {
             pendingVisualizerStart = true
         }

@@ -219,12 +219,12 @@ fun CaptureSourceCard(
     ExpressiveCard(modifier = Modifier.fillMaxWidth()) {
         CardHeader(title = "Capture Source")
         val sources = mutableListOf(
-            Triple(AudioCaptureService.CaptureSource.INTERNAL, "Media Projection\n(default, best)", Icons.Default.PhoneAndroid),
-            Triple(AudioCaptureService.CaptureSource.MIC, "Microphone", Icons.Default.Mic),
-            Triple(AudioCaptureService.CaptureSource.VIZUALIZER, "Android built-in vizualizer", Icons.Default.GraphicEq)
+            Triple(AudioCaptureService.CaptureSource.INTERNAL, stringResource(R.string.capture_media_projection), Icons.Default.PhoneAndroid),
+            Triple(AudioCaptureService.CaptureSource.MIC, stringResource(R.string.capture_microphone), Icons.Default.Mic),
+            Triple(AudioCaptureService.CaptureSource.VIZUALIZER, stringResource(R.string.capture_vizualizer), Icons.Default.GraphicEq)
         )
         if (BuildConfig.SHOW_SHIZUKU) {
-            sources.add(Triple(AudioCaptureService.CaptureSource.SHIZUKU, "Shizuku", Icons.Default.Terminal))
+            sources.add(Triple(AudioCaptureService.CaptureSource.SHIZUKU, stringResource(R.string.capture_shizuku), Icons.Default.Terminal))
         }
 
         FlowRow(
@@ -235,37 +235,14 @@ fun CaptureSourceCard(
         ) {
             sources.forEach { (source, label, icon) ->
                 val isSelected = selectedSource == source
-                val backgroundColor by animateColorAsState(
-                    if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                )
-                val contentColor by animateColorAsState(
-                    if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
-                )
-
-                Surface(
+                OptionTile(
+                    label = label,
+                    icon = icon,
+                    isSelected = isSelected,
                     onClick = { onSourceSelected(source) },
-                    shape = RoundedCornerShape(16.dp),
-                    color = backgroundColor,
-                    contentColor = contentColor,
-                    border = if (isSelected) BorderStroke(1.dp, contentColor.copy(alpha = 0.5f)) else null,
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(64.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Icon(icon, contentDescription = null, modifier = Modifier.size(20.dp))
-                        Text(
-                            text = label,
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                            maxLines = 2
-                        )
-                    }
-                }
+                    modifier = Modifier.height(64.dp),
+                    maxLines = 2
+                )
             }
         }
         if (selectedSource == AudioCaptureService.CaptureSource.VIZUALIZER) {
