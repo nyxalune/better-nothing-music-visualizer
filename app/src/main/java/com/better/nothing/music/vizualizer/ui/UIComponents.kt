@@ -976,14 +976,51 @@ fun BetterVizTheme(
     fontName: String = "NDot",
     m3eEnabled: Boolean = true,
     uiAmplitudeProvider: () -> Float = { 0f },
+    musicPrimaryColor: Color? = null,
     content: @Composable () -> Unit
 ) {
     val useNType = fontName == "NType"
     val context = LocalContext.current
     val isDark = isSystemInDarkTheme()
 
-    val targetColorScheme = remember(themeName, isDark) {
+    val targetColorScheme = remember(themeName, isDark, musicPrimaryColor) {
         when (themeName) {
+            "Music" -> {
+                val primary = musicPrimaryColor ?: Color(0xFFD71921) // Fallback to Nothing Red
+                if (isDark) {
+                    androidx.compose.material3.darkColorScheme(
+                        background = Color.Black,
+                        surface = Color(0xFF0D0D0D),
+                        primary = primary,
+                        secondary = primary,
+                        error = primary,
+                        onBackground = Color.White,
+                        onSurface = Color.White,
+                        onPrimary = Color.White,
+                        onSecondary = Color.White,
+                        onError = Color.White,
+                        surfaceVariant = Color(0xFF1A1A1A),
+                        onSurfaceVariant = Color(0xFFB3B3B3),
+                        outline = Color(0xFF333333)
+                    )
+                } else {
+                    androidx.compose.material3.lightColorScheme(
+                        background = Color.White,
+                        surface = Color(0xFFF5F5F5),
+                        primary = primary,
+                        secondary = primary,
+                        error = primary,
+                        onBackground = Color.Black,
+                        onSurface = Color.Black,
+                        onPrimary = Color.White,
+                        onSecondary = Color.White,
+                        onError = Color.White,
+                        surfaceVariant = Color(0xFFE0E0E0),
+                        onSurfaceVariant = Color(0xFF757575),
+                        outline = Color(0xFFBDBDBD)
+                    )
+                }
+            }
             "Material You" -> {
                 if (isDark) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
             }

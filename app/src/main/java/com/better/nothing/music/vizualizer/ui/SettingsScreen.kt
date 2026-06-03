@@ -116,7 +116,8 @@ internal fun SettingsScreen(
                 Triple("Default", stringResource(R.string.theme_normal), Icons.Default.BrightnessAuto),
                 Triple("Liquorice Black", stringResource(R.string.theme_liquorice), Icons.Default.DarkMode),
                 Triple("Nothing", stringResource(R.string.theme_nothing), Icons.Default.Settings),
-                Triple("Material You", stringResource(R.string.theme_material_you), Icons.Default.Palette)
+                Triple("Material You", stringResource(R.string.theme_material_you), Icons.Default.Palette),
+                Triple("Music", stringResource(R.string.theme_music), Icons.Default.MusicNote)
             )
 
             FlowRow(

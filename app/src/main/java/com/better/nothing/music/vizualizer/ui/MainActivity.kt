@@ -52,6 +52,15 @@ import android.media.AudioDeviceInfo
 import android.media.AudioManager
 import android.media.projection.MediaProjectionManager
 import android.net.Uri
+import android.media.session.MediaController
+import android.media.session.MediaSessionManager
+import android.graphics.Bitmap
+import androidx.palette.graphics.Palette
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.animation.animateColorAsState
+import android.media.session.PlaybackState
+import android.media.MediaMetadata
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
@@ -663,6 +672,28 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
     // ── Theme & Font ─────────────────────────────────────────────────────────
     private val _selectedTheme = MutableStateFlow("Default")
     val selectedTheme = _selectedTheme.asStateFlow()
+
+    private val _musicPrimaryColor = MutableStateFlow<Color?>(null)
+    val musicPrimaryColor = _musicPrimaryColor.asStateFlow()
+
+    fun updateMusicColor(bitmap: Bitmap?) {
+        if (bitmap == null) {
+            _musicPrimaryColor.value = null
+            return
+        }
+        viewModelScope.launch(Dispatchers.Default) {
+            val palette = Palette.from(bitmap).generate()
+            val color = palette.getVibrantColor(0)
+                .takeIf { it != 0 }
+                ?: palette.getMutedColor(0)
+                .takeIf { it != 0 }
+                ?: palette.getDominantColor(0)
+            
+            withContext(Dispatchers.Main) {
+                _musicPrimaryColor.value = if (color != 0) Color(color) else null
+            }
+        }
+    }
 
     private val _selectedFont = MutableStateFlow("NDot")
     val selectedFont = _selectedFont.asStateFlow()
@@ -1459,6 +1490,55 @@ class MainActivity : ComponentActivity() {
             }
         }
 
+    private val mediaSessionManager by lazy {
+        getSystemService(Context.MEDIA_SESSION_SERVICE) as MediaSessionManager
+    }
+
+    private var activeMediaController: MediaController? = null
+    private val mediaCallback = object : MediaController.Callback() {
+        override fun onMetadataChanged(metadata: android.media.MediaMetadata?) {
+            val bitmap = metadata?.getBitmap(android.media.MediaMetadata.METADATA_KEY_ALBUM_ART)
+                ?: metadata?.getBitmap(android.media.MediaMetadata.METADATA_KEY_ART)
+            viewModel.updateMusicColor(bitmap)
+        }
+
+        override fun onPlaybackStateChanged(state: android.media.session.PlaybackState?) {
+            if (state?.state == android.media.session.PlaybackState.STATE_PLAYING) {
+                updateActiveMediaController()
+            }
+        }
+    }
+
+    private val sessionsChangedListener = MediaSessionManager.OnActiveSessionsChangedListener { 
+        updateActiveMediaController()
+    }
+
+    private fun updateActiveMediaController() {
+        try {
+            val componentName = ComponentName(this, com.better.nothing.music.vizualizer.service.GlyphNotificationListener::class.java)
+            val sessions = mediaSessionManager.getActiveSessions(componentName)
+            val controller = sessions.firstOrNull { 
+                it.playbackState?.state == android.media.session.PlaybackState.STATE_PLAYING 
+            } ?: sessions.firstOrNull()
+
+            if (controller?.packageName != activeMediaController?.packageName) {
+                activeMediaController?.unregisterCallback(mediaCallback)
+                activeMediaController = controller
+                activeMediaController?.registerCallback(mediaCallback)
+                
+                // Initial update
+                val metadata = activeMediaController?.metadata
+                val bitmap = metadata?.getBitmap(android.media.MediaMetadata.METADATA_KEY_ALBUM_ART)
+                    ?: metadata?.getBitmap(android.media.MediaMetadata.METADATA_KEY_ART)
+                viewModel.updateMusicColor(bitmap)
+            }
+        } catch (e: SecurityException) {
+            Log.e("BetterViz", "No notification access to get media sessions")
+        } catch (e: Exception) {
+            Log.e("BetterViz", "Error updating media controller", e)
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -1472,8 +1552,14 @@ class MainActivity : ComponentActivity() {
                 themeName = selectedTheme,
                 fontName = selectedFont,
                 m3eEnabled = m3eEnabled,
-                uiAmplitudeProvider = { uiAmplitude }
+                uiAmplitudeProvider = { uiAmplitude },
+                musicPrimaryColor = viewModel.musicPrimaryColor.collectAsStateWithLifecycle().value
             ) {
+                LaunchedEffect(selectedTheme) {
+                    if (selectedTheme == "Music") {
+                        updateActiveMediaController()
+                    }
+                }
                 // Collect each StateFlow independently. Compose only recomposes the
                 // subtree(s) that actually read a value when it changes — collecting
                 // them as separate `by` delegates achieves this granularity.
@@ -1771,11 +1857,20 @@ class MainActivity : ComponentActivity() {
     override fun onStart() {
         super.onStart()
         audioManager.registerAudioDeviceCallback(audioDeviceCallback, mainHandler)
+        try {
+            val componentName = ComponentName(this, com.better.nothing.music.vizualizer.service.GlyphNotificationListener::class.java)
+            mediaSessionManager.addOnActiveSessionsChangedListener(sessionsChangedListener, componentName)
+        } catch (e: SecurityException) {
+            Log.e("BetterViz", "No notification access for media sessions")
+        }
         refreshConnectedAudioRoute()
     }
 
     override fun onStop() {
         audioManager.unregisterAudioDeviceCallback(audioDeviceCallback)
+        mediaSessionManager.removeOnActiveSessionsChangedListener(sessionsChangedListener)
+        activeMediaController?.unregisterCallback(mediaCallback)
+        activeMediaController = null
         super.onStop()
     }
 
@@ -1785,6 +1880,9 @@ class MainActivity : ComponentActivity() {
         // The poller will keep it in sync while the app is in the foreground.
         viewModel.setRunning(AudioCaptureService.isRunning())
         refreshConnectedAudioRoute()
+        if (viewModel.selectedTheme.value == "Music") {
+            updateActiveMediaController()
+        }
     }
 
     override fun onDestroy() {

@@ -10,6 +10,8 @@
 * Merge Git repo link card with app version card
 
 ### Logic/Features
+* Latency Auto-Calibration: Sync Wizard using microphone to measure delay
+* Voice Assistant Visualization: Specialized mode for voice input detection
 * Reduce bit depth haptics amplitude 
 * Add one-shot spam haptics engine (from Oliver)
 * Refine beat detection engine haptics
@@ -31,6 +33,7 @@
 * RichTap haptics (currently not working)
 
 ## Done
+* Dynamic UI Theming: Use Palette API to match app colors with album art
 * Use rotating rounded polygon for the haptic viz visual (boost rotate and change shape when beat detected)
 * Change that app theme carrousel thing cuz it sucks
 * Global "UI shift" variable (float 0.0 to 1.0, reactive to 50-150 Hz)

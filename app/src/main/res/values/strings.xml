@@ -30,6 +30,7 @@
     <string name="theme_nothing">Nothing</string>
     <string name="theme_nothing_red">Nothing Red</string>
     <string name="theme_material_you">Material You</string>
+    <string name="theme_music">Music (Album Art)</string>
     <string name="theme_help_text">Changes apply after app restart.</string>
     <string name="typography">Typography</string>
     <string name="font_ndot">NDot</string>

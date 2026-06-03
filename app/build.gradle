@@ -102,6 +102,7 @@ dependencies {
 
     // 7. Legacy Support
     implementation 'androidx.appcompat:appcompat:1.7.1'
+    implementation 'androidx.palette:palette-ktx:1.0.0'
     implementation 'androidx.benchmark:benchmark-traceprocessor:1.4.1'
 
     // 8. Debugging
