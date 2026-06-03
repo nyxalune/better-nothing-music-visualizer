@@ -35,6 +35,7 @@ import android.media.AudioRecord;
 import android.media.audiofx.Visualizer;
 import android.media.projection.MediaProjection;
 import android.media.projection.MediaProjectionManager;
+import android.net.Uri;
 import android.os.Binder;
 import android.os.Build;
 import android.os.Handler;
@@ -42,11 +43,17 @@ import android.os.HandlerThread;
 import android.os.IBinder;
 import android.os.Process;
 import android.os.SystemClock;
+import android.provider.Settings;
 import android.service.quicksettings.TileService;
 import android.util.Log;
+import android.view.Gravity;
+import android.view.WindowManager;
+import android.graphics.PixelFormat;
 
 import androidx.core.app.ActivityCompat;
 import androidx.core.app.NotificationCompat;
+
+import com.better.nothing.music.vizualizer.ui.VisualizerOverlayView;
 
 import com.nothing.ketchum.Common;
 import rikka.shizuku.Shizuku;
@@ -230,6 +237,16 @@ public class AudioCaptureService extends Service {
     private boolean mNotificationFlashEnabled = false;
     private boolean mStrobeEnabled = false;
     private boolean mDisableGlyphsWhenSilent = false;
+    private boolean mDynamicGainEnabled = false;
+    private boolean mBatterySaverEnabled = false;
+    private int mBatterySaverThreshold = 20;
+    private int mCurrentBatteryLevel = 100;
+    private boolean mIsBatteryLow = false;
+
+    private boolean mOverlayEnabled = false;
+    private WindowManager mWindowManager;
+    private VisualizerOverlayView mOverlayView;
+
     private long mLastNotificationFlashMs = 0;
     private static final long FLASH_DURATION_MS = 200L;
 
@@ -249,6 +266,7 @@ public class AudioCaptureService extends Service {
     private BeatDetectionHapticEngine mBeatDetectionEngine;
     private FlashlightEngine mFlashlightEngine;
 
+    private float mRollingMaxMagnitude = 0.05f;
     private AudioProcessor mAudioProcessor;
     private GlyphRenderer mGlyphRenderer;
     private AudioDeviceManager mAudioDeviceManager;
@@ -297,6 +315,34 @@ public class AudioCaptureService extends Service {
         }
     };
 
+    private final android.content.BroadcastReceiver mBatteryReceiver = new android.content.BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if (Intent.ACTION_BATTERY_CHANGED.equals(intent.getAction())) {
+                int level = intent.getIntExtra(android.os.BatteryManager.EXTRA_LEVEL, -1);
+                int scale = intent.getIntExtra(android.os.BatteryManager.EXTRA_SCALE, -1);
+                if (level != -1 && scale != -1) {
+                    mCurrentBatteryLevel = (int) ((level / (float) scale) * 100);
+                    updateBatterySaverState();
+                }
+            }
+        }
+    };
+
+    private void updateBatterySaverState() {
+        boolean wasLow = mIsBatteryLow;
+        mIsBatteryLow = mBatterySaverEnabled && mCurrentBatteryLevel <= mBatterySaverThreshold;
+        if (wasLow != mIsBatteryLow && mGlyphRenderer != null) {
+            applyEffectiveMaxBrightness();
+        }
+    }
+
+    private void applyEffectiveMaxBrightness() {
+        if (mGlyphRenderer == null) return;
+        int effectiveMax = mIsBatteryLow ? Math.min(mMaxBrightness, 1500) : mMaxBrightness;
+        mGlyphRenderer.setMaxBrightness(effectiveMax);
+    }
+
     private static final class PendingFrame {
         final float[] uniqueMagnitudes;
         final float[] magnitude;
@@ -338,6 +384,8 @@ public class AudioCaptureService extends Service {
         super.onCreate();
         sInstance = this;
 
+        registerReceiver(mBatteryReceiver, new android.content.IntentFilter(Intent.ACTION_BATTERY_CHANGED));
+
         mWorkerThread = new HandlerThread("GlyphVizWorker", Process.THREAD_PRIORITY_BACKGROUND);
         mWorkerThread.start();
         mWorkerHandler = Handler.createAsync(mWorkerThread.getLooper());
@@ -362,6 +410,7 @@ public class AudioCaptureService extends Service {
         mIdleBreathingEnabled = appPrefs.getBoolean("idle_breathing_enabled", false);
         mNotificationFlashEnabled = appPrefs.getBoolean("notification_flash_enabled", false);
         mDisableGlyphsWhenSilent = appPrefs.getBoolean("disable_glyphs_when_silent", false);
+        mOverlayEnabled = appPrefs.getBoolean("overlay_enabled", false);
 
         mGlyphRenderer = new GlyphRenderer(mGamma, mIdleBreathingEnabled, mNotificationFlashEnabled, mSelectedDevice);
         mGlyphRenderer.setMaxBrightness(mMaxBrightness);
@@ -474,6 +523,9 @@ public class AudioCaptureService extends Service {
     @Override
     public void onDestroy() {
         sInstance = null;
+        try {
+            unregisterReceiver(mBatteryReceiver);
+        } catch (Exception ignored) {}
         stopCapture();
         clearGlyphSession();
         if (mRichTapHapticEngine != null) {
@@ -829,12 +881,10 @@ public class AudioCaptureService extends Service {
         final int targetBrightness = brightness;
         final boolean reopeningAfterEnable = mMaxBrightness <= 0 && targetBrightness > 0;
         mMaxBrightness = brightness;
-        if (mGlyphRenderer != null) {
-            mGlyphRenderer.setMaxBrightness(brightness);
-        }
-
+        
         if (mWorkerHandler == null) return;
         mWorkerHandler.post(() -> {
+            applyEffectiveMaxBrightness();
             if (targetBrightness <= 0) {
                 clearGlyphSession();
                 return;
@@ -878,6 +928,63 @@ public class AudioCaptureService extends Service {
         mDisableGlyphsWhenSilent = enabled;
         if (!enabled && !mSessionOpen && mGM != null) {
             mWorkerHandler.post(this::ensureGlyphSession);
+        }
+    }
+
+    public void setDynamicGainEnabled(boolean enabled) {
+        mDynamicGainEnabled = enabled;
+    }
+
+    public void setBatterySaverEnabled(boolean enabled, int threshold) {
+        mBatterySaverEnabled = enabled;
+        mBatterySaverThreshold = threshold;
+        updateBatterySaverState();
+    }
+
+    public void setOverlayEnabled(boolean enabled) {
+        mOverlayEnabled = enabled;
+        if (mWorkerHandler != null) {
+            mWorkerHandler.post(this::updateOverlayVisibility);
+        }
+    }
+
+    private void updateOverlayVisibility() {
+        if (mOverlayEnabled && sIsRunning) {
+            if (mOverlayView == null && Settings.canDrawOverlays(this)) {
+                mMainHandler.post(this::showOverlay);
+            }
+        } else {
+            mMainHandler.post(this::hideOverlay);
+        }
+    }
+
+    private void showOverlay() {
+        if (mOverlayView != null) return;
+        mWindowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
+        mOverlayView = new VisualizerOverlayView(this);
+
+        WindowManager.LayoutParams params = new WindowManager.LayoutParams(
+                WindowManager.LayoutParams.MATCH_PARENT,
+                80, // Height in px, can be adjusted
+                WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
+                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE | WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
+                PixelFormat.TRANSLUCENT
+        );
+
+        params.gravity = Gravity.BOTTOM;
+        try {
+            mWindowManager.addView(mOverlayView, params);
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to add overlay view", e);
+        }
+    }
+
+    private void hideOverlay() {
+        if (mWindowManager != null && mOverlayView != null) {
+            try {
+                mWindowManager.removeView(mOverlayView);
+            } catch (Exception ignored) {}
+            mOverlayView = null;
         }
     }
 
@@ -1031,6 +1138,7 @@ public class AudioCaptureService extends Service {
 
             mCapturing = true;
             sIsRunning = true;
+            updateOverlayVisibility();
             mCaptureStartTimeMs = SystemClock.elapsedRealtime();
             ensureCaptureExecutor();
             requestTileRefresh();
@@ -1126,6 +1234,7 @@ public class AudioCaptureService extends Service {
     private void stopCaptureLocked() {
         mCapturing = false;
         sIsRunning = false;
+        updateOverlayVisibility();
         mCaptureStartTimeMs = 0;
         shutdownCaptureExecutor();
         releaseAudioRecord();
@@ -1236,6 +1345,10 @@ public class AudioCaptureService extends Service {
                 mLatestMagnitudes = pendingFrame.magnitude;
             }
 
+            if (mOverlayView != null) {
+                mOverlayView.updateMagnitudes(pendingFrame.magnitude);
+            }
+
             if (mHapticEnabled) {
                 if (mHapticMode == HapticMode.BASS_TO_AMPLITUDE) {
                     mContinuousHapticEngine.performHapticFeedback(pendingFrame.hapticPeak, pendingFrame.config);
@@ -1258,8 +1371,27 @@ public class AudioCaptureService extends Service {
         if (config == null || configVersion != mPresetConfigVersion) return;
 
         long now = SystemClock.elapsedRealtime();
-        boolean hasActivity = false;
+        
         float gain = mGlyphRenderer.getSpectrumGain();
+
+        if (mDynamicGainEnabled) {
+            float maxInFrame = 0f;
+            for (float m : uniqueMagnitudes) maxInFrame = Math.max(maxInFrame, m);
+            
+            // Dynamic Gain logic: track peak magnitude with slow decay
+            mRollingMaxMagnitude = Math.max(mRollingMaxMagnitude * 0.995f, maxInFrame);
+            
+            // If the signal is very quiet, boost it. If it's loud, leave it.
+            // Target peak is around 0.15 for these presets
+            float dynamicBoost = 1.0f;
+            if (mRollingMaxMagnitude > 0.005f) {
+                dynamicBoost = 0.15f / mRollingMaxMagnitude;
+                dynamicBoost = Math.max(0.5f, Math.min(4.0f, dynamicBoost));
+            }
+            gain *= dynamicBoost;
+        }
+
+        boolean hasActivity = false;
         for (float mag : uniqueMagnitudes) {
             if (mag * gain > 0.002f) {
                 hasActivity = true;
@@ -1283,7 +1415,17 @@ public class AudioCaptureService extends Service {
             mGlyphRenderer.triggerNotificationFlash(now);
         }
 
-        int[] frameColors = mGlyphRenderer.processFrame(uniqueMagnitudes, config, now);
+        // Apply local gain directly to uniqueMagnitudes before renderer
+        float[] boostedMagnitudes = new float[uniqueMagnitudes.length];
+        for (int i = 0; i < uniqueMagnitudes.length; i++) boostedMagnitudes[i] = uniqueMagnitudes[i] * gain;
+
+        // The renderer's own spectrumGain will be 1.0 because we've applied it here
+        // We temporarily swap it to ensure processFrame works as expected
+        float originalRendererGain = mGlyphRenderer.getSpectrumGain();
+        mGlyphRenderer.setSpectrumGain(1.0f);
+        int[] frameColors = mGlyphRenderer.processFrame(boostedMagnitudes, config, now);
+        mGlyphRenderer.setSpectrumGain(originalRendererGain);
+
         if (frameColors == null) return;
 
         if (!canPushGlyphFrames()) return;

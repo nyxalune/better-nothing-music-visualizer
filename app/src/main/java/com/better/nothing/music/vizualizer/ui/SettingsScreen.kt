@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.VolumeOff
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.*
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.font.FontWeight
@@ -45,12 +46,16 @@ internal fun SettingsScreen(
     disableGlyphsWhenSilent: Boolean,
     onDisableGlyphsWhenSilentChanged: (Boolean) -> Unit,
 ) {
-    val m3eEnabled = LocalM3EEnabled.current
+    val m3eEnabled by viewModel.m3eEnabled.collectAsStateWithLifecycle()
+    val dynamicGainEnabled by viewModel.dynamicGainEnabled.collectAsStateWithLifecycle()
+    val batterySaverEnabled by viewModel.batterySaverEnabled.collectAsStateWithLifecycle()
+    val batterySaverThreshold by viewModel.batterySaverThreshold.collectAsStateWithLifecycle()
     val scrollState = rememberScrollState()
 
     val selectedTheme by viewModel.selectedTheme.collectAsStateWithLifecycle()
     val selectedFont by viewModel.selectedFont.collectAsStateWithLifecycle()
     val uriHandler = LocalUriHandler.current
+    val localContext = LocalContext.current
 
     Column(
         modifier = Modifier
@@ -132,7 +137,14 @@ internal fun SettingsScreen(
                         label = label,
                         icon = icon,
                         isSelected = isSelected,
-                        onClick = { viewModel.setSelectedTheme(key) },
+                        onClick = { 
+                            if (key == "Music" && !viewModel.isNotificationAccessGranted()) {
+                                Toast.makeText(localContext, "Music theme requires Notification Access. Please enable it for this app.", Toast.LENGTH_LONG).show()
+                                localContext.startActivity(android.content.Intent("android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS"))
+                            } else {
+                                viewModel.setSelectedTheme(key)
+                            }
+                        },
                         modifier = Modifier.height(64.dp),
                         maxLines = 1
                     )
@@ -199,11 +211,43 @@ internal fun SettingsScreen(
             }
         }
 
+        // ── Strobe Mode ─────────────────────────────────────────────────────
+        ExpressiveCard {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Icon(Icons.Default.Vibration, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                    Column {
+                        Text(
+                            text = "Strobe Mode",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "Alternating flash pattern for Glyphs",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                        )
+                    }
+                }
+                Switch(
+                    checked = strobeEnabled,
+                    onCheckedChange = onStrobeEnabledChanged,
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor = Color.White,
+                        checkedTrackColor = MaterialTheme.colorScheme.primary
+                    )
+                )
+            }
+        }
+
         // ── Developer Mode ──────────────────────────────────────────────────
         val devModeEnabled by viewModel.developerModeEnabled.collectAsStateWithLifecycle()
         var showPasswordDialog by remember { mutableStateOf(false) }
         var passwordInput by remember { mutableStateOf("") }
-        val context = LocalContext.current
 
         if (showPasswordDialog) {
             AlertDialog(
@@ -233,7 +277,7 @@ internal fun SettingsScreen(
                                 showPasswordDialog = false
                                 passwordInput = ""
                             } else {
-                                Toast.makeText(context, "Incorrect Password", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(localContext, "Incorrect Password", Toast.LENGTH_SHORT).show()
                             }
                         }
                     ) {
@@ -380,20 +424,59 @@ internal fun SettingsScreen(
                             modifier = Modifier.weight(1f)
                         )
                         FeatureCard(
-                            title = "Strobe Mode",
-                            icon = Icons.Default.Vibration,
-                            checked = strobeEnabled,
-                            onCheckedChange = onStrobeEnabledChanged,
-                            modifier = Modifier.weight(1f)
-                        )
-                        FeatureCard(
                             title = "Silent Auto-Off",
                             icon = Icons.AutoMirrored.Filled.VolumeOff,
                             checked = disableGlyphsWhenSilent,
                             onCheckedChange = onDisableGlyphsWhenSilentChanged,
                             modifier = Modifier.weight(1f)
                         )
+                        FeatureCard(
+                            title = "Dynamic Gain",
+                            icon = Icons.AutoMirrored.Filled.TrendingUp,
+                            checked = dynamicGainEnabled,
+                            onCheckedChange = { viewModel.setDynamicGainEnabled(it) },
+                            modifier = Modifier.weight(1f)
+                        )
+                        FeatureCard(
+                            title = "Battery Saver",
+                            icon = Icons.Default.BatteryChargingFull,
+                            checked = batterySaverEnabled,
+                            onCheckedChange = { viewModel.setBatterySaverEnabled(it) },
+                            modifier = Modifier.weight(1f)
+                        )
                         Spacer(modifier = Modifier.weight(1f))
+                    }
+
+                    AnimatedVisibility(visible = batterySaverEnabled) {
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "Saver Threshold",
+                                    style = MaterialTheme.typography.labelLarge,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                                Text(
+                                    text = "$batterySaverThreshold%",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                            ExpressiveSlider(
+                                value = batterySaverThreshold.toFloat(),
+                                onValueChange = { viewModel.setBatterySaverThreshold(it.toInt()) },
+                                valueRange = 5f..50f,
+                                steps = 9,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            BodyText(
+                                text = "Reduces Glyph brightness when battery is below this level to save power.",
+                                size = 11.sp
+                            )
+                        }
                     }
                 }
             }
@@ -412,7 +495,7 @@ private fun LinkCard(
 ) {
     Surface(
         onClick = onClick,
-        shape = RoundedCornerShape(16.dp),
+        shape = MaterialTheme.shapes.medium,
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
         contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
         modifier = modifier.height(64.dp)
@@ -453,7 +536,7 @@ private fun FeatureCard(
 
     Surface(
         onClick = { onCheckedChange(!checked) },
-        shape = RoundedCornerShape(16.dp),
+        shape = MaterialTheme.shapes.medium,
         color = backgroundColor,
         contentColor = contentColor,
         modifier = modifier.height(64.dp)

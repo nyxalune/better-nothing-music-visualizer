@@ -66,8 +66,7 @@ public class GlyphRenderer {
     }
 
     public void setSpectrumGain(float gain) {
-        // Enforce 4.0 gain as requested
-        mSpectrumGain = 4.0f;
+        mSpectrumGain = gain;
         mLastHash = Integer.MIN_VALUE;
     }
 

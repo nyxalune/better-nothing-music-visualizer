@@ -55,6 +55,7 @@ import android.net.Uri
 import android.media.session.MediaController
 import android.media.session.MediaSessionManager
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import androidx.palette.graphics.Palette
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.runtime.rememberUpdatedState
@@ -446,6 +447,18 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
     private val _disableGlyphsWhenSilent = MutableStateFlow(false)
     val disableGlyphsWhenSilent = _disableGlyphsWhenSilent.asStateFlow()
 
+    private val _dynamicGainEnabled = MutableStateFlow(false)
+    val dynamicGainEnabled = _dynamicGainEnabled.asStateFlow()
+
+    private val _batterySaverEnabled = MutableStateFlow(false)
+    val batterySaverEnabled = _batterySaverEnabled.asStateFlow()
+
+    private val _batterySaverThreshold = MutableStateFlow(20)
+    val batterySaverThreshold = _batterySaverThreshold.asStateFlow()
+
+    private val _overlayEnabled = MutableStateFlow(false)
+    val overlayEnabled = _overlayEnabled.asStateFlow()
+
     // ── Zones Update ──────────────────────────────────────────────────────────
     private val _configUpdateStatus = MutableStateFlow<ConfigUpdateStatus>(ConfigUpdateStatus.Idle)
     val configUpdateStatus = _configUpdateStatus.asStateFlow()
@@ -682,17 +695,33 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
             return
         }
         viewModelScope.launch(Dispatchers.Default) {
-            val palette = Palette.from(bitmap).generate()
-            val color = palette.getVibrantColor(0)
-                .takeIf { it != 0 }
-                ?: palette.getMutedColor(0)
-                .takeIf { it != 0 }
-                ?: palette.getDominantColor(0)
-            
-            withContext(Dispatchers.Main) {
-                _musicPrimaryColor.value = if (color != 0) Color(color) else null
+            try {
+                // Resize for faster processing
+                val scaled = if (bitmap.width > 200 || bitmap.height > 200) {
+                    Bitmap.createScaledBitmap(bitmap, 128, 128, true)
+                } else bitmap
+
+                val palette = Palette.from(scaled).generate()
+                
+                // Prioritize vibrant swatches for better UI colors
+                val swatch = palette.vibrantSwatch 
+                    ?: palette.lightVibrantSwatch
+                    ?: palette.darkVibrantSwatch
+                    ?: palette.mutedSwatch
+                    ?: palette.dominantSwatch
+
+                withContext(Dispatchers.Main) {
+                    _musicPrimaryColor.value = swatch?.rgb?.let { Color(it) }
+                }
+            } catch (e: Exception) {
+                Log.e("MainViewModel", "Palette generation failed", e)
             }
         }
+    }
+
+    fun isNotificationAccessGranted(): Boolean {
+        val flat = android.provider.Settings.Secure.getString(ctx.contentResolver, "enabled_notification_listeners")
+        return flat?.contains(ctx.packageName) == true
     }
 
     private val _selectedFont = MutableStateFlow("NDot")
@@ -1056,6 +1085,39 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
         }
     }
 
+    fun setDynamicGainEnabled(enabled: Boolean) {
+        _dynamicGainEnabled.value = enabled
+        viewModelScope.launch(Dispatchers.IO) {
+            ctx.getSharedPreferences("viz_prefs", Context.MODE_PRIVATE)
+                .edit { putBoolean("dynamic_gain_enabled", enabled) }
+        }
+    }
+
+    fun setBatterySaverEnabled(enabled: Boolean) {
+        _batterySaverEnabled.value = enabled
+        viewModelScope.launch(Dispatchers.IO) {
+            ctx.getSharedPreferences("viz_prefs", Context.MODE_PRIVATE)
+                .edit { putBoolean("battery_saver_enabled", enabled) }
+        }
+    }
+
+    fun setBatterySaverThreshold(threshold: Int) {
+        _batterySaverThreshold.value = threshold
+        viewModelScope.launch(Dispatchers.IO) {
+            ctx.getSharedPreferences("viz_prefs", Context.MODE_PRIVATE)
+                .edit { putInt("battery_saver_threshold", threshold) }
+        }
+    }
+
+    fun setOverlayEnabled(enabled: Boolean) {
+        _overlayEnabled.value = enabled
+        MainActivity.serviceStatic?.setOverlayEnabled(enabled)
+        viewModelScope.launch(Dispatchers.IO) {
+            ctx.getSharedPreferences("viz_prefs", Context.MODE_PRIVATE)
+                .edit { putBoolean("overlay_enabled", enabled) }
+        }
+    }
+
     fun setAutoDeviceEnabled(enabled: Boolean): Int {
         _autoDeviceEnabled.value = enabled
         viewModelScope.launch(Dispatchers.IO) {
@@ -1239,6 +1301,10 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
                 _strobeEnabled.value = prefs.getBoolean("strobe_enabled", false)
                 _configVersion.value = AudioCaptureService.loadZonesConfigVersion(ctx)
                 _disableGlyphsWhenSilent.value = prefs.getBoolean("disable_glyphs_when_silent", false)
+                _dynamicGainEnabled.value = prefs.getBoolean("dynamic_gain_enabled", false)
+                _batterySaverEnabled.value = prefs.getBoolean("battery_saver_enabled", false)
+                _batterySaverThreshold.value = prefs.getInt("battery_saver_threshold", 20)
+                _overlayEnabled.value = prefs.getBoolean("overlay_enabled", false)
                 _m3eEnabled.value = prefs.getBoolean("m3e_enabled", true)
 
                 val theme = prefs.getString("selected_theme", "Default") ?: "Default"
@@ -1515,28 +1581,60 @@ class MainActivity : ComponentActivity() {
 
     private fun updateActiveMediaController() {
         try {
+            if (!isNotificationServiceEnabled()) {
+                viewModel.updateMusicColor(null)
+                return
+            }
+
             val componentName = ComponentName(this, com.better.nothing.music.vizualizer.service.GlyphNotificationListener::class.java)
             val sessions = mediaSessionManager.getActiveSessions(componentName)
+            
             val controller = sessions.firstOrNull { 
-                it.playbackState?.state == android.media.session.PlaybackState.STATE_PLAYING 
+                it.playbackState?.state == PlaybackState.STATE_PLAYING 
             } ?: sessions.firstOrNull()
 
-            if (controller?.packageName != activeMediaController?.packageName) {
+            if (controller?.packageName != activeMediaController?.packageName || activeMediaController == null) {
                 activeMediaController?.unregisterCallback(mediaCallback)
                 activeMediaController = controller
                 activeMediaController?.registerCallback(mediaCallback)
-                
-                // Initial update
-                val metadata = activeMediaController?.metadata
-                val bitmap = metadata?.getBitmap(android.media.MediaMetadata.METADATA_KEY_ALBUM_ART)
-                    ?: metadata?.getBitmap(android.media.MediaMetadata.METADATA_KEY_ART)
-                viewModel.updateMusicColor(bitmap)
             }
+
+            val metadata = controller?.metadata
+            val bitmap = getArtworkBitmap(metadata)
+            viewModel.updateMusicColor(bitmap)
         } catch (e: SecurityException) {
             Log.e("BetterViz", "No notification access to get media sessions")
+            viewModel.updateMusicColor(null)
         } catch (e: Exception) {
             Log.e("BetterViz", "Error updating media controller", e)
+            viewModel.updateMusicColor(null)
         }
+    }
+
+    private fun getArtworkBitmap(metadata: MediaMetadata?): Bitmap? {
+        if (metadata == null) return null
+        
+        // 1. Try direct bitmaps
+        metadata.getBitmap(MediaMetadata.METADATA_KEY_ALBUM_ART)?.let { return it }
+        metadata.getBitmap(MediaMetadata.METADATA_KEY_ART)?.let { return it }
+        
+        // 2. Try URIs
+        val uriString = metadata.getString(MediaMetadata.METADATA_KEY_ALBUM_ART_URI)
+            ?: metadata.getString(MediaMetadata.METADATA_KEY_ART_URI)
+        
+        if (uriString != null) {
+            try {
+                val uri = Uri.parse(uriString)
+                contentResolver.openInputStream(uri)?.use { stream ->
+                    return BitmapFactory.decodeStream(stream)
+                }
+            } catch (e: Exception) {
+                Log.e("BetterViz", "Failed to decode URI artwork: $uriString", e)
+            }
+        }
+        
+        // 3. Last resort: icon
+        return metadata.getBitmap(MediaMetadata.METADATA_KEY_DISPLAY_ICON)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -2180,6 +2278,8 @@ class MainActivity : ComponentActivity() {
         service?.setIdlePattern(viewModel.idlePattern.value)
         service?.setNotificationFlashEnabled(viewModel.notificationFlashEnabled.value)
         service?.setStrobeEnabled(viewModel.strobeEnabled.value)
+        service?.setDynamicGainEnabled(viewModel.dynamicGainEnabled.value)
+        service?.setBatterySaverEnabled(viewModel.batterySaverEnabled.value, viewModel.batterySaverThreshold.value)
 
         service?.setHapticEnabled(viewModel.hapticMotorEnabled.value)
         service?.setHapticMode(viewModel.hapticMode.value)

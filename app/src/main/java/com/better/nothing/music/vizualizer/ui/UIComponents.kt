@@ -327,7 +327,7 @@ fun FlowRowScope.OptionTile(
     )
 
     val m3eEnabled = LocalM3EEnabled.current
-    val targetRadius = if (isSelected && m3eEnabled) 32.dp else 16.dp
+    val targetRadius = if (isSelected) 32.dp else 20.dp
     val animatedRadius by animateDpAsState(
         targetValue = targetRadius,
         animationSpec = if (m3eEnabled) {
@@ -402,7 +402,7 @@ fun ExpressiveCard(
     Card(
         modifier = modifier
             .padding(vertical = LocalAppSpacing.current.between / 2),
-        shape = if (m3eEnabled) shape else RoundedCornerShape(16.dp),
+        shape = shape,
         colors = CardDefaults.cardColors(containerColor = containerColor),
         border = border,
         elevation = CardDefaults.cardElevation(defaultElevation = if (m3eEnabled) 2.dp else 0.dp)
@@ -519,7 +519,7 @@ fun NativeFilterChip(
     )
 
     Surface(
-        shape = RoundedCornerShape(12.dp),
+        shape = MaterialTheme.shapes.medium,
         color = backgroundColor,
         contentColor = contentColor,
         border = if (selected) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)),

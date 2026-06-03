@@ -186,7 +186,7 @@ internal fun GlyphsScreen(
                             containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
                             contentColor = MaterialTheme.colorScheme.primary
                         ),
-                        shape = RoundedCornerShape(12.dp),
+                        shape = MaterialTheme.shapes.medium,
                         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
                     ) {
                         Icon(Icons.Default.Public, contentDescription = null, modifier = Modifier.size(18.dp))
@@ -314,7 +314,7 @@ internal fun GlyphsScreen(
                     Spacer(modifier = Modifier.height(16.dp))
 
                     Surface(
-                        shape = RoundedCornerShape(16.dp),
+                        shape = MaterialTheme.shapes.medium,
                         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
                         modifier = Modifier.fillMaxWidth()
                     ) {
@@ -343,7 +343,7 @@ internal fun GlyphsScreen(
                             if (remoteVersion != null && remoteVersion != "Unknown" && remoteVersion != configVersion) {
                                 Surface(
                                     color = MaterialTheme.colorScheme.error.copy(alpha = 0.1f),
-                                    shape = RoundedCornerShape(8.dp)
+                                    shape = MaterialTheme.shapes.small
                                 ) {
                                     Text(
                                         text = "UPDATE AVAILABLE",
@@ -481,7 +481,7 @@ fun GammaPreviewCard(gammaValue: Float) {
     val accent    = MaterialTheme.colorScheme.primary
 
     Card(
-        shape    = RoundedCornerShape(28.dp),
+        shape    = MaterialTheme.shapes.large,
         colors   = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
         modifier = Modifier.size(130.dp, 130.dp),
     ) {

@@ -316,7 +316,7 @@ fun LatencyCard(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(48.dp)
-                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f), RoundedCornerShape(24.dp))
+                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f), MaterialTheme.shapes.large)
                 .padding(4.dp)
         ) {
             val spacing = 4.dp
@@ -338,7 +338,7 @@ fun LatencyCard(
                         .width(itemWidth)
                         .fillMaxHeight()
                         .offset(x = animatedX)
-                        .clip(RoundedCornerShape(20.dp))
+                        .clip(MaterialTheme.shapes.medium)
                         .background(if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent)
                         .clickable {
                             haptics.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -397,7 +397,7 @@ fun FFTSpectrumCard(fftData: FloatArray) {
             modifier = Modifier
                 .fillMaxWidth()
                 .height(180.dp)
-                .clip(RoundedCornerShape(20.dp))
+                .clip(MaterialTheme.shapes.medium)
                 .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f))
                 .pointerInput(Unit) {
                     detectDragGestures(
@@ -560,7 +560,7 @@ fun FFTSpectrumCard(fftData: FloatArray) {
                             y = 12.dp
                         ),
                     color = MaterialTheme.colorScheme.primary,
-                    shape = RoundedCornerShape(8.dp),
+                    shape = MaterialTheme.shapes.small,
                     tonalElevation = 4.dp
                 ) {
                     Text(
@@ -626,7 +626,7 @@ fun RowScope.FineTuneButton(
     Surface(
         onClick = onClick,
         interactionSource = interactionSource,
-        shape = RoundedCornerShape(12.dp),
+        shape = MaterialTheme.shapes.medium,
         color = containerColor,
         modifier = Modifier
             .weight(animatedWeight)

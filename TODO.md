@@ -10,9 +10,17 @@
 * Merge Git repo link card with app version card
 
 ### Logic/Features
-* Latency Auto-Calibration: Sync Wizard using microphone to measure delay
-* Voice Assistant Visualization: Specialized mode for voice input detection
+* Adaptive Smoothing: Real-time decay adjustment based on music tempo (3c)
+* Dynamic Gain Normalization: Auto-Gain for quiet audio (Experimental) - DONE
+* Battery Saver Threshold: Dims visualization when low battery (Experimental) - DONE
+* Proximity Visualization: Auto-pause when phone is face-up or in pocket (5d)
+* Latency Auto-Calibration: Sync Wizard using microphone to measure delay (4a)
+* Voice Assistant Visualization: Specialized mode for voice input detection (4b)
 * Reduce bit depth haptics amplitude 
+
+### Visual
+* Screen Mirroring: On-screen visualizer overlay for when phone is face-up (1c)
+* Dynamic UI Theming: Use Palette API to match app colors with album art - DONE
 * Add one-shot spam haptics engine (from Oliver)
 * Refine beat detection engine haptics
 * Ask RichTap what is going on
@@ -33,6 +41,8 @@
 * RichTap haptics (currently not working)
 
 ## Done
+* Dynamic Peak Normalization: Auto-Gain for quiet audio (Experimental)
+* Battery Saver Threshold: Dims visualization when low battery (Experimental)
 * Dynamic UI Theming: Use Palette API to match app colors with album art
 * Use rotating rounded polygon for the haptic viz visual (boost rotate and change shape when beat detected)
 * Change that app theme carrousel thing cuz it sucks

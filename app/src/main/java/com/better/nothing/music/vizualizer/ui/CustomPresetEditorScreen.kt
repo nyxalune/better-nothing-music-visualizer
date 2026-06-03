@@ -101,7 +101,7 @@ fun CustomPresetEditorScreen(
                             containerColor = MaterialTheme.colorScheme.tertiary,
                             contentColor = MaterialTheme.colorScheme.onTertiary
                         ),
-                        shape = RoundedCornerShape(12.dp),
+                        shape = MaterialTheme.shapes.medium,
                         modifier = Modifier.padding(end = 8.dp)
                     ) {
                         Icon(Icons.Default.Public, contentDescription = "Share", modifier = Modifier.size(18.dp))
@@ -114,7 +114,7 @@ fun CustomPresetEditorScreen(
                             haptics.performHapticFeedback(HapticFeedbackType.GestureThresholdActivate)
                             onSave(presetName, zones.toList(), authorName)
                         },
-                        shape = RoundedCornerShape(12.dp)
+                        shape = MaterialTheme.shapes.medium
                     ) {
                         Icon(Icons.Default.Save, contentDescription = "Save", modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(8.dp))
@@ -188,7 +188,7 @@ fun CustomPresetEditorScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(350.dp)
-                    .clip(RoundedCornerShape(40.dp))
+                    .clip(MaterialTheme.shapes.extraLarge)
                     .background(Color(0xFF1A1A1A))
                     .padding(24.dp),
                 contentAlignment = Alignment.Center
@@ -241,7 +241,7 @@ fun CustomPresetEditorScreen(
                     Box(
                         modifier = Modifier
                             .size(36.dp)
-                            .clip(RoundedCornerShape(8.dp))
+                            .clip(MaterialTheme.shapes.small)
                             .background(if (isSelected) MaterialTheme.colorScheme.primary else Color(0xFF333333))
                             .clickable { 
                                 haptics.performHapticFeedback(HapticFeedbackType.SegmentTick)
@@ -267,7 +267,7 @@ fun CustomPresetEditorScreen(
             
             if (selectedIndices.size > 1) {
                 Card(
-                    shape = RoundedCornerShape(28.dp),
+                    shape = MaterialTheme.shapes.large,
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -292,7 +292,7 @@ fun CustomPresetEditorScreen(
                 val firstIdx = selectedIndices.first()
                 val zone = zones[firstIdx]
                 Card(
-                    shape = RoundedCornerShape(28.dp),
+                    shape = MaterialTheme.shapes.large,
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                     modifier = Modifier.fillMaxWidth()
                 ) {

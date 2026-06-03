@@ -113,7 +113,7 @@ internal fun TimelineScreen(
         ScreenTitle(text = "Project Timeline")
 
         Card(
-            shape = RoundedCornerShape(24.dp),
+            shape = MaterialTheme.shapes.large,
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
             modifier = Modifier.fillMaxWidth(),
         ) {
