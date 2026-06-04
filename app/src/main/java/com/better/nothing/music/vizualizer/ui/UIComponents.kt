@@ -311,23 +311,28 @@ fun FlowRowScope.OptionTile(
     isSelected: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    maxLines: Int = 2
+    maxLines: Int = 2,
+    enabled: Boolean = true
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
 
-    val isEffectivelySelected = isSelected || isPressed
+    val isEffectivelySelected = (isSelected || isPressed) && enabled
     val backgroundColor by animateColorAsState(
-        if (isEffectivelySelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.8f),
+        if (!enabled) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+        else if (isEffectivelySelected) MaterialTheme.colorScheme.primary 
+        else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.8f),
         label = "backgroundColor"
     )
     val contentColor by animateColorAsState(
-        if (isEffectivelySelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+        if (!enabled) MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
+        else if (isEffectivelySelected) MaterialTheme.colorScheme.onPrimary 
+        else MaterialTheme.colorScheme.onSurfaceVariant,
         label = "contentColor"
     )
 
     val m3eEnabled = LocalM3EEnabled.current
-    val targetRadius = if (isSelected) 32.dp else 20.dp
+    val targetRadius = if (isSelected && enabled) 32.dp else 20.dp
     val animatedRadius by animateDpAsState(
         targetValue = targetRadius,
         animationSpec = if (m3eEnabled) {
@@ -341,7 +346,7 @@ fun FlowRowScope.OptionTile(
         label = "cornerRadius"
     )
 
-    val targetWeight = if (isPressed) 1.2f else 1f
+    val targetWeight = if (isPressed && enabled) 1.2f else 1f
     val animatedWeight by animateFloatAsState(
         targetValue = targetWeight,
         animationSpec = spring(
@@ -352,7 +357,8 @@ fun FlowRowScope.OptionTile(
     )
 
     Surface(
-        onClick = onClick,
+        onClick = if (enabled) onClick else ({}),
+        enabled = enabled,
         interactionSource = interactionSource,
         shape = RoundedCornerShape(animatedRadius),
         color = backgroundColor,
@@ -370,7 +376,7 @@ fun FlowRowScope.OptionTile(
             Text(
                 text = label,
                 style = MaterialTheme.typography.labelSmall,
-                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                fontWeight = if (isSelected && enabled) FontWeight.Bold else FontWeight.Medium,
                 maxLines = maxLines
             )
         }
@@ -676,7 +682,7 @@ fun NativeBottomBar(
                     },
                     label = {
                         Text(
-                            text = tab.label,
+                            text = stringResource(tab.labelRes),
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                             color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
@@ -692,11 +698,11 @@ fun NativeBottomBar(
                                 }
 
                             when (tab) {
-                                Tab.Audio -> Icon(Icons.AutoMirrored.Filled.VolumeUp, tab.label, modifier = iconModifier)
-                                Tab.Glyphs -> Icon(painter = painterResource(R.drawable.ic_nav_glyphs), contentDescription = tab.label, modifier = iconModifier)
-                                Tab.Haptics -> Icon(Icons.Filled.Vibration, tab.label, modifier = iconModifier)
-                                Tab.Flashlight -> Icon(Icons.Filled.FlashlightOn, tab.label, modifier = iconModifier)
-                                Tab.Settings -> Icon(Icons.Filled.Settings, tab.label, modifier = iconModifier)
+                                Tab.Audio -> Icon(Icons.AutoMirrored.Filled.VolumeUp, stringResource(tab.labelRes), modifier = iconModifier)
+                                Tab.Glyphs -> Icon(painter = painterResource(R.drawable.ic_nav_glyphs), contentDescription = stringResource(tab.labelRes), modifier = iconModifier)
+                                Tab.Haptics -> Icon(Icons.Filled.Vibration, stringResource(tab.labelRes), modifier = iconModifier)
+                                Tab.Flashlight -> Icon(Icons.Filled.FlashlightOn, stringResource(tab.labelRes), modifier = iconModifier)
+                                Tab.Settings -> Icon(Icons.Filled.Settings, stringResource(tab.labelRes), modifier = iconModifier)
                             }
                         }
                     },

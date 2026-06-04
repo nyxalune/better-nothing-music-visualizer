@@ -1656,7 +1656,7 @@ public class AudioCaptureService extends Service {
             mVisualizer.setDataCaptureListener(new Visualizer.OnDataCaptureListener() {
                 @Override
                 public void onWaveFormDataCapture(Visualizer visualizer, byte[] waveform, int samplingRate) {
-                    processVisualizerWaveform(waveform);
+                    processVisualizerWaveform(waveform, samplingRate);
                 }
 
                 @Override
@@ -1671,8 +1671,10 @@ public class AudioCaptureService extends Service {
         }
     }
 
-    private void processVisualizerWaveform(byte[] waveform) {
+    private void processVisualizerWaveform(byte[] waveform, int samplingRate) {
         if (!mCapturing || mVisualizerConfig == null) return;
+
+        mAudioProcessor.updateFFTSize(mLatencyCompensationMs, samplingRate / 1000); // Visualizer API samplingRate is in mHz
 
         short[] hop = new short[waveform.length];
         for (int i = 0; i < waveform.length; i++) {

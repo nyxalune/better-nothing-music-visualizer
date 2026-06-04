@@ -157,10 +157,12 @@ internal fun AboutScreen(
             )
 
             // Update Action
-            val statusText = when (appUpdateStatus) {
+            val statusText = when (val status = appUpdateStatus) {
                 is MainViewModel.AppUpdateStatus.Checking -> "Checking for updates..."
-                is MainViewModel.AppUpdateStatus.Available -> "Update available: ${(appUpdateStatus as MainViewModel.AppUpdateStatus.Available).version}"
+                is MainViewModel.AppUpdateStatus.Available -> "Update available: ${status.version}"
+                is MainViewModel.AppUpdateStatus.Downloading -> "Downloading: ${(status.progress * 100).toInt()}%"
                 is MainViewModel.AppUpdateStatus.UpToDate -> "Latest version installed"
+                is MainViewModel.AppUpdateStatus.Error -> "Error: ${status.message}"
                 else -> "Check for software updates"
             }
 
@@ -169,16 +171,28 @@ internal fun AboutScreen(
                 title = "Software Update",
                 subtitle = statusText,
                 onClick = { 
-                    if (appUpdateStatus is MainViewModel.AppUpdateStatus.Available) {
-                        uriHandler.openUri((appUpdateStatus as MainViewModel.AppUpdateStatus.Available).url)
-                    } else {
+                    val status = appUpdateStatus
+                    if (status is MainViewModel.AppUpdateStatus.Available) {
+                        if (status.apkUrl != null) {
+                            viewModel.downloadAndInstallUpdate(status.apkUrl, status.version)
+                        } else {
+                            uriHandler.openUri(status.url)
+                        }
+                    } else if (status !is MainViewModel.AppUpdateStatus.Downloading) {
                         viewModel.checkAppUpdate()
                     }
                 },
                 trailingContent = {
-                    if (appUpdateStatus is MainViewModel.AppUpdateStatus.Checking) {
+                    val status = appUpdateStatus
+                    if (status is MainViewModel.AppUpdateStatus.Checking) {
                         CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-                    } else if (appUpdateStatus is MainViewModel.AppUpdateStatus.Available) {
+                    } else if (status is MainViewModel.AppUpdateStatus.Downloading) {
+                        CircularProgressIndicator(
+                            progress = { status.progress },
+                            modifier = Modifier.size(20.dp),
+                            strokeWidth = 2.dp
+                        )
+                    } else if (status is MainViewModel.AppUpdateStatus.Available) {
                         Surface(
                             shape = MaterialTheme.shapes.small,
                             color = MaterialTheme.colorScheme.error,

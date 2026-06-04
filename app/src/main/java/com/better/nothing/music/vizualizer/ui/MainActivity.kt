@@ -1,22 +1,3 @@
-/*
-////
-//////
-////////
-//////////
-////////////
-// TO DO LIST HEREEEE:::::
-////////////////
-//https://taskweb.pages.dev/?board=mauv5VZ29Gw1vnbExSXb#
-////////////////
-//////////////
-////////////
-//////////
-////////
-//////
-////
-//
-*/
-
 package com.better.nothing.music.vizualizer.ui
 
 import com.better.nothing.music.vizualizer.R
@@ -29,9 +10,14 @@ import com.better.nothing.music.vizualizer.service.HapticsTileService
 import com.better.nothing.music.vizualizer.service.VisualizerTileService
 import com.better.nothing.music.vizualizer.util.AnalyticsHelper
 import com.better.nothing.music.vizualizer.logic.CommunityRepository
+import com.better.nothing.music.vizualizer.logic.AnnouncementRepository
 import com.better.nothing.music.vizualizer.model.CommunityPreset
+import com.better.nothing.music.vizualizer.model.Announcement
 import com.better.nothing.music.vizualizer.model.ZoneData
 import com.better.nothing.music.vizualizer.ui.CommunityPresetsScreen
+import com.better.nothing.music.vizualizer.ui.AnnouncementModal
+import com.better.nothing.music.vizualizer.ui.AnnouncementEditorScreen
+import com.better.nothing.music.vizualizer.ui.AnnouncementHistoryScreen
 
 import rikka.shizuku.Shizuku
 import rikka.shizuku.ShizukuProvider
@@ -105,6 +91,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -117,7 +104,15 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.BorderStroke
 import androidx.core.content.ContextCompat
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.core.content.edit
+import androidx.core.content.FileProvider
+import java.io.FileOutputStream
+import java.io.InputStream
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
@@ -135,13 +130,12 @@ import java.net.URL
 import kotlin.math.absoluteValue
 import kotlin.math.sqrt
 
-
-// ─── Tab ─────────────────────────────────────────────────────────────────────
-// Promoted to internal so MainViewModel can reference it without reflection.
-
-enum class Tab(val label: String) {
-    Audio("Audio"), Glyphs("Glyphs"), Haptics("Haptics"), Flashlight("Flashlight"), Settings("Settings");
-
+enum class Tab(val label: String, val labelRes: Int) {
+    Audio("Audio", R.string.tab_audio), 
+    Glyphs("Glyphs", R.string.tab_glyphs), 
+    Haptics("Haptics", R.string.tab_haptics), 
+    Flashlight("Flashlight", R.string.tab_flashlight), 
+    Settings("Settings", R.string.tab_settings);
 }
 
 private data class AudioRoute(
@@ -149,16 +143,10 @@ private data class AudioRoute(
     val displayName: String,
 )
 
-// ─── ViewModel ────────────────────────────────────────────────────────────────
-//
-// All mutable state lives here as MutableStateFlow so that:
-//   • State survives configuration changes — no full UI rebuild on rotation.
-//   • Collectors only recomposes the subtree that reads a particular flow.
-//   • All IO / CPU work is dispatched off the main thread.
-
 internal class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val ctx = application
     private val communityRepository = CommunityRepository()
+    private val announcementRepository = AnnouncementRepository()
     private val analytics = AnalyticsHelper(application)
 
     private val _thanksMessage = MutableStateFlow<String?>(null)
@@ -187,6 +175,79 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
     private val _captureSource = MutableStateFlow(AudioCaptureService.CaptureSource.INTERNAL)
     val captureSource = _captureSource.asStateFlow()
 
+    private val _latestAnnouncement = MutableStateFlow<Announcement?>(null)
+    val latestAnnouncement = _latestAnnouncement.asStateFlow()
+
+    private val _showAnnouncementModal = MutableStateFlow(false)
+    val showAnnouncementModal = _showAnnouncementModal.asStateFlow()
+
+    private val _showAnnouncementEditor = MutableStateFlow(false)
+    val showAnnouncementEditor = _showAnnouncementEditor.asStateFlow()
+
+    private val _showAnnouncementHistory = MutableStateFlow(false)
+    val showAnnouncementHistory = _showAnnouncementHistory.asStateFlow()
+
+    private val _showSpoofingSettings = MutableStateFlow(false)
+    val showSpoofingSettings = _showSpoofingSettings.asStateFlow()
+
+    private val _shizukuSourceUnlocked = MutableStateFlow(false)
+    val shizukuSourceUnlocked = _shizukuSourceUnlocked.asStateFlow()
+
+    fun setShizukuSourceUnlocked(unlocked: Boolean) {
+        _shizukuSourceUnlocked.value = unlocked
+        viewModelScope.launch(Dispatchers.IO) {
+            ctx.getSharedPreferences("viz_prefs", Context.MODE_PRIVATE)
+                .edit { putBoolean("shizuku_source_unlocked", unlocked) }
+        }
+    }
+
+    fun setShowSpoofingSettings(show: Boolean) {
+        _showSpoofingSettings.value = show
+    }
+
+    fun showAnnouncementEditor() { _showAnnouncementEditor.value = true }
+    fun hideAnnouncementEditor() { _showAnnouncementEditor.value = false }
+
+    fun showAnnouncementHistory() { _showAnnouncementHistory.value = true }
+    fun hideAnnouncementHistory() { _showAnnouncementHistory.value = false }
+
+    fun dismissAnnouncement() {
+        val announcement = _latestAnnouncement.value ?: return
+        _showAnnouncementModal.value = false
+        viewModelScope.launch(Dispatchers.IO) {
+            ctx.getSharedPreferences("viz_prefs", Context.MODE_PRIVATE)
+                .edit { putString("last_seen_announcement_id", announcement.id) }
+        }
+    }
+
+    fun postAnnouncement(title: String, message: String, style: String, link: String? = null, linkText: String? = null) {
+        viewModelScope.launch {
+            try {
+                val announcement = Announcement(
+                    id = System.currentTimeMillis().toString(),
+                    title = title,
+                    message = message,
+                    style = style,
+                    link = link.takeIf { it?.isNotBlank() == true },
+                    linkText = linkText.takeIf { it?.isNotBlank() == true },
+                    timestamp = System.currentTimeMillis()
+                )
+                announcementRepository.postAnnouncement(announcement)
+                _showAnnouncementEditor.value = false
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(ctx, ctx.getString(R.string.announcement_posted), Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(ctx, ctx.getString(R.string.failed_to_post, e.message), Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+
+    val announcementHistory = announcementRepository.getAnnouncementHistory()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
     init {
         val prefs = ctx.getSharedPreferences("viz_prefs", Context.MODE_PRIVATE)
         _favoritePresets.value = prefs.getStringSet("favorite_presets", emptySet()) ?: emptySet()
@@ -194,25 +255,40 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
         val savedSource = prefs.getString("capture_source", AudioCaptureService.CaptureSource.INTERNAL.name)
         _captureSource.value = AudioCaptureService.CaptureSource.valueOf(savedSource ?: AudioCaptureService.CaptureSource.INTERNAL.name)
 
+        _shizukuSourceUnlocked.value = prefs.getBoolean("shizuku_source_unlocked", false)
+
         // Track app openings and show thanks messages
         val openCount = prefs.getInt("app_open_count", 0) + 1
         prefs.edit().putInt("app_open_count", openCount).apply()
 
         viewModelScope.launch {
+            announcementRepository.getLatestAnnouncement().collect { announcement ->
+                _latestAnnouncement.value = announcement
+                if (announcement != null) {
+                    val sharedPrefs = ctx.getSharedPreferences("viz_prefs", Context.MODE_PRIVATE)
+                    val lastSeenId = sharedPrefs.getString("last_seen_announcement_id", "")
+                    if (announcement.id != lastSeenId) {
+                        _showAnnouncementModal.value = true
+                    }
+                }
+            }
+        }
+
+        viewModelScope.launch {
             if (BuildConfig.DEBUG) {
                 // In debug, show start-up messages every time
-                showThanks("thanks for downloading")
-                showThanks("thanks for installing")
+                showThanks(ctx.getString(R.string.thanks_downloading))
+                showThanks(ctx.getString(R.string.thanks_installing))
                 withContext(Dispatchers.Main) {
-                    Toast.makeText(ctx, "thanks for using the app", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(ctx, ctx.getString(R.string.thanks_using), Toast.LENGTH_SHORT).show()
                 }
             } else {
                 if (openCount == 1) {
-                    showThanks("thanks for downloading")
-                    showThanks("thanks for installing")
+                    showThanks(ctx.getString(R.string.thanks_downloading))
+                    showThanks(ctx.getString(R.string.thanks_installing))
                 } else if (openCount == 2) {
                     withContext(Dispatchers.Main) {
-                        Toast.makeText(ctx, "thanks for using the app", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(ctx, ctx.getString(R.string.thanks_using), Toast.LENGTH_SHORT).show()
                     }
                 }
             }
@@ -276,14 +352,14 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
             if (Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED) {
                 return true
             } else if (Shizuku.shouldShowRequestPermissionRationale()) {
-                Toast.makeText(ctx, "Shizuku permission is required for this source", Toast.LENGTH_LONG).show()
+                Toast.makeText(ctx, ctx.getString(R.string.shizuku_permission_required), Toast.LENGTH_LONG).show()
                 return false
             } else {
                 Shizuku.requestPermission(1001)
                 return false
             }
         } catch (e: Exception) {
-            Toast.makeText(ctx, "Shizuku not running or not installed", Toast.LENGTH_LONG).show()
+            Toast.makeText(ctx, ctx.getString(R.string.shizuku_not_running), Toast.LENGTH_LONG).show()
             return false
         }
     }
@@ -493,7 +569,13 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
     sealed class AppUpdateStatus {
         object Idle : AppUpdateStatus()
         object Checking : AppUpdateStatus()
-        data class Available(val version: String, val url: String) : AppUpdateStatus()
+        data class Available(
+            val version: String,
+            val url: String,
+            val changelog: String? = null,
+            val apkUrl: String? = null
+        ) : AppUpdateStatus()
+        data class Downloading(val progress: Float) : AppUpdateStatus()
         object UpToDate : AppUpdateStatus()
         data class Error(val message: String) : AppUpdateStatus()
     }
@@ -504,6 +586,19 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
         _configUpdateStatus.value = ConfigUpdateStatus.Updating
 
         viewModelScope.launch {
+            announcementRepository.getLatestAnnouncement().collect { announcement ->
+                _latestAnnouncement.value = announcement
+                if (announcement != null) {
+                    val sharedPrefs = ctx.getSharedPreferences("viz_prefs", Context.MODE_PRIVATE)
+                    val lastSeenId = sharedPrefs.getString("last_seen_announcement_id", "")
+                    if (announcement.id != lastSeenId) {
+                        _showAnnouncementModal.value = true
+                    }
+                }
+            }
+        }
+
+        viewModelScope.launch {
             try {
                 // 2. Perform network/download on IO Thread
                 val success = withContext(Dispatchers.IO) {
@@ -512,13 +607,13 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
 
                 // 3. Back on Main Thread automatically after withContext
                 if (success) {
-                    _configUpdateStatus.value = ConfigUpdateStatus.Success("Successfully updated zones.config")
+                    _configUpdateStatus.value = ConfigUpdateStatus.Success(ctx.getString(R.string.config_update_success))
                 }
                 // Errors are handled inside performUpdateAction setting the status directly now,
                 // or we could return Result object. To keep it simple with existing code:
             } catch (e: Exception) {
                 // Catch unexpected errors
-                _configUpdateStatus.value = ConfigUpdateStatus.Error("Error updating: ${e.message}")
+                _configUpdateStatus.value = ConfigUpdateStatus.Error(ctx.getString(R.string.config_error_updating, e.message))
             }
         }
     }
@@ -554,13 +649,13 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
                 true
             } else {
                 withContext(Dispatchers.Main) {
-                    _configUpdateStatus.value = ConfigUpdateStatus.Error("Failed to download: ${connection.responseCode}")
+                    _configUpdateStatus.value = ConfigUpdateStatus.Error(ctx.getString(R.string.config_download_error, connection.responseCode))
                 }
                 false
             }
         } catch (e: Exception) {
             withContext(Dispatchers.Main) {
-                _configUpdateStatus.value = ConfigUpdateStatus.Error("Error updating: ${e.message}")
+                _configUpdateStatus.value = ConfigUpdateStatus.Error(ctx.getString(R.string.config_error_updating, e.message))
             }
             false
         }
@@ -568,6 +663,19 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
 
     fun importZonesConfig(uri: Uri) {
         _configUpdateStatus.value = ConfigUpdateStatus.Updating
+        viewModelScope.launch {
+            announcementRepository.getLatestAnnouncement().collect { announcement ->
+                _latestAnnouncement.value = announcement
+                if (announcement != null) {
+                    val sharedPrefs = ctx.getSharedPreferences("viz_prefs", Context.MODE_PRIVATE)
+                    val lastSeenId = sharedPrefs.getString("last_seen_announcement_id", "")
+                    if (announcement.id != lastSeenId) {
+                        _showAnnouncementModal.value = true
+                    }
+                }
+            }
+        }
+
         viewModelScope.launch {
             try {
                 val success = withContext(Dispatchers.IO) {
@@ -593,12 +701,12 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
                 }
 
                 if (success) {
-                    _configUpdateStatus.value = ConfigUpdateStatus.Success("Successfully imported zones.config")
+                    _configUpdateStatus.value = ConfigUpdateStatus.Success(ctx.getString(R.string.config_import_success))
                 } else {
-                    _configUpdateStatus.value = ConfigUpdateStatus.Error("Failed to read selected file")
+                    _configUpdateStatus.value = ConfigUpdateStatus.Error(ctx.getString(R.string.config_import_error))
                 }
             } catch (e: Exception) {
-                _configUpdateStatus.value = ConfigUpdateStatus.Error("Error importing: ${e.message}")
+                _configUpdateStatus.value = ConfigUpdateStatus.Error(ctx.getString(R.string.config_error_importing, e.message))
             }
         }
     }
@@ -644,6 +752,20 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
                     val json = JSONObject(content)
                     val tagName = json.getString("tag_name")
                     val htmlUrl = json.getString("html_url")
+                    val body = json.optString("body")
+                    
+                    val assets = json.optJSONArray("assets")
+                    var apkUrl: String? = null
+                    if (assets != null) {
+                        for (i in 0 until assets.length()) {
+                            val asset = assets.getJSONObject(i)
+                            val name = asset.getString("name")
+                            if (name.endsWith(".apk")) {
+                                apkUrl = asset.getString("browser_download_url")
+                                break
+                            }
+                        }
+                    }
                     
                     val latestVersion = tagName.removePrefix("v")
                     val currentVersion = BuildConfig.VERSION_NAME
@@ -651,7 +773,7 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
                     _appRemoteVersion.value = latestVersion
 
                     if (isNewerVersion(currentVersion, latestVersion)) {
-                        _appUpdateStatus.value = AppUpdateStatus.Available(latestVersion, htmlUrl)
+                        _appUpdateStatus.value = AppUpdateStatus.Available(latestVersion, htmlUrl, body, apkUrl)
                         _showUpdateDialog.value = true
                     } else {
                         _appUpdateStatus.value = AppUpdateStatus.UpToDate
@@ -671,6 +793,69 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
                     Toast.makeText(ctx, errorMsg, Toast.LENGTH_SHORT).show()
                 }
             }
+        }
+    }
+
+    fun downloadAndInstallUpdate(apkUrl: String, versionName: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val url = URL(apkUrl)
+                val connection = url.openConnection() as HttpURLConnection
+                connection.connectTimeout = 10000
+                connection.readTimeout = 30000
+                
+                if (connection.responseCode == HttpURLConnection.HTTP_OK) {
+                    val fileLength = connection.contentLength
+                    val destinationFile = File(ctx.externalCacheDir, "update_$versionName.apk")
+                    
+                    connection.inputStream.use { input ->
+                        FileOutputStream(destinationFile).use { output ->
+                            val buffer = ByteArray(8192)
+                            var bytesRead: Int
+                            var totalBytesRead = 0L
+                            
+                            while (input.read(buffer).also { bytesRead = it } != -1) {
+                                output.write(buffer, 0, bytesRead)
+                                totalBytesRead += bytesRead
+                                if (fileLength > 0) {
+                                    val progress = totalBytesRead.toFloat() / fileLength.toFloat()
+                                    _appUpdateStatus.value = AppUpdateStatus.Downloading(progress)
+                                }
+                            }
+                        }
+                    }
+                    
+                    withContext(Dispatchers.Main) {
+                        installApk(destinationFile)
+                    }
+                } else {
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(ctx, "Download failed: ${connection.responseCode}", Toast.LENGTH_SHORT).show()
+                        _appUpdateStatus.value = AppUpdateStatus.Error("Download failed")
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("MainViewModel", "Download failed", e)
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(ctx, "Download error: ${e.message}", Toast.LENGTH_SHORT).show()
+                    _appUpdateStatus.value = AppUpdateStatus.Error(e.message ?: "Unknown error")
+                }
+            }
+        }
+    }
+
+    private fun installApk(file: File) {
+        try {
+            val uri = FileProvider.getUriForFile(ctx, "${ctx.packageName}.fileprovider", file)
+            val intent = Intent(Intent.ACTION_VIEW).apply {
+                setDataAndType(uri, "application/vnd.android.package-archive")
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            ctx.startActivity(intent)
+        } catch (e: Exception) {
+            Log.e("MainViewModel", "Installation failed", e)
+            Toast.makeText(ctx, "Installation failed: ${e.message}", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -813,6 +998,19 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
 
     fun sharePresetToCommunity(name: String, author: String, zones: List<AudioProcessor.ZoneSpec>) {
         viewModelScope.launch {
+            announcementRepository.getLatestAnnouncement().collect { announcement ->
+                _latestAnnouncement.value = announcement
+                if (announcement != null) {
+                    val sharedPrefs = ctx.getSharedPreferences("viz_prefs", Context.MODE_PRIVATE)
+                    val lastSeenId = sharedPrefs.getString("last_seen_announcement_id", "")
+                    if (announcement.id != lastSeenId) {
+                        _showAnnouncementModal.value = true
+                    }
+                }
+            }
+        }
+
+        viewModelScope.launch {
             try {
                 val preset = CommunityPreset(
                     name = name,
@@ -823,7 +1021,7 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
                 communityRepository.uploadPreset(preset)
                 analytics.logPresetShared(name)
                 withContext(Dispatchers.Main) {
-                    Toast.makeText(ctx, "thanks for participating to the community", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(ctx, ctx.getString(R.string.thanks_participating), Toast.LENGTH_SHORT).show()
                 }
             } catch (e: Exception) {
                 Log.e("MainViewModel", "Failed to share preset", e)
@@ -837,6 +1035,19 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
     fun downloadPreset(preset: CommunityPreset) {
         saveCustomPreset(preset.name, preset.zones.map { it.toZoneSpec() }, preset.author)
         analytics.logCommunityPresetDownloaded(preset.name, preset.author)
+        viewModelScope.launch {
+            announcementRepository.getLatestAnnouncement().collect { announcement ->
+                _latestAnnouncement.value = announcement
+                if (announcement != null) {
+                    val sharedPrefs = ctx.getSharedPreferences("viz_prefs", Context.MODE_PRIVATE)
+                    val lastSeenId = sharedPrefs.getString("last_seen_announcement_id", "")
+                    if (announcement.id != lastSeenId) {
+                        _showAnnouncementModal.value = true
+                    }
+                }
+            }
+        }
+
         viewModelScope.launch {
             communityRepository.incrementDownloadCount(preset.id)
             _isShowingCommunity.value = false
@@ -1278,6 +1489,19 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
                         thresholdMask = delta * 0.8f
                         // Auto-reset beat after a short duration for the UI flash
                         viewModelScope.launch {
+            announcementRepository.getLatestAnnouncement().collect { announcement ->
+                _latestAnnouncement.value = announcement
+                if (announcement != null) {
+                    val sharedPrefs = ctx.getSharedPreferences("viz_prefs", Context.MODE_PRIVATE)
+                    val lastSeenId = sharedPrefs.getString("last_seen_announcement_id", "")
+                    if (announcement.id != lastSeenId) {
+                        _showAnnouncementModal.value = true
+                    }
+                }
+            }
+        }
+
+        viewModelScope.launch {
                             delay(50)
                             _isBeatDetected.value = false
                         }
@@ -1467,7 +1691,7 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
 
     // ── Thanks Messages ──────────────────────────────────────────────────────
     fun onDevDepressed() {
-        showThanks("thanks for nothing")
+        showThanks(ctx.getString(R.string.thanks_nothing))
     }
 
     override fun onCleared() {
@@ -1563,12 +1787,12 @@ class MainActivity : ComponentActivity() {
                 } else {
                     pendingVisualizerStart = false
                     viewModel.setRunning(false)
-                    Toast.makeText(this@MainActivity, "Audio recording permission is required", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this@MainActivity, getString(R.string.audio_permission_required), Toast.LENGTH_SHORT).show()
                 }
             } else {
                 pendingVisualizerStart = false
                 viewModel.setRunning(false)
-                Toast.makeText(this@MainActivity, "Screen capture permission denied", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this@MainActivity, getString(R.string.screen_capture_denied), Toast.LENGTH_SHORT).show()
             }
         }
 
@@ -1580,7 +1804,7 @@ class MainActivity : ComponentActivity() {
                 viewModel.setRunning(false)
                 Toast.makeText(
                     this,
-                    "Notifications are required while the visualizer is active",
+                    getString(R.string.notifications_required),
                     Toast.LENGTH_SHORT
                 ).show()
             }
@@ -1594,7 +1818,7 @@ class MainActivity : ComponentActivity() {
                 viewModel.setRunning(false)
                 Toast.makeText(
                     this,
-                    "Audio recording permission is required",
+                    getString(R.string.audio_permission_required),
                     Toast.LENGTH_SHORT
                 ).show()
             }
@@ -1686,7 +1910,7 @@ class MainActivity : ComponentActivity() {
             if (Settings.canDrawOverlays(this)) {
                 viewModel.setOverlayEnabled(true)
             } else {
-                Toast.makeText(this, "Overlay permission denied", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.overlay_permission_denied), Toast.LENGTH_SHORT).show()
             }
         }
 
@@ -1754,27 +1978,73 @@ class MainActivity : ComponentActivity() {
                 val showUpdateDialog by viewModel.showUpdateDialog.collectAsStateWithLifecycle()
                 val appUpdateStatus by viewModel.appUpdateStatus.collectAsStateWithLifecycle()
 
-                if (showUpdateDialog && appUpdateStatus is MainViewModel.AppUpdateStatus.Available) {
-                    val update = appUpdateStatus as MainViewModel.AppUpdateStatus.Available
-                    val uriHandler = androidx.compose.ui.platform.LocalUriHandler.current
-                    androidx.compose.material3.AlertDialog(
-                        onDismissRequest = viewModel::dismissUpdateDialog,
-                        title = { androidx.compose.material3.Text("Update Available") },
-                        text = { androidx.compose.material3.Text("A new version (${update.version}) is available. Do you want to download it now?") },
-                        confirmButton = {
-                            androidx.compose.material3.Button(onClick = {
-                                uriHandler.openUri(update.url)
-                                viewModel.dismissUpdateDialog()
-                            }) {
-                                androidx.compose.material3.Text("Download")
+                if (showUpdateDialog) {
+                    val status = appUpdateStatus
+                    if (status is MainViewModel.AppUpdateStatus.Available) {
+                        androidx.compose.material3.AlertDialog(
+                            onDismissRequest = viewModel::dismissUpdateDialog,
+                            title = { androidx.compose.material3.Text(stringResource(R.string.update_available_title, status.version)) },
+                            text = {
+                                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    androidx.compose.material3.Text(stringResource(R.string.update_available_msg))
+                                    if (status.changelog != null) {
+                                        androidx.compose.foundation.layout.Box(
+                                            modifier = Modifier
+                                                .heightIn(max = 200.dp)
+                                                .verticalScroll(rememberScrollState())
+                                                .background(MaterialTheme.colorScheme.surfaceVariant, MaterialTheme.shapes.small)
+                                                .padding(8.dp)
+                                        ) {
+                                            androidx.compose.material3.Text(
+                                                text = status.changelog,
+                                                style = MaterialTheme.typography.bodySmall
+                                            )
+                                        }
+                                    } else {
+                                        androidx.compose.material3.Text(stringResource(R.string.no_changelog))
+                                    }
+                                }
+                            },
+                            confirmButton = {
+                                val uriHandler = androidx.compose.ui.platform.LocalUriHandler.current
+                                androidx.compose.material3.Button(onClick = {
+                                    if (status.apkUrl != null) {
+                                        viewModel.downloadAndInstallUpdate(status.apkUrl, status.version)
+                                    } else {
+                                        uriHandler.openUri(status.url)
+                                        viewModel.dismissUpdateDialog()
+                                    }
+                                }) {
+                                    androidx.compose.material3.Text(if (status.apkUrl != null) stringResource(R.string.install) else stringResource(R.string.download))
+                                }
+                            },
+                            dismissButton = {
+                                androidx.compose.material3.TextButton(onClick = viewModel::dismissUpdateDialog) {
+                                    androidx.compose.material3.Text(stringResource(R.string.not_now))
+                                }
                             }
-                        },
-                        dismissButton = {
-                            androidx.compose.material3.TextButton(onClick = viewModel::dismissUpdateDialog) {
-                                androidx.compose.material3.Text("Not now")
-                            }
-                        }
-                    )
+                        )
+                    } else if (status is MainViewModel.AppUpdateStatus.Downloading) {
+                        androidx.compose.material3.AlertDialog(
+                            onDismissRequest = {}, // Prevent dismiss while downloading
+                            title = { androidx.compose.material3.Text(stringResource(R.string.downloading_update)) },
+                            text = {
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    LinearProgressIndicator(
+                                        progress = { status.progress },
+                                        modifier = Modifier.fillMaxWidth(),
+                                    )
+                                    androidx.compose.material3.Text("${(status.progress * 100).toInt()}%")
+                                }
+                            },
+                            confirmButton = {},
+                            dismissButton = {}
+                        )
+                    }
                 }
 
                 if (isEditingPreset) {
@@ -1826,6 +2096,48 @@ class MainActivity : ComponentActivity() {
                 val communityPresets by viewModel.communityPresets.collectAsStateWithLifecycle()
                 val communityError by viewModel.communityError.collectAsStateWithLifecycle()
                 val thanksMessage by viewModel.thanksMessage.collectAsStateWithLifecycle()
+                val latestAnnouncement by viewModel.latestAnnouncement.collectAsStateWithLifecycle()
+                val showAnnouncementModal by viewModel.showAnnouncementModal.collectAsStateWithLifecycle()
+                val showAnnouncementEditor by viewModel.showAnnouncementEditor.collectAsStateWithLifecycle()
+                val showAnnouncementHistory by viewModel.showAnnouncementHistory.collectAsStateWithLifecycle()
+                val announcementHistory by viewModel.announcementHistory.collectAsStateWithLifecycle()
+
+                if (showAnnouncementModal && latestAnnouncement != null) {
+                    AnnouncementModal(
+                        announcement = latestAnnouncement!!,
+                        onDismiss = viewModel::dismissAnnouncement
+                    )
+                }
+
+                if (showAnnouncementEditor) {
+                    androidx.compose.ui.window.Dialog(
+                        onDismissRequest = viewModel::hideAnnouncementEditor,
+                        properties = androidx.compose.ui.window.DialogProperties(
+                            usePlatformDefaultWidth = false,
+                            decorFitsSystemWindows = false
+                        )
+                    ) {
+                        AnnouncementEditorScreen(
+                            onDismiss = viewModel::hideAnnouncementEditor,
+                            onPost = viewModel::postAnnouncement
+                        )
+                    }
+                }
+
+                if (showAnnouncementHistory) {
+                    androidx.compose.ui.window.Dialog(
+                        onDismissRequest = viewModel::hideAnnouncementHistory,
+                        properties = androidx.compose.ui.window.DialogProperties(
+                            usePlatformDefaultWidth = false,
+                            decorFitsSystemWindows = false
+                        )
+                    ) {
+                        AnnouncementHistoryScreen(
+                            announcements = announcementHistory,
+                            onDismiss = viewModel::hideAnnouncementHistory
+                        )
+                    }
+                }
 
                 if (thanksMessage != null) {
                     androidx.compose.material3.AlertDialog(
@@ -1847,7 +2159,7 @@ class MainActivity : ComponentActivity() {
                         },
                         title = { 
                             androidx.compose.material3.Text(
-                                "BETTER NOTHING MUSIC VISUALIZER", 
+                                stringResource(R.string.app_name_caps), 
                                 style = MaterialTheme.typography.titleSmall,
                                 fontWeight = FontWeight.ExtraBold,
                                 letterSpacing = 2.sp,
@@ -1871,7 +2183,7 @@ class MainActivity : ComponentActivity() {
                                 )
                                 Spacer(modifier = Modifier.height(24.dp))
                                 androidx.compose.material3.Text(
-                                    "WE APPRECIATE YOUR SUPPORT.",
+                                    stringResource(R.string.appreciate_support),
                                     textAlign = TextAlign.Center,
                                     style = MaterialTheme.typography.labelMedium,
                                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
@@ -1889,7 +2201,7 @@ class MainActivity : ComponentActivity() {
                                 )
                             ) {
                                 androidx.compose.material3.Text(
-                                    "YOU'RE WELCOME!",
+                                    stringResource(R.string.youre_welcome),
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onPrimary
                                 )
@@ -2153,7 +2465,7 @@ class MainActivity : ComponentActivity() {
 
     private fun onNotificationFlashEnabledChanged(enabled: Boolean) {
         if (enabled && !isNotificationServiceEnabled()) {
-            Toast.makeText(this, "Please enable notification access for this feature", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, getString(R.string.notification_access_required), Toast.LENGTH_LONG).show()
             startActivity(Intent("android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS"))
             return
         }
@@ -2377,7 +2689,7 @@ class MainActivity : ComponentActivity() {
         val route = resolvePreferredAudioRoute()
         val latency = viewModel.updateConnectedDevice(
             routeKey = route?.storageKey,
-            name = route?.displayName ?: "Internal Speaker"
+            name = route?.displayName ?: getString(R.string.internal_speaker)
         )
         service?.setLatencyCompensationMs(latency)
     }
@@ -2465,7 +2777,7 @@ private fun AudioDeviceInfo.isWiredOutput(): Boolean {
 
 private fun AudioDeviceInfo.toAudioRoute(): AudioRoute {
     val routeName = when (type) {
-        AudioDeviceInfo.TYPE_BUILTIN_SPEAKER -> "Internal Speaker"
+        AudioDeviceInfo.TYPE_BUILTIN_SPEAKER -> "Internal Speaker" // This is just for key generation/display, but let's leave it for now or pass context if needed.
         else -> productName?.toString()?.takeIf { it.isNotBlank() } ?: "Unknown Output"
     }
     val normalizedName = routeName.lowercase()
@@ -2500,21 +2812,21 @@ private fun MediaProjectionInfoDialog(
     androidx.compose.material3.AlertDialog(
         onDismissRequest = onDismiss,
         title = {
-            androidx.compose.material3.Text("MediaProjection permission")
+            androidx.compose.material3.Text(stringResource(R.string.mediaprojection_permission))
         },
         text = {
             androidx.compose.material3.Text(
-                "This permission lets the app access the device audio stream through Android's capture system so the Glyph visualizer can react in real time. No unnecessary recordings are stored, and the app does not save your media or private data."
+                stringResource(R.string.mediaprojection_description)
             )
         },
         confirmButton = {
             androidx.compose.material3.TextButton(onClick = onContinue) {
-                androidx.compose.material3.Text("Continue")
+                androidx.compose.material3.Text(stringResource(R.string.continue_label))
             }
         },
         dismissButton = {
             androidx.compose.material3.TextButton(onClick = onDismiss) {
-                androidx.compose.material3.Text("Not now")
+                androidx.compose.material3.Text(stringResource(R.string.not_now))
             }
         }
     )
@@ -2716,6 +3028,7 @@ private fun BetterVizApp(
                             val fftData by viewModel.fftState.collectAsStateWithLifecycle()
                             val captureSource by viewModel.captureSource.collectAsStateWithLifecycle()
                             val sessionDuration by viewModel.sessionDuration.collectAsStateWithLifecycle()
+                            val shizukuUnlocked by viewModel.shizukuSourceUnlocked.collectAsStateWithLifecycle()
                             AudioScreen(
                                 isRunning = isRunning,
                                 sessionDuration = sessionDuration,
@@ -2728,7 +3041,8 @@ private fun BetterVizApp(
                                 connectedDeviceName = connectedDeviceName,
                                 fftData = fftData,
                                 captureSource = captureSource,
-                                onCaptureSourceChanged = viewModel::setCaptureSource
+                                onCaptureSourceChanged = viewModel::setCaptureSource,
+                                shizukuUnlocked = shizukuUnlocked
                             )
                         }
                         Tab.Glyphs -> GlyphsScreen(

@@ -80,6 +80,12 @@ internal fun SettingsScreen(
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             LinkCard(
+                title = stringResource(R.string.app_news),
+                icon = Icons.Default.Campaign,
+                onClick = { viewModel.showAnnouncementHistory() },
+                modifier = Modifier.weight(1f)
+            )
+            LinkCard(
                 title = stringResource(R.string.about_title),
                 icon = Icons.Default.Info,
                 onClick = { viewModel.showAbout() },
@@ -107,7 +113,7 @@ internal fun SettingsScreen(
                 items = listOf("NDot", "NType"),
                 selectedItem = selectedFont,
                 onItemSelection = { viewModel.setSelectedFont(it) },
-                labelProvider = { it },
+                labelProvider = { if (it == "NDot") stringResource(R.string.font_ndot) else stringResource(R.string.font_ntype) },
                 modifier = Modifier.fillMaxWidth()
             )
 
@@ -144,7 +150,7 @@ internal fun SettingsScreen(
                         isSelected = isSelected,
                         onClick = { 
                             if (key == "Music" && !viewModel.isNotificationAccessGranted()) {
-                                Toast.makeText(localContext, "Music theme requires Notification Access. Please enable it for this app.", Toast.LENGTH_LONG).show()
+                                Toast.makeText(localContext, localContext.getString(R.string.music_theme_notification_access), Toast.LENGTH_LONG).show()
                                 localContext.startActivity(android.content.Intent("android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS"))
                             } else {
                                 viewModel.setSelectedTheme(key)
@@ -168,12 +174,12 @@ internal fun SettingsScreen(
                     Icon(Icons.Default.Air, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                     Column {
                         Text(
-                            text = "Idle Breathing",
+                            text = stringResource(R.string.idle_breathing_title),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold
                         )
                         Text(
-                            text = "Pulse Glyphs when no audio is playing",
+                            text = stringResource(R.string.idle_breathing_desc),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                         )
@@ -192,17 +198,17 @@ internal fun SettingsScreen(
             AnimatedVisibility(visible = idleBreathingEnabled) {
                 Column(modifier = Modifier.padding(top = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
-                        text = "Idle Pattern",
+                        text = stringResource(R.string.idle_pattern),
                         style = MaterialTheme.typography.labelLarge,
                         color = MaterialTheme.colorScheme.primary
                     )
 
                     val patternOptions = listOf(
-                        "pulse" to "Pulse",
-                        "wave" to "Wave",
-                        "scanner" to "Cylon",
-                        "static" to "Static",
-                        "zebra" to "Zebra"
+                        "pulse" to stringResource(R.string.idle_pattern_pulse),
+                        "wave" to stringResource(R.string.idle_pattern_wave),
+                        "scanner" to stringResource(R.string.idle_pattern_cylon),
+                        "static" to stringResource(R.string.idle_pattern_static),
+                        "zebra" to stringResource(R.string.idle_pattern_zebra)
                     )
 
                     ExpressiveSegmentedButtonRow(
@@ -227,12 +233,12 @@ internal fun SettingsScreen(
                     Icon(Icons.Default.Vibration, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                     Column {
                         Text(
-                            text = "Strobe Mode",
+                            text = stringResource(R.string.strobe_mode),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold
                         )
                         Text(
-                            text = "Alternating flash pattern for Glyphs",
+                            text = stringResource(R.string.strobe_mode_desc),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                         )
@@ -260,14 +266,14 @@ internal fun SettingsScreen(
                     showPasswordDialog = false
                     passwordInput = ""
                 },
-                title = { Text("Developer Access") },
+                title = { Text(stringResource(R.string.developer_access)) },
                 text = {
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Text("Please enter the developer password to enable advanced features and device spoofing.")
+                        Text(stringResource(R.string.developer_access_desc))
                         OutlinedTextField(
                             value = passwordInput,
                             onValueChange = { passwordInput = it },
-                            label = { Text("Password") },
+                            label = { Text(stringResource(R.string.password)) },
                             singleLine = true,
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(12.dp)
@@ -282,11 +288,11 @@ internal fun SettingsScreen(
                                 showPasswordDialog = false
                                 passwordInput = ""
                             } else {
-                                Toast.makeText(localContext, "Incorrect Password", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(localContext, localContext.getString(R.string.incorrect_password), Toast.LENGTH_SHORT).show()
                             }
                         }
                     ) {
-                        Text("Unlock")
+                        Text(stringResource(R.string.unlock))
                     }
                 },
                 dismissButton = {
@@ -294,7 +300,7 @@ internal fun SettingsScreen(
                         showPasswordDialog = false
                         passwordInput = ""
                     }) {
-                        Text("Cancel")
+                        Text(stringResource(R.string.cancel))
                     }
                 }
             )
@@ -310,12 +316,12 @@ internal fun SettingsScreen(
                     Icon(Icons.Default.Code, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                     Column {
                         Text(
-                            text = "Developer Mode",
+                            text = stringResource(R.string.developer_mode),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold
                         )
                         Text(
-                            text = "Advanced testing and device spoofing",
+                            text = stringResource(R.string.developer_mode_description),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                         )
@@ -338,43 +344,115 @@ internal fun SettingsScreen(
             }
 
             AnimatedVisibility(visible = devModeEnabled) {
-                Column(modifier = Modifier.padding(top = 20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    val spoofedDevice by viewModel.spoofedDevice.collectAsStateWithLifecycle()
-                    val devices = listOf(
-                        DeviceProfile.DEVICE_NP1,
-                        DeviceProfile.DEVICE_NP2,
-                        DeviceProfile.DEVICE_NP2A,
-                        DeviceProfile.DEVICE_NP3A,
-                        DeviceProfile.DEVICE_NP4A,
-                        DeviceProfile.DEVICE_NP4APRO,
-                        DeviceProfile.DEVICE_NP3
-                    )
-
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(
-                            text = stringResource(R.string.spoof_device),
-                            style = MaterialTheme.typography.labelLarge,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-
-                        FlowRow(
+                Column(modifier = Modifier.padding(top = 16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    // 1. Announcements
+                    ExpressiveCard(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.2f))
+                    ) {
+                        Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
-                            devices.forEach { dev ->
-                                NativeFilterChip(
-                                    label = DeviceProfile.deviceName(dev).replace("Nothing Phone ", ""),
-                                    selected = spoofedDevice == dev,
-                                    onClick = { viewModel.setSpoofedDevice(dev) }
+                            Icon(Icons.Default.Campaign, null, tint = MaterialTheme.colorScheme.primary)
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(stringResource(R.string.global_announcements), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                                Text(stringResource(R.string.global_announcements_desc), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                            }
+                            Button(
+                                onClick = { viewModel.showAnnouncementEditor() },
+                                shape = RoundedCornerShape(12.dp),
+                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
+                            ) {
+                                Text(stringResource(R.string.create), style = MaterialTheme.typography.labelMedium)
+                            }
+                        }
+                    }
+
+                    // 2. Shizuku Source Toggle
+                    val shizukuUnlocked by viewModel.shizukuSourceUnlocked.collectAsStateWithLifecycle()
+                    ExpressiveCard(
+                        containerColor = if (shizukuUnlocked) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                        border = BorderStroke(1.dp, if (shizukuUnlocked) MaterialTheme.colorScheme.primary.copy(alpha = 0.3f) else MaterialTheme.colorScheme.outline.copy(alpha = 0.1f))
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                Icon(Icons.Default.Terminal, null, tint = if (shizukuUnlocked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                                Column {
+                                    Text(stringResource(R.string.unlock_shizuku_source), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                                    Text(stringResource(R.string.unlock_shizuku_source_desc), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                                }
+                            }
+                            Switch(
+                                checked = shizukuUnlocked,
+                                onCheckedChange = { viewModel.setShizukuSourceUnlocked(it) },
+                                colors = SwitchDefaults.colors(
+                                    checkedThumbColor = Color.White,
+                                    checkedTrackColor = MaterialTheme.colorScheme.primary
+                                )
+                            )
+                        }
+                    }
+
+                    // 3. Device Spoofing Toggle
+                    val showSpoofing by viewModel.showSpoofingSettings.collectAsStateWithLifecycle()
+                    Column {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { viewModel.setShowSpoofingSettings(!showSpoofing) }
+                                .padding(vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                Icon(Icons.Default.Dns, null, modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
+                                Text(stringResource(R.string.spoof_device), style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+                            }
+                            Icon(
+                                if (showSpoofing) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                                null,
+                                tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+                            )
+                        }
+
+                        AnimatedVisibility(visible = showSpoofing) {
+                            Column(modifier = Modifier.padding(top = 8.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                                val spoofedDevice by viewModel.spoofedDevice.collectAsStateWithLifecycle()
+                                val devices = listOf(
+                                    DeviceProfile.DEVICE_NP1,
+                                    DeviceProfile.DEVICE_NP2,
+                                    DeviceProfile.DEVICE_NP2A,
+                                    DeviceProfile.DEVICE_NP3A,
+                                    DeviceProfile.DEVICE_NP4A,
+                                    DeviceProfile.DEVICE_NP4APRO,
+                                    DeviceProfile.DEVICE_NP3
+                                )
+
+                                FlowRow(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    devices.forEach { dev ->
+                                        NativeFilterChip(
+                                            label = DeviceProfile.deviceName(dev).replace("Nothing Phone ", ""),
+                                            selected = spoofedDevice == dev,
+                                            onClick = { viewModel.setSpoofedDevice(dev) }
+                                        )
+                                    }
+                                }
+                                BodyText(
+                                    text = stringResource(R.string.spoof_device_description),
+                                    size = 11.sp
                                 )
                             }
                         }
-
-                        BodyText(
-                            text = stringResource(R.string.spoof_device_description),
-                            size = 11.sp
-                        )
                     }
                 }
             }
@@ -415,28 +493,28 @@ internal fun SettingsScreen(
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         FeatureCard(
-                            title = "Expressive UI",
+                            title = stringResource(R.string.expressive_ui),
                             icon = Icons.Default.AutoAwesome,
                             checked = m3eEnabled,
                             onCheckedChange = { viewModel.setM3EEnabled(it) },
                             modifier = Modifier.weight(1f)
                         )
                         FeatureCard(
-                            title = "Notif. Flash",
+                            title = stringResource(R.string.notification_flash_title),
                             icon = Icons.Default.FlashOn,
                             checked = notificationFlashEnabled,
                             onCheckedChange = onNotificationFlashEnabledChanged,
                             modifier = Modifier.weight(1f)
                         )
                         FeatureCard(
-                            title = "Nav Overlay",
+                            title = stringResource(R.string.nav_overlay),
                             icon = Icons.Default.Layers,
                             checked = overlayEnabled,
                             onCheckedChange = onOverlayEnabledChanged,
                             modifier = Modifier.weight(1f)
                         )
                         FeatureCard(
-                            title = "Silent Auto-Off",
+                            title = stringResource(R.string.disable_glyphs_when_silent_title),
                             icon = Icons.AutoMirrored.Filled.VolumeOff,
                             checked = disableGlyphsWhenSilent,
                             onCheckedChange = onDisableGlyphsWhenSilentChanged,
@@ -453,7 +531,7 @@ internal fun SettingsScreen(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text(
-                                    text = "Overlay Width",
+                                    text = stringResource(R.string.overlay_width),
                                     style = MaterialTheme.typography.labelLarge,
                                     color = MaterialTheme.colorScheme.primary
                                 )
@@ -477,7 +555,7 @@ internal fun SettingsScreen(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text(
-                                    text = "Overlay Height",
+                                    text = stringResource(R.string.overlay_height),
                                     style = MaterialTheme.typography.labelLarge,
                                     color = MaterialTheme.colorScheme.primary
                                 )
@@ -501,7 +579,7 @@ internal fun SettingsScreen(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text(
-                                    text = "Vertical Position",
+                                    text = stringResource(R.string.vertical_position),
                                     style = MaterialTheme.typography.labelLarge,
                                     color = MaterialTheme.colorScheme.primary
                                 )
@@ -527,14 +605,14 @@ internal fun SettingsScreen(
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         FeatureCard(
-                            title = "Dynamic Gain",
+                            title = stringResource(R.string.dynamic_gain),
                             icon = Icons.AutoMirrored.Filled.TrendingUp,
                             checked = dynamicGainEnabled,
                             onCheckedChange = { viewModel.setDynamicGainEnabled(it) },
                             modifier = Modifier.weight(1f)
                         )
                         FeatureCard(
-                            title = "Battery Saver",
+                            title = stringResource(R.string.battery_saver),
                             icon = Icons.Default.BatteryChargingFull,
                             checked = batterySaverEnabled,
                             onCheckedChange = { viewModel.setBatterySaverEnabled(it) },
@@ -551,7 +629,7 @@ internal fun SettingsScreen(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text(
-                                    text = "Saver Threshold",
+                                    text = stringResource(R.string.saver_threshold),
                                     style = MaterialTheme.typography.labelLarge,
                                     color = MaterialTheme.colorScheme.primary
                                 )
@@ -569,7 +647,7 @@ internal fun SettingsScreen(
                                 modifier = Modifier.fillMaxWidth()
                             )
                             BodyText(
-                                text = "Reduces Glyph brightness when battery is below this level to save power.",
+                                text = stringResource(R.string.battery_saver_desc),
                                 size = 11.sp
                             )
                         }

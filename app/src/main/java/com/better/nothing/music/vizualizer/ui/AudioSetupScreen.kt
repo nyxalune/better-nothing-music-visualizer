@@ -38,6 +38,7 @@ import androidx.compose.ui.graphics.*
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -71,6 +72,7 @@ fun AudioScreen(
     fftData: FloatArray = floatArrayOf(),
     captureSource: AudioCaptureService.CaptureSource = AudioCaptureService.CaptureSource.INTERNAL,
     onCaptureSourceChanged: (AudioCaptureService.CaptureSource) -> Unit = {},
+    shizukuUnlocked: Boolean = false,
 ) {
     val context = LocalContext.current
     val scrollState = rememberScrollState()
@@ -136,7 +138,8 @@ fun AudioScreen(
                 } else {
                     onCaptureSourceChanged(source)
                 }
-            }
+            },
+            shizukuUnlocked = shizukuUnlocked
         )
 
         val descriptionText = if (isRunning) {
@@ -214,18 +217,17 @@ fun AudioScreen(
 @OptIn(ExperimentalLayoutApi::class)
 fun CaptureSourceCard(
     selectedSource: AudioCaptureService.CaptureSource,
-    onSourceSelected: (AudioCaptureService.CaptureSource) -> Unit
+    onSourceSelected: (AudioCaptureService.CaptureSource) -> Unit,
+    shizukuUnlocked: Boolean
 ) {
     ExpressiveCard(modifier = Modifier.fillMaxWidth()) {
         CardHeader(title = "Capture Source")
-        val sources = mutableListOf(
+        val sources = listOf(
             Triple(AudioCaptureService.CaptureSource.INTERNAL, stringResource(R.string.capture_media_projection), Icons.Default.PhoneAndroid),
             Triple(AudioCaptureService.CaptureSource.MIC, stringResource(R.string.capture_microphone), Icons.Default.Mic),
-            Triple(AudioCaptureService.CaptureSource.VIZUALIZER, stringResource(R.string.capture_vizualizer), Icons.Default.GraphicEq)
+            Triple(AudioCaptureService.CaptureSource.VIZUALIZER, stringResource(R.string.capture_vizualizer), Icons.Default.GraphicEq),
+            Triple(AudioCaptureService.CaptureSource.SHIZUKU, stringResource(R.string.capture_shizuku), Icons.Default.Terminal)
         )
-        if (BuildConfig.SHOW_SHIZUKU) {
-            sources.add(Triple(AudioCaptureService.CaptureSource.SHIZUKU, stringResource(R.string.capture_shizuku), Icons.Default.Terminal))
-        }
 
         FlowRow(
             modifier = Modifier.fillMaxWidth(),
@@ -235,10 +237,14 @@ fun CaptureSourceCard(
         ) {
             sources.forEach { (source, label, icon) ->
                 val isSelected = selectedSource == source
+                val isShizuku = source == AudioCaptureService.CaptureSource.SHIZUKU
+                val isEnabled = !isShizuku || shizukuUnlocked
+
                 OptionTile(
-                    label = label,
+                    label = if (isShizuku && !shizukuUnlocked) "$label (Locked)" else label,
                     icon = icon,
                     isSelected = isSelected,
+                    enabled = isEnabled,
                     onClick = { onSourceSelected(source) },
                     modifier = Modifier.height(64.dp),
                     maxLines = 2

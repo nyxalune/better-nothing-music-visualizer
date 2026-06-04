@@ -45,6 +45,23 @@ class PermissionTrampolineActivity : ComponentActivity() {
             return
         }
 
+        val appPrefs = getSharedPreferences("viz_prefs", Context.MODE_PRIVATE)
+        val sourceStr = appPrefs.getString("capture_source", AudioCaptureService.CaptureSource.INTERNAL.name)
+        val source = try {
+            AudioCaptureService.CaptureSource.valueOf(sourceStr!!)
+        } catch (e: Exception) {
+            AudioCaptureService.CaptureSource.INTERNAL
+        }
+
+        if (source == AudioCaptureService.CaptureSource.MIC || source == AudioCaptureService.CaptureSource.VIZUALIZER) {
+            val serviceIntent = Intent(this, AudioCaptureService::class.java).apply {
+                putExtra(AudioCaptureService.EXTRA_PRESET_KEY, getDefaultPreset())
+            }
+            ContextCompat.startForegroundService(this, serviceIntent)
+            finish()
+            return
+        }
+
         projectionLauncher.launch(projectionManager.createScreenCaptureIntent())
     }
     

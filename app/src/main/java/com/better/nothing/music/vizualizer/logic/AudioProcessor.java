@@ -7,7 +7,7 @@ import org.jtransforms.fft.DoubleFFT_1D;
  */
 public class AudioProcessor {
 
-    private static final int SAMPLE_RATE = 44100;
+    private int sampleRate = 44100;
     private static final float SPECTRUM_LEAKAGE_FLOOR_RATIO = 0.12f;
     private static final float EPSILON = 0.000001f;
 
@@ -25,19 +25,24 @@ public class AudioProcessor {
     private DoubleFFT_1D fft;
 
     public AudioProcessor() {
-        updateFFTSize(0); // Default
+        updateFFTSize(0, 44100); // Default
     }
 
     public void updateFFTSize(int latencyMs) {
-        int newFftSize = 4096; // Fixed size for temporal snappiness
+        updateFFTSize(latencyMs, 44100);
+    }
 
-        if (this.fftSize == newFftSize && this.fft != null) {
+    public void updateFFTSize(int latencyMs, int sampleRate) {
+        int newFftSize = 4096; // Fixed size for temporal snappiness
+        this.sampleRate = sampleRate;
+
+        if (this.fftSize == newFftSize && this.fft != null && this.hzPerBin == (float) sampleRate / (float) newFftSize) {
             return;
         }
 
         this.fftSize = newFftSize;
         this.analysisWindow = fftSize;
-        this.hzPerBin = (float) SAMPLE_RATE / (float) fftSize;
+        this.hzPerBin = (float) sampleRate / (float) fftSize;
 
         this.fft = new DoubleFFT_1D(fftSize);
         this.fftData = new double[fftSize * 2];
