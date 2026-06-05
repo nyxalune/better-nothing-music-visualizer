@@ -90,7 +90,7 @@ internal fun AboutScreen(
 
         ExpressiveCard {
             CardHeader(title = "Application")
-            
+
             Row(
                 modifier = Modifier
                     .fillMaxWidth()

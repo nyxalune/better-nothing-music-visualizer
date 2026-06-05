@@ -6,6 +6,7 @@
     <string name="audio_screen_title">Better Nothing\nMüzik Görselleştirici</string>
     <string name="audio_description_running">Gerçek zamanlı ses görselleştirici aktif. Telefonunuz şimdi ritme göre dans ediyor! Hiçbir içerik kaydedilmez ve gizliliğe saygı duyulur.</string>
     <string name="audio_description_idle">Bu uygulama Aleks Levet, rKyzen ve Oliver Lebaigue tarafından yapılmıştır.\n\nGlyph Arayüzünü müziğinizle senkronize etmek için bu uygulama cihaz sesini yakalar. Yüksek kaliteli görselleştirme için Media Projection kullanıyoruz.\n\nGizlilik Notu: Yalnızca ses akışını kullanıyoruz. Ekran içeriği kaydedilmez.</string>
+    <string name="audio_warning_vizualizer">Uyarı: Bu kaynak standart Android görselleştirici tarzı ses akışını kullanır. Düşük sadakatlidir ve kötü olabilir.</string>
     <string name="auto_memorize_device">Cihazı Otomatik Hatırla</string>
     <string name="saving_latency_for">Şunun için gecikme kaydediliyor: %s</string>
     <string name="internal_speaker">Dahili Hoparlör</string>
@@ -29,22 +30,23 @@
     <string name="theme_nothing">Nothing</string>
     <string name="theme_nothing_red">Nothing Kırmızı</string>
     <string name="theme_material_you">Material You</string>
+    <string name="theme_music">Müzik (Albüm Kapağı)</string>
     <string name="theme_help_text">Değişiklikler uygulama yeniden başlatıldıktan sonra uygulanır.</string>
     <string name="typography">Tipografi</string>
     <string name="font_ndot">NDot</string>
     <string name="font_ntype">NType</string>
     <string name="typography_help_text">Uygulama genelinde NDot ve NType yazı tipleri arasında geçiş yapın.</string>
-    <string name="more_settings_coming">Daha fazla ayar yakında gelecek...</string>
+    <string name="more_settings_coming">Daha fazla ayar yakında gelecek…</string>
 
     <!-- Haptics Screen -->
     <string name="haptics_title">Haptik</string>
-    <string name="haptics_header">Haptik</string>
+    <string name="haptics_header">Haptik kontrolleri</string>
     <string name="haptics_mode_label">Haptik Motor Modu</string>
     <string name="haptics_mode_bass">Bas Genliği</string>
     <string name="haptics_mode_beat">Ritim Algılama</string>
-    <string name="haptics_mode_richtap">RichTap HD (Bas)</string>
+    <string name="haptics_mode_richtap">RichTap HD</string>
     <string name="haptics_beat_detection_desc">Seçilen frekans aralığında algılanan ritimlerde titrer. Daha pürüzsüzdür ancak bazen o kadar kararlı değildir. Beta özelliğidir.</string>
-    <string name="haptics_motor_title">Sese Duyarlı Haptik</string>
+    <string name="haptics_motor_title">Haptik görselleştirme</string>
     <string name="haptics_frequency_label">Frekans: %1$d - %2$d Hz</string>
     <string name="haptics_frequency_desc">Bu aralıktaki ses genliğine göre titreşir.</string>
     <string name="haptics_amplitude_label">Genlik: %.1fx</string>
@@ -105,16 +107,98 @@
     <string name="check_for_app_updates">Uygulama Güncellemelerini Kontrol Et</string>
     <string name="discord_server">Discord Sunucusu</string>
     <string name="join_discord">Discord\'daki topluluğumuza katılın</string>
-    <string name="checking_for_updates">Güncellemeler kontrol ediliyor...</string>
+    <string name="checking_for_updates">Güncellemeler kontrol ediliyor…</string>
     <string name="app_up_to_date">Uygulama güncel</string>
+
+    <!-- Capture Source Labels -->
+    <string name="capture_media_projection">Media Projection\n(varsayılan, en iyisi)</string>
+    <string name="capture_microphone">Mikrofon</string>
+    <string name="capture_vizualizer">Android yerleşik görselleştirici</string>
+    <string name="capture_shizuku">Shizuku</string>
     <string name="update_available">Güncelleme mevcut: %s</string>
     <string name="update_now">Şimdi Güncelle</string>
     <string name="credit_alekslevet_role">Kurucu, koordinatör, ana fikir, sahip</string>
     <string name="credit_rkyzen_role">Android uygulama geliştiricisi (gerçek zamanlı müzik akışı)</string>
-    <string name="credit_oliver_role">Geliştirici</string>
+    <string name="credit_oliver_role">Bu harika uygulamanın yardımcı geliştiricisi</string>
     <string name="credit_nicouschulas_role">Beni oku ve Viki geliştirmeleri</string>
     <string name="credit_sebiai_role">Glif modlama ve destek</string>
     <string name="credit_earnedel_role">Beni oku geliştirmeleri</string>
     <string name="credit_ake_role">Entegrasyonlu bir müzik uygulaması üzerinde çalışan geliştirici</string>
     <string name="credit_interlastic_role">Betiği test etmek için Discord botu (kullanımdan kaldırıldı)</string>
+
+    <string name="app_news">Uygulama Haberleri</string>
+    <string name="music_theme_notification_access">Müzik teması Bildirim Erişimi gerektirir. Lütfen bu uygulama için etkinleştirin.</string>
+    <string name="idle_pattern">Boşta Deseni</string>
+    <string name="idle_pattern_pulse">Nabız</string>
+    <string name="idle_pattern_wave">Dalga</string>
+    <string name="idle_pattern_cylon">Cylon</string>
+    <string name="idle_pattern_static">Statik</string>
+    <string name="idle_pattern_zebra">Zebra</string>
+    <string name="strobe_mode">Strobo Modu</string>
+    <string name="strobe_mode_desc">Glifler için alternatif flaş deseni</string>
+    <string name="developer_access">Geliştirici Erişimi</string>
+    <string name="developer_access_desc">Gelişmiş özellikleri ve cihaz taklidini etkinleştirmek için lütfen geliştirici şifresini girin.</string>
+    <string name="password">Şifre</string>
+    <string name="unlock">Kilidi Aç</string>
+    <string name="incorrect_password">Yanlış Şifre</string>
+    <string name="cancel">İptal</string>
+    <string name="global_announcements">Küresel Duyurular</string>
+    <string name="global_announcements_desc">Tüm kullanıcıları güncellemeler veya haberler hakkında bilgilendirin</string>
+    <string name="create">Oluştur</string>
+    <string name="unlock_shizuku_source">Shizuku Kaynağını Kilidini Aç</string>
+    <string name="unlock_shizuku_source_desc">Deneysel yüksek sadakatli yakalama</string>
+    <string name="expressive_ui">Dışavurumcu Arayüz</string>
+    <string name="nav_overlay">Navigasyon Bindirmesi</string>
+    <string name="overlay_width">Bindirme Genişliği</string>
+    <string name="overlay_height">Bindirme Yüksekliği</string>
+    <string name="vertical_position">Dikey Konum</string>
+    <string name="dynamic_gain">Dinamik Kazanç</string>
+    <string name="battery_saver">Pil Tasarrufu</string>
+    <string name="saver_threshold">Tasarruf Eşiği</string>
+    <string name="battery_saver_desc">Güç tasarrufu sağlamak için pil bu seviyenin altına düştüğünde Glif parlaklığını azaltır.</string>
+
+    <string name="tab_audio">Ses</string>
+    <string name="tab_glyphs">Glifler</string>
+    <string name="tab_haptics">Haptik</string>
+    <string name="tab_flashlight">Fener</string>
+    <string name="tab_settings">Ayarlar</string>
+
+    <string name="update_available_title">Güncelleme Mevcut: %s</string>
+    <string name="update_available_msg">Yeni bir sürüm mevcut. Yenilikler:</string>
+    <string name="no_changelog">Değişiklik günlüğü mevcut değil.</string>
+    <string name="install">Yükle</string>
+    <string name="download">İndir</string>
+    <string name="not_now">Şimdi değil</string>
+    <string name="downloading_update">Güncelleme İndiriliyor…</string>
+
+    <string name="app_name_caps">BETTER NOTHING MÜZİK GÖRSELLEŞTİRİCİ</string>
+    <string name="appreciate_support">DESTEĞİNİZ İÇİN TEŞEKKÜR EDERİZ.</string>
+    <string name="youre_welcome">RİCA EDERİM!</string>
+
+    <string name="mediaprojection_permission">MediaProjection izni</string>
+    <string name="mediaprojection_description">Bu izin, Glyph görselleştiricinin gerçek zamanlı olarak tepki verebilmesi için uygulamanın Android\'in yakalama sistemi aracılığıyla cihaz ses akışına erişmesine olanak tanır. Gereksiz kayıtlar saklanmaz ve uygulama medyanızı veya özel verilerinizi kaydetmez.</string>
+    <string name="continue_label">Devam Et</string>
+
+    <string name="shizuku_permission_required">Bu kaynak için Shizuku izni gereklidir</string>
+    <string name="shizuku_not_running">Shizuku çalışmıyor veya yüklü değil</string>
+    <string name="announcement_posted">Duyuru yayınlandı!</string>
+    <string name="failed_to_post">Yayınlanamadı: %s</string>
+    <string name="audio_permission_required">Ses kaydı izni gereklidir</string>
+    <string name="screen_capture_denied">Ekran yakalama izni reddedildi</string>
+    <string name="notifications_required">Görselleştirici aktifken bildirimler gereklidir</string>
+    <string name="overlay_permission_denied">Bindirme izni reddedildi</string>
+    <string name="notification_access_required">Lütfen bu özellik için bildirim erişimini etkinleştirin</string>
+
+    <string name="thanks_downloading">indirdiğiniz için teşekkürler</string>
+    <string name="thanks_installing">yüklediğiniz için teşekkürler</string>
+    <string name="thanks_using">uygulamayı kullandığınız için teşekkürler</string>
+    <string name="thanks_nothing">hiçbir şey (nothing) için teşekkürler</string>
+    <string name="thanks_participating">topluluğa katıldığınız için teşekkürler</string>
+
+    <string name="config_update_success">zones.config başarıyla güncellendi</string>
+    <string name="config_import_success">zones.config başarıyla içe aktarıldı</string>
+    <string name="config_import_error">Seçilen dosya okunamadı</string>
+    <string name="config_download_error">İndirme başarısız oldu: %d</string>
+    <string name="config_error_updating">Güncelleme hatası: %s</string>
+    <string name="config_error_importing">İçe aktarma hatası: %s</string>
 </resources>
