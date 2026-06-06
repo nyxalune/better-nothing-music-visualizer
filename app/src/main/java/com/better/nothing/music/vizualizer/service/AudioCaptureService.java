@@ -237,10 +237,6 @@ public class AudioCaptureService extends Service {
     private boolean mNotificationFlashEnabled = false;
     private boolean mDisableGlyphsWhenSilent = false;
     private boolean mDynamicGainEnabled = false;
-    private boolean mBatterySaverEnabled = false;
-    private int mBatterySaverThreshold = 20;
-    private int mCurrentBatteryLevel = 100;
-    private boolean mIsBatteryLow = false;
 
     private boolean mOverlayEnabled = false;
     private int mOverlayWidth = 120;
@@ -317,32 +313,9 @@ public class AudioCaptureService extends Service {
         }
     };
 
-    private final android.content.BroadcastReceiver mBatteryReceiver = new android.content.BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            if (Intent.ACTION_BATTERY_CHANGED.equals(intent.getAction())) {
-                int level = intent.getIntExtra(android.os.BatteryManager.EXTRA_LEVEL, -1);
-                int scale = intent.getIntExtra(android.os.BatteryManager.EXTRA_SCALE, -1);
-                if (level != -1 && scale != -1) {
-                    mCurrentBatteryLevel = (int) ((level / (float) scale) * 100);
-                    updateBatterySaverState();
-                }
-            }
-        }
-    };
-
-    private void updateBatterySaverState() {
-        boolean wasLow = mIsBatteryLow;
-        mIsBatteryLow = mBatterySaverEnabled && mCurrentBatteryLevel <= mBatterySaverThreshold;
-        if (wasLow != mIsBatteryLow && mGlyphRenderer != null) {
-            applyEffectiveMaxBrightness();
-        }
-    }
-
     private void applyEffectiveMaxBrightness() {
         if (mGlyphRenderer == null) return;
-        int effectiveMax = mIsBatteryLow ? Math.min(mMaxBrightness, 1500) : mMaxBrightness;
-        mGlyphRenderer.setMaxBrightness(effectiveMax);
+        mGlyphRenderer.setMaxBrightness(mMaxBrightness);
     }
 
     private static final class PendingFrame {
@@ -385,8 +358,6 @@ public class AudioCaptureService extends Service {
     public void onCreate() {
         super.onCreate();
         sInstance = this;
-
-        registerReceiver(mBatteryReceiver, new android.content.IntentFilter(Intent.ACTION_BATTERY_CHANGED));
 
         mWorkerThread = new HandlerThread("GlyphVizWorker", Process.THREAD_PRIORITY_BACKGROUND);
         mWorkerThread.start();
@@ -528,9 +499,6 @@ public class AudioCaptureService extends Service {
     @Override
     public void onDestroy() {
         sInstance = null;
-        try {
-            unregisterReceiver(mBatteryReceiver);
-        } catch (Exception ignored) {}
         stopCapture();
         clearGlyphSession();
         if (mRichTapHapticEngine != null) {
@@ -939,12 +907,6 @@ public class AudioCaptureService extends Service {
 
     public void setDynamicGainEnabled(boolean enabled) {
         mDynamicGainEnabled = enabled;
-    }
-
-    public void setBatterySaverEnabled(boolean enabled, int threshold) {
-        mBatterySaverEnabled = enabled;
-        mBatterySaverThreshold = threshold;
-        updateBatterySaverState();
     }
 
     public void setOverlayEnabled(boolean enabled) {

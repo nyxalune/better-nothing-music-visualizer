@@ -315,9 +315,19 @@ fun FlowRowScope.OptionTile(
     enabled: Boolean = true
 ) {
     val interactionSource = remember { MutableInteractionSource() }
-    val isPressed by interactionSource.collectIsPressedAsState()
+    val isPressedReal by interactionSource.collectIsPressedAsState()
+    var isPressedDebounced by remember { mutableStateOf(false) }
 
-    val isEffectivelySelected = (isSelected || isPressed) && enabled
+    LaunchedEffect(isPressedReal) {
+        if (isPressedReal) {
+            isPressedDebounced = true
+        } else {
+            delay(150)
+            isPressedDebounced = false
+        }
+    }
+
+    val isEffectivelySelected = (isSelected || isPressedDebounced) && enabled
     val backgroundColor by animateColorAsState(
         if (!enabled) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
         else if (isEffectivelySelected) MaterialTheme.colorScheme.primary 
@@ -346,7 +356,7 @@ fun FlowRowScope.OptionTile(
         label = "cornerRadius"
     )
 
-    val targetWeight = if (isPressed && enabled) 1.2f else 1f
+    val targetWeight = if (isPressedDebounced && enabled) 1.2f else 1f
     val animatedWeight by animateFloatAsState(
         targetValue = targetWeight,
         animationSpec = spring(

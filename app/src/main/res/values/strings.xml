@@ -90,7 +90,6 @@
 
     <!-- About Screen -->
     <string name="about_title">App info and updates</string>
-    <string name="about_description">WE NEED A DAMN PROPER ABOUT SCREEN!! In the meantime please check GitHub for info.</string>
     <string name="about_intro">Better Nothing Music Visualizer unlocks the full potential of the Glyph Interface with high-fidelity, real-time frequency analysis.</string>
     <string name="about_section_why">Why are we better than Nothing\'s implementation:</string>
     <string name="about_why_1">• 12-bit brightness (4096 levels) vs ~2-bit stock (3 levels)</string>
@@ -174,9 +173,6 @@
     <string name="overlay_height">Overlay Height</string>
     <string name="vertical_position">Vertical Position</string>
     <string name="dynamic_gain">Dynamic Gain</string>
-    <string name="battery_saver">Battery Saver</string>
-    <string name="saver_threshold">Saver Threshold</string>
-    <string name="battery_saver_desc">Reduces Glyph brightness when battery is below this level to save power.</string>
 
     <string name="tab_audio">Audio</string>
     <string name="tab_glyphs">Glyphs</string>

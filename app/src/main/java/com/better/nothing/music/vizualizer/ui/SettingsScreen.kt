@@ -4,8 +4,6 @@ import com.better.nothing.music.vizualizer.R
 import com.better.nothing.music.vizualizer.model.DeviceProfile
 import android.widget.Toast
 import androidx.compose.animation.*
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.spring
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -26,7 +24,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.VolumeOff
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.*
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -50,8 +47,6 @@ internal fun SettingsScreen(
 ) {
     val m3eEnabled by viewModel.m3eEnabled.collectAsStateWithLifecycle()
     val dynamicGainEnabled by viewModel.dynamicGainEnabled.collectAsStateWithLifecycle()
-    val batterySaverEnabled by viewModel.batterySaverEnabled.collectAsStateWithLifecycle()
-    val batterySaverThreshold by viewModel.batterySaverThreshold.collectAsStateWithLifecycle()
     val overlayWidth by viewModel.overlayWidth.collectAsStateWithLifecycle()
     val overlayHeight by viewModel.overlayHeight.collectAsStateWithLifecycle()
     val overlayYOffset by viewModel.overlayYOffset.collectAsStateWithLifecycle()
@@ -220,39 +215,6 @@ internal fun SettingsScreen(
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
-            }
-        }
-
-        // ── Strobe Mode ─────────────────────────────────────────────────────
-        ExpressiveCard {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Icon(Icons.Default.Vibration, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                    Column {
-                        Text(
-                            text = stringResource(R.string.strobe_mode),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            text = stringResource(R.string.strobe_mode_desc),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                        )
-                    }
-                }
-                Switch(
-                    checked = strobeEnabled,
-                    onCheckedChange = onStrobeEnabledChanged,
-                    colors = SwitchDefaults.colors(
-                        checkedThumbColor = Color.White,
-                        checkedTrackColor = MaterialTheme.colorScheme.primary
-                    )
-                )
             }
         }
 
@@ -494,33 +456,41 @@ internal fun SettingsScreen(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        FeatureCard(
-                            title = stringResource(R.string.expressive_ui),
+                        OptionTile(
+                            label = stringResource(R.string.expressive_ui),
                             icon = Icons.Default.AutoAwesome,
-                            checked = m3eEnabled,
-                            onCheckedChange = { viewModel.setM3EEnabled(it) },
-                            modifier = Modifier.weight(1f)
+                            isSelected = m3eEnabled,
+                            onClick = { viewModel.setM3EEnabled(!m3eEnabled) }
                         )
-                        FeatureCard(
-                            title = stringResource(R.string.notification_flash_title),
+                        OptionTile(
+                            label = stringResource(R.string.notification_flash_title),
                             icon = Icons.Default.FlashOn,
-                            checked = notificationFlashEnabled,
-                            onCheckedChange = onNotificationFlashEnabledChanged,
-                            modifier = Modifier.weight(1f)
+                            isSelected = notificationFlashEnabled,
+                            onClick = { onNotificationFlashEnabledChanged(!notificationFlashEnabled) }
                         )
-                        FeatureCard(
-                            title = stringResource(R.string.nav_overlay),
+                        OptionTile(
+                            label = stringResource(R.string.nav_overlay),
                             icon = Icons.Default.Layers,
-                            checked = overlayEnabled,
-                            onCheckedChange = onOverlayEnabledChanged,
-                            modifier = Modifier.weight(1f)
+                            isSelected = overlayEnabled,
+                            onClick = { onOverlayEnabledChanged(!overlayEnabled) }
                         )
-                        FeatureCard(
-                            title = stringResource(R.string.disable_glyphs_when_silent_title),
+                        OptionTile(
+                            label = stringResource(R.string.disable_glyphs_when_silent_title),
                             icon = Icons.AutoMirrored.Filled.VolumeOff,
-                            checked = disableGlyphsWhenSilent,
-                            onCheckedChange = onDisableGlyphsWhenSilentChanged,
-                            modifier = Modifier.weight(1f)
+                            isSelected = disableGlyphsWhenSilent,
+                            onClick = { onDisableGlyphsWhenSilentChanged(!disableGlyphsWhenSilent) }
+                        )
+                        OptionTile(
+                            label = stringResource(R.string.dynamic_gain),
+                            icon = Icons.AutoMirrored.Filled.TrendingUp,
+                            isSelected = dynamicGainEnabled,
+                            onClick = { viewModel.setDynamicGainEnabled(!dynamicGainEnabled) }
+                        )
+                        OptionTile(
+                            label = stringResource(R.string.strobe_mode),
+                            icon = Icons.Default.Vibration,
+                            isSelected = strobeEnabled,
+                            onClick = { onStrobeEnabledChanged(!strobeEnabled) }
                         )
                     }
 
@@ -599,61 +569,6 @@ internal fun SettingsScreen(
                             )
                         }
                     }
-
-                    FlowRow(
-                        modifier = Modifier.fillMaxWidth(),
-                        maxItemsInEachRow = 2,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        FeatureCard(
-                            title = stringResource(R.string.dynamic_gain),
-                            icon = Icons.AutoMirrored.Filled.TrendingUp,
-                            checked = dynamicGainEnabled,
-                            onCheckedChange = { viewModel.setDynamicGainEnabled(it) },
-                            modifier = Modifier.weight(1f)
-                        )
-                        FeatureCard(
-                            title = stringResource(R.string.battery_saver),
-                            icon = Icons.Default.BatteryChargingFull,
-                            checked = batterySaverEnabled,
-                            onCheckedChange = { viewModel.setBatterySaverEnabled(it) },
-                            modifier = Modifier.weight(1f)
-                        )
-                        Spacer(modifier = Modifier.weight(1f))
-                    }
-
-                    AnimatedVisibility(visible = batterySaverEnabled) {
-                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    text = stringResource(R.string.saver_threshold),
-                                    style = MaterialTheme.typography.labelLarge,
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                                Text(
-                                    text = "$batterySaverThreshold%",
-                                    style = MaterialTheme.typography.labelMedium,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-                            ExpressiveSlider(
-                                value = batterySaverThreshold.toFloat(),
-                                onValueChange = { viewModel.setBatterySaverThreshold(it.toInt()) },
-                                valueRange = 5f..50f,
-                                steps = 9,
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                            BodyText(
-                                text = stringResource(R.string.battery_saver_desc),
-                                size = 11.sp
-                            )
-                        }
-                    }
                 }
             }
         }
@@ -691,46 +606,6 @@ private fun LinkCard(
                 lineHeight = 14.sp
             )
             Icon(Icons.Default.ChevronRight, null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f))
-        }
-    }
-}
-
-@Composable
-private fun FeatureCard(
-    title: String,
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val backgroundColor by animateColorAsState(
-        if (checked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-    )
-    val contentColor by animateColorAsState(
-        if (checked) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
-    )
-
-    Surface(
-        onClick = { onCheckedChange(!checked) },
-        shape = MaterialTheme.shapes.medium,
-        color = backgroundColor,
-        contentColor = contentColor,
-        modifier = modifier.height(64.dp)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Icon(icon, contentDescription = null, modifier = Modifier.size(20.dp))
-            Text(
-                text = title,
-                style = MaterialTheme.typography.labelSmall,
-                maxLines = 2,
-                fontWeight = if (checked) FontWeight.Bold else FontWeight.Medium,
-                modifier = Modifier.weight(1f),
-                lineHeight = 14.sp
-            )
         }
     }
 }
