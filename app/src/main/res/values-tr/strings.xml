@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Better Nothing Müzik Görselleştirici</string>
+    <string name="app_name">Better Nothing Music Visualizer</string>
 
     <!-- Audio Screen -->
     <string name="audio_screen_title">Better Nothing\nMüzik Görselleştirici</string>
@@ -201,4 +201,73 @@
     <string name="config_download_error">İndirme başarısız oldu: %d</string>
     <string name="config_error_updating">Güncelleme hatası: %s</string>
     <string name="config_error_importing">İçe aktarma hatası: %s</string>
+
+    <!-- License Screen -->
+    <string name="license_title">Lisans</string>
+    <string name="license_agreement">Lisans Sözleşmesi</string>
+    <string name="read_license">Yazılım lisansını oku</string>
+    <string name="license_agreement_title">BETTER-NOTHING-MUSIC-VISUALIZER LİSANS SÖZLEŞMESİ</string>
+    <string name="license_version">Sürüm: 1.1</string>
+    <string name="license_date">Tarih: 16 Mayıs 2026</string>
+    <string name="license_licensor">Lisans Veren</string>
+    <string name="license_licensor_name">Oliver Lebaigue</string>
+    <string name="license_founder">Kurucu</string>
+    <string name="license_founder_name">Aleks Levet</string>
+    <string name="license_organization">Organizasyon</string>
+    <string name="license_organization_name">Luminus Labs</string>
+    <string name="license_section_1">1. BAŞLANGIÇ</string>
+    <string name="license_preamble_1">İşbu Lisans Sözleşmesi (\"Sözleşme\"), Oliver Lebaigue (\"Lisans Veren\") ile siz (\"Lisans Alan\") arasında, Aleks Levet tarafından Luminus Labs organizasyonu altında kurulan \"better-nothing-music-visualizer\" (\"Yazılım\") adlı müzik görselleştirici yazılım uygulamasının kullanımı, incelenmesi ve değiştirilmesi için yapılan yasal bir sözleşmedir.</string>
+    <string name="license_preamble_2">Yazılımın kaynak kodu https://github.com/aleks-levet/better-nothing-music-visualizer adresinde herkese açık olarak barındırılmaktadır. Yazılıma veya Kaynak Koduna erişerek, indirerek, kopyalayarak veya başka bir şekilde kullanarak, Lisans Alan işbu Sözleşmenin şartlarına bağlı kalmayı kabul eder.</string>
+    <string name="license_section_2">2. TANIMLAR</string>
+    <string name="license_def_1">2.1 \"Yazılım\", kaynak kodu, ses işleme modülleri, oluşturma motorları, görsel varlıklar, grafik kitaplıkları, yapılandırma betikleri, dokümantasyon, nesne dosyaları, ikili yürütülebilir dosyalar ve ilgili her türlü medya veya varlığı içeren ancak bunlarla sınırlı olmayan better-nothing-music-visualizer yazılım uygulamasını ifade eder.</string>
+    <string name="license_def_2">2.2 \"Kaynak Kodu\", tüm betik dosyaları, gölgelendirici kodları, varlıklar ve derleme yapılandırmaları dahil olmak üzere Yazılımın herkese açık olarak ifşa edilen dosyalarını ifade eder.</string>
+    <string name="license_section_3">3. LİSANS VERME VE ERİŞİLEBİLİRLİK</string>
+    <string name="license_section_3_1">3.1 Kamuoyuna Açıklık</string>
+    <string name="license_grant_3_1">Lisans Veren, Kaynak Kodunun herkese açık olduğunu kabul eder. Lisans Alan\'a, Kaynak Kodunu yalnızca kişisel, eğitimsel ve ticari olmayan değerlendirme amaçlarıyla indirmesi, görüntülemesi ve değiştirmesi için münhasır olmayan, devredilemez ve iptal edilebilir bir lisans verilir.</string>
+    <string name="license_section_3_2">3.2 Kısıtlamalar</string>
+    <string name="license_grant_3_2">Lisans Alan ŞUNLARI YAPAMAZ:</string>
+    <string name="license_restriction_a">* (a) Yazılımı veya değiştirilmiş versiyonlarını, GitHub üzerindeki standart depo çatalları (fork) hariç olmak üzere, üçüncü taraflara yeniden dağıtamaz; bu çatalların da tam olarak bu Lisansa bağlı kalması şarttır.</string>
+    <string name="license_restriction_b">* (b) Yazılımı veya herhangi bir türev çalışmasını ticari amaçlarla, halka açık performanslarda, ticari yayınlarda veya herhangi bir gelir getirici faaliyette ayrı bir yazılı izin olmaksızın kullanamaz.</string>
+    <string name="license_restriction_c">* (c) Yazılımın üzerine veya içine yerleştirilmiş olan Aleks Levet, Luminus Labs veya Lisans Veren\'e yapılan atıflar da dahil olmak üzere hiçbir telif hakkı, ticari marka, patent veya mülkiyet hakkı bildirimini kaldıramaz, değiştiremez veya gizleyemez.</string>
+    <string name="license_restriction_d">* (d) Yazılımı, rakip bir ticari müzik görselleştirme yazılımı veya platformu geliştirmek için kullanamaz.</string>
+    <string name="license_section_4">4. FİKRİ MÜLKİYET HAKLARI</string>
+    <string name="license_section_4_1">4.1 Mülkiyet</string>
+    <string name="license_ownership">Lisans Veren, Aleks Levet ve Luminus Labs, Yazılım üzerindeki ve Yazılıma ilişkin tüm fikri mülkiyet hakları dahil olmak üzere ilgili tüm hak, unvan ve menfaatleri saklı tutar. Kaynak Kodunun kamuya açıklanması, telif hakkından veya mülkiyetten feragat edildiği anlamına gelmez.</string>
+    <string name="license_section_5">5. GARANTİ YOKTUR</string>
+    <string name="license_section_5_1">5.1 Sorumluluk Reddi</string>
+    <string name="license_warranty_disclaimer">YAZILIM \"OLDUĞU GİBİ\" VE \"TÜM HATALARIYLA\" SUNULMAKTADIR. YÜRÜRLÜKTEKİ YASALARIN İZİN VERDİĞİ AZAMİ ÖLÇÜDE, LİSANS VEREN, TİCARİ ELVERİŞLİLİK, BELİRLİ BİR AMACA UYGUNLUK, MÜLKİYET VE İHLAL ETMEME DAHİL ANCAK BUNLARLA SINIRLI OLMAMAK ÜZERE, AÇIK, ZIMNİ VEYA YASAL DİĞER TÜM GARANTİ VE KOŞULLARI REDDEDER.</string>
+    <string name="license_section_5_2">5.2 Teknik Destek Yoktur</string>
+    <string name="license_technical_support">Lisans Veren, Aleks Levet ve Luminus Labs, Yazılım için teknik destek, güncelleme, yükseltme veya değişiklik sağlama yükümlülüğü altında değildir.</string>
+    <string name="license_section_6">6. SORUMLULUĞUN SINIRLANDIRILMASI</string>
+    <string name="license_section_6_1">6.1 Sorumluluk Üst Sınırı</string>
+    <string name="license_liability_cap">YÜRÜRLÜKTEKİ YASALARIN İZİN VERDİĞİ AZAMİ ÖLÇÜDE, LİSANS VEREN, ALEKS LEVET VEYA LUMINUS LABS, YAZILIMIN KULLANIMINDAN VEYA KULLANILAMAMASINDAN KAYNAKLANAN HİÇBİR DOLAYLI, ARIZİ, ÖZEL, SONUÇSAL VEYA CEZAİ ZARARDAN (KAR KAYBI, İŞİN KESİNTİYE UĞRAMASI VEYA DİĞER MADDİ KAYIPLAR DAHİL ANCAK BUNLARLA SINIRLI OLMAMAK ÜZERE), BU TÜR ZARARLARIN OLASILIĞI KONUSUNDA BİLGİLENDİRİLMİŞ OLSALAR DAHİ, HİÇBİR DURUMDA SORUMLU TUTULAMAZ.</string>
+    <string name="license_section_7">7. FESİH</string>
+    <string name="license_section_7_1">7.1 Otomatik Fesih</string>
+    <string name="license_termination">Lisans Alan\'ın işbu Sözleşme kapsamındaki hakları, Lisans Alan\'ın işbu Sözleşmenin herhangi bir şartına uymaması durumunda, Lisans Veren\'den herhangi bir bildirim gelmeksizin otomatik olarak sona erecektir. Fesih üzerine, Lisans Alan tüm kullanımı durdurmalı ve Yazılımın tüm yerel kopyalarını imha etmelidir.</string>
+    <string name="license_section_8">8. ÇEŞİTLİ HÜKÜMLER</string>
+    <string name="license_section_8_1">8.1 Uygulanacak Hukuk</string>
+    <string name="license_governing_law">İşbu Sözleşme, kanunlar ihtilafı ilkelerine bakılmaksızın, Oliver Lebaigue\'in ikamet ettiği yargı bölgesinin kanunlarına tabi olacak ve bu kanunlara göre yorumlanacaktır.</string>
+    <string name="end_of_license">LİSANS SÖZLEŞMESİNİN SONU</string>
+
+    <string name="back">Geri</string>
+    <string name="visual_preset_editor">Görsel Hazır Ayar Editörü</string>
+    <string name="share">Paylaş</string>
+    <string name="save">Kaydet</string>
+    <string name="community_presets">Topluluk Hazır Ayarları</string>
+    <string name="share_to_community">Toplulukla Paylaş</string>
+    <string name="share_preset_desc">Hazır ayarınızı diğer kullanıcılarla paylaşın.</string>
+    <string name="author_name">Yazar Adı</string>
+    <string name="preset_name">Hazır Ayar Adı</string>
+    <string name="segments_selected">Segmentler (%d seçildi)</string>
+    <string name="multi_select">Çoklu seçim</string>
+    <string name="bulk_actions">Toplu İşlemler</string>
+    <string name="bulk_actions_desc">Ayarları tüm seçili segmentlere uygula</string>
+    <string name="auto_distribute">Otomatik Dağıt</string>
+    <string name="editing_segment">Segment #%d Düzenleniyor</string>
+    <string name="editing_segments_count">%d Segment Düzenleniyor</string>
+    <string name="frequency_range_label">Frekans Aralığı: %1$dHz - %2$dHz</string>
+    <string name="no_presets_found">Hazır ayar bulunamadı. İlk paylaşan siz olun!</string>
+    <string name="preset_by_author">%1$s • %2$s tarafından</string>
+    <string name="downloads_count">%1$s • %2$d indirme</string>
+    <string name="clear">Temizle</string>
 </resources>

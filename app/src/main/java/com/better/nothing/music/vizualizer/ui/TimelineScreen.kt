@@ -39,6 +39,22 @@ internal fun TimelineScreen(
     val items = remember {
         listOf(
             TimelineItem(
+                "RichTap HD & Shizuku",
+                "Advanced audio capture via Shizuku integration.",
+                isKey = true,
+                status = TimelineStatus.IN_PROGRESS
+            ),
+            TimelineItem(
+                title = "Multiple Languages",
+                description = "Support for English, Spanish, and Chinese interfaces.",
+            ),
+            TimelineItem(
+                "Flashlight Visualizer",
+                "The latest addition: sync your camera LED with the beat.",
+                isKey = false,
+                status = TimelineStatus.DONE
+            ),
+            TimelineItem(
                 "Strobe Mode",
                 "Experimental high-frequency flicker for intense visual feedback.",
                 isKey = false,
@@ -51,18 +67,6 @@ internal fun TimelineScreen(
                 status = TimelineStatus.DONE
             ),
             TimelineItem(
-                "RichTap HD & Shizuku",
-                "Advanced haptics and high-fidelity audio capture via Shizuku integration.",
-                isKey = true,
-                status = TimelineStatus.IN_PROGRESS
-            ),
-            TimelineItem(
-                "Flashlight Visualizer",
-                "The latest addition: sync your camera LED with the beat.",
-                isKey = true,
-                status = TimelineStatus.IN_PROGRESS
-            ),
-            TimelineItem(
                 "Dynamic Theming",
                 "Auto Dark/Light mode support and Material You color syncing.",
                 isKey = false,
@@ -71,13 +75,13 @@ internal fun TimelineScreen(
             TimelineItem(
                 "Phone (1) Compatibility",
                 "Full support for the original Nothing Phone (1) Glyphs.",
-                isKey = true,
+                isKey = false,
                 status = TimelineStatus.DONE
             ),
             TimelineItem(
                 "Haptic Visualization",
                 "Feel the music through the device's vibration motor.",
-                isKey = true,
+                isKey = false,
                 status = TimelineStatus.DONE
             ),
             TimelineItem(

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">बेटर नथिंग म्यूजिक विज़ुअलाइज़र</string>
+    <string name="app_name">Better Nothing Music Visualizer</string>
 
     <!-- Audio Screen -->
     <string name="audio_screen_title">बेटर नथिंग\nम्यूजिक विज़ुअलाइज़र</string>
@@ -201,4 +201,73 @@
     <string name="config_download_error">डाउनलोड करने में विफल: %d</string>
     <string name="config_error_updating">अपडेट करने में त्रुटि: %s</string>
     <string name="config_error_importing">आयात करने में त्रुटि: %s</string>
+
+    <!-- License Screen -->
+    <string name="license_title">लाइसेंस</string>
+    <string name="license_agreement">लाइसेंस समझौता</string>
+    <string name="read_license">सॉफ्टवेयर लाइसेंस पढ़ें</string>
+    <string name="license_agreement_title">बेटर-नथिंग-म्यूजिक-विज़ुअलाइज़र लाइसेंस समझौता</string>
+    <string name="license_version">संस्करण: 1.1</string>
+    <string name="license_date">दिनांक: 16 मई, 2026</string>
+    <string name="license_licensor">लाइसेंसदाता</string>
+    <string name="license_licensor_name">ओलिवर लेबैग</string>
+    <string name="license_founder">संस्थापक</string>
+    <string name="license_founder_name">एलेक्स लेवेट</string>
+    <string name="license_organization">संगठन</string>
+    <string name="license_organization_name">ल्यूमिनस लैब्स</string>
+    <string name="license_section_1">1. प्रस्तावना</string>
+    <string name="license_preamble_1">यह लाइसेंस समझौता (\"समझौता\") आपके (\"लाइसेंसधारी\") और ओलिवर लेबैग (\"लाइसेंसदाता\") के बीच \"बेटर-नथिंग-म्यूजिक-विज़ुअलाइज़र\" (\"सॉफ्टवेयर\") के रूप में जाने जाने वाले म्यूजिक विज़ुअलाइज़र सॉफ्टवेयर एप्लिकेशन के उपयोग, समीक्षा और संशोधन के लिए एक कानूनी समझौता है, जो ल्यूमिनस लैब्स संगठन के तहत एलेक्स लेवेट द्वारा स्थापित एक परियोजना है।</string>
+    <string name="license_preamble_2">सॉफ्टवेयर का सोर्स कोड सार्वजनिक रूप से https://github.com/aleks-levet/better-nothing-music-visualizer पर होस्ट किया गया है। सॉफ्टवेयर या इसके सोर्स कोड को एक्सेस करने, डाउनलोड करने, कॉपी करने या अन्यथा उपयोग करने से, लाइसेंसधारी इस समझौते की शर्तों से बाध्य होने के लिए सहमत है।</string>
+    <string name="license_section_2">2. परिभाषाएं</string>
+    <string name="license_def_1">2.1 \"सॉफ्टवेयर\" का अर्थ होगा बेटर-नथिंग-म्यूजिक-विज़ुअलाइज़र सॉफ्टवेयर एप्लिकेशन, जिसमें सोर्स कोड, ऑडियो प्रोसेसिंग मॉड्यूल, रेंडरिंग इंजन, विजुअल एसेट्स, ग्राफिक्स लाइब्रेरी, कॉन्फ़िगरेशन स्क्रिप्ट, दस्तावेज़ीकरण, ऑब्जेक्ट फाइलें, बाइनरी एक्जीक्यूटेबल और कोई भी संबद्ध मीडिया या एसेट्स शामिल हैं, लेकिन इन्हीं तक सीमित नहीं हैं।</string>
+    <string name="license_def_2">2.2 \"सोर्स कोड\" का अर्थ होगा सॉफ्टवेयर की सार्वजनिक रूप से प्रकट फाइलें, जिसमें सभी स्क्रिप्ट फाइलें, शेडर कोड, एसेट्स और बिल्ड कॉन्फ़िगरेशन शामिल हैं।</string>
+    <string name="license_section_3">3. लाइसेंस प्रदान करना और पहुंच</string>
+    <string name="license_section_3_1">3.1 सार्वजनिक उपलब्धता</string>
+    <string name="license_grant_3_1">लाइसेंसदाता स्वीकार करता है कि सोर्स कोड सार्वजनिक है। लाइसेंसधारी को केवल व्यक्तिगत, शैक्षिक और गैर-व्यावसायिक मूल्यांकन उद्देश्यों के लिए सोर्स कोड डाउनलोड करने, देखने और संशोधित करने के लिए एक गैर-अनन्य, गैर-हस्तांतरणीय, प्रतिसंहरणीय लाइसेंस प्रदान किया जाता है।</string>
+    <string name="license_section_3_2">3.2 प्रतिबंध</string>
+    <string name="license_grant_3_2">लाइसेंसधारी यह नहीं कर सकता है:</string>
+    <string name="license_restriction_a">* (a) सॉफ्टवेयर या उसके संशोधित संस्करणों को तीसरे पक्ष को पुनर्वितरित करना, सिवाय गिटहब पर मानक रिपॉजिटरी फोर्क्स के माध्यम से, बशर्ते कि वे फोर्क्स इसी सटीक लाइसेंस से बाध्य रहें।</string>
+    <string name="license_restriction_b">* (b) बिना अलग लिखित प्राधिकरण के व्यावसायिक उद्देश्यों, सार्वजनिक प्रदर्शनों, व्यावसायिक स्ट्रीमिंग, या किसी भी राजस्व-उत्पादक गतिविधियों के लिए सॉफ्टवेयर या किसी भी व्युत्पन्न कार्यों का उपयोग करना।</string>
+    <string name="license_restriction_c">* (c) सॉफ्टवेयर पर या उसके भीतर रखे गए किसी भी कॉपीराइट, ट्रेडमार्क, पेटेंट, या मालिकाना अधिकार नोटिस को हटाना, बदलना या छिपाना, जिसमें एलेक्स लेवेट, ल्यूमिनस लैब्स, या लाइसेंसदाता के संदर्भ शामिल हैं।</string>
+    <string name="license_restriction_d">* (d) किसी भी प्रतिस्पर्धी व्यावसायिक संगीत विज़ुअलाइज़ेशन सॉफ्टवेयर या प्लेटफॉर्म को विकसित करने के लिए सॉफ्टवेयर का उपयोग करना।</string>
+    <string name="license_section_4">4. बौद्धिक संपदा अधिकार</string>
+    <string name="license_section_4_1">4.1 स्वामित्व</string>
+    <string name="license_ownership">लाइसेंसदाता, एलेक्स लेवेट, और ल्यूमिनस लैब्स सॉफ्टवेयर में और उसके लिए सभी संबंधित अधिकार, शीर्षक और हित बनाए रखते हैं, जिसमें उसमें सभी बौद्धिक संपदा अधिकार शामिल हैं। सोर्स कोड के सार्वजनिक प्रकटीकरण से कॉपीराइट या स्वामित्व का त्याग नहीं होता है।</string>
+    <string name="license_section_5">5. कोई वारंटी नहीं</string>
+    <string name="license_section_5_1">5.1 अस्वीकरण</string>
+    <string name="license_warranty_disclaimer">सॉफ्टवेयर \"जैसा है\" और \"सभी दोषों के साथ\" प्रदान किया जाता है। लागू कानून द्वारा अनुमत अधिकतम सीमा तक, लाइसेंसदाता अन्य सभी वारंटी और शर्तों को अस्वीकार करता है, चाहे वे व्यक्त, निहित, या वैधानिक हों, जिसमें व्यापारिकता की कोई भी निहित वारंटी, किसी विशेष उद्देश्य के लिए उपयुक्तता, शीर्षक और गैर-उल्लंघन शामिल है, लेकिन इन्हीं तक सीमित नहीं है।</string>
+    <string name="license_section_5_2">5.2 कोई तकनीकी सहायता नहीं</string>
+    <string name="license_technical_support">लाइसेंसदाता, एलेक्स लेवेट, और ल्यूमिनस लैब्स सॉफ्टवेयर के लिए तकनीकी सहायता, अपडेट, अपग्रेड, या संशोधन प्रदान करने के लिए किसी भी दायित्व के अधीन नहीं हैं।</string>
+    <string name="license_section_6">6. दायित्व की सीमा</string>
+    <string name="license_section_6_1">6.1 दायित्व की सीमा</string>
+    <string name="license_liability_cap">लागू कानून द्वारा अनुमत अधिकतम सीमा तक, किसी भी स्थिति में लाइसेंसदाता, एलेक्स लेवेट, या ल्यूमिनस लैब्स सॉफ्टवेयर के उपयोग या उपयोग करने में असमर्थता से उत्पन्न होने वाले किसी भी अप्रत्यक्ष, आकस्मिक, विशेष, परिणामी, या दंडात्मक नुकसान (जिसमें लाभ की हानि, व्यावसायिक व्यवधान, या कोई अन्य आर्थिक हानि शामिल है, लेकिन इन्हीं तक सीमित नहीं है) के लिए उत्तरदायी नहीं होंगे, भले ही उन्हें ऐसे नुकसान की संभावना के बारे में सूचित किया गया हो।</string>
+    <string name="license_section_7">7. समाप्ति</string>
+    <string name="license_section_7_1">7.1 स्वचालित समाप्ति</string>
+    <string name="license_termination">यदि लाइसेंसधारी इस समझौते की किसी भी शर्त (शर्तों) का पालन करने में विफल रहता है, तो इस समझौते के तहत लाइसेंसधारी के अधिकार लाइसेंसदाता के बिना किसी नोटिस के स्वचालित रूप से समाप्त हो जाएंगे। समाप्ति पर, लाइसेंसधारी सभी उपयोग बंद कर देगा और सॉफ्टवेयर की सभी स्थानीय प्रतियों को नष्ट कर देगा।</string>
+    <string name="license_section_8">8. विविध</string>
+    <string name="license_section_8_1">8.1 शासी कानून</string>
+    <string name="license_governing_law">यह समझौता ओलिवर लेबैग के निवास स्थान के क्षेत्राधिकार के कानूनों द्वारा शासित और उनके अनुसार समझा जाएगा, बिना इसके कानूनों के टकराव के सिद्धांतों के।</string>
+    <string name="end_of_license">लाइसेंस समझौते का अंत</string>
+
+    <string name="back">पीछे</string>
+    <string name="visual_preset_editor">विजुअल प्रीसेट संपादक</string>
+    <string name="share">साझा करें</string>
+    <string name="save">सहेजें</string>
+    <string name="community_presets">सामुदायिक प्रीसेट</string>
+    <string name="share_to_community">समुदाय के साथ साझा करें</string>
+    <string name="share_preset_desc">अपने प्रीसेट को अन्य उपयोगकर्ताओं के साथ साझा करें।</string>
+    <string name="author_name">लेखक का नाम</string>
+    <string name="preset_name">प्रीसेट नाम</string>
+    <string name="segments_selected">सेगमेंट (%d चयनित)</string>
+    <string name="multi_select">मल्टी-सेलेक्ट</string>
+    <string name="bulk_actions">थोक कार्रवाई</string>
+    <string name="bulk_actions_desc">सभी चयनित सेगमेंट पर सेटिंग्स लागू करें</string>
+    <string name="auto_distribute">ऑटो-डिस्ट्रीब्यूट</string>
+    <string name="editing_segment">सेगमेंट #%d संपादित किया जा रहा है</string>
+    <string name="editing_segments_count">%d सेगमेंट संपादित किए जा रहे हैं</string>
+    <string name="frequency_range_label">आवृत्ति रेंज: %1$dHz - %2$dHz</string>
+    <string name="no_presets_found">कोई प्रीसेट नहीं मिला। साझा करने वाले पहले व्यक्ति बनें!</string>
+    <string name="preset_by_author">%1$s • %2$s द्वारा</string>
+    <string name="downloads_count">%1$s • %2$d डाउनलोड</string>
+    <string name="clear">साफ़ करें</string>
 </resources>

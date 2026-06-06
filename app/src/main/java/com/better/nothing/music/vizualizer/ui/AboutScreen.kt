@@ -32,6 +32,7 @@ import androidx.compose.material.icons.filled.Timeline
 import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Gavel
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -82,7 +83,7 @@ internal fun AboutScreen(
             IconButton(onClick = onDismiss) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Back"
+                    contentDescription = stringResource(R.string.back)
                 )
             }
         }
@@ -123,7 +124,7 @@ internal fun AboutScreen(
                 
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "Better Nothing Music Visualizer",
+                        text = stringResource(R.string.app_name),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
@@ -154,6 +155,14 @@ internal fun AboutScreen(
                 title = "GitHub Repository",
                 subtitle = "View source and contributions",
                 onClick = { uriHandler.openUri("https://github.com/Aleks-Levet/better-nothing-music-visualizer") }
+            )
+
+            // License Action
+            InfoRow(
+                icon = Icons.Default.Gavel,
+                title = stringResource(R.string.license_agreement),
+                subtitle = stringResource(R.string.read_license),
+                onClick = { viewModel.showLicense() }
             )
 
             // Update Action

@@ -976,6 +976,12 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
     fun showAbout() { _isShowingAbout.value = true }
     fun hideAbout() { _isShowingAbout.value = false }
 
+    private val _isShowingLicense = MutableStateFlow(false)
+    val isShowingLicense = _isShowingLicense.asStateFlow()
+
+    fun showLicense() { _isShowingLicense.value = true }
+    fun hideLicense() { _isShowingLicense.value = false }
+
     private val _isShowingTimeline = MutableStateFlow(false)
     val isShowingTimeline = _isShowingTimeline.asStateFlow()
 
@@ -1974,6 +1980,7 @@ class MainActivity : ComponentActivity() {
                 val selectedDevice by viewModel.selectedDevice.collectAsStateWithLifecycle()
                 val isEditingPreset by viewModel.isEditingPreset.collectAsStateWithLifecycle()
                 val isShowingAbout by viewModel.isShowingAbout.collectAsStateWithLifecycle()
+                val isShowingLicense by viewModel.isShowingLicense.collectAsStateWithLifecycle()
                 val isShowingTimeline by viewModel.isShowingTimeline.collectAsStateWithLifecycle()
                 val showUpdateDialog by viewModel.showUpdateDialog.collectAsStateWithLifecycle()
                 val appUpdateStatus by viewModel.appUpdateStatus.collectAsStateWithLifecycle()
@@ -2074,6 +2081,20 @@ class MainActivity : ComponentActivity() {
                     ) {
                         Box(modifier = Modifier.background(MaterialTheme.colorScheme.background)) {
                             AboutScreen(viewModel = viewModel, onDismiss = viewModel::hideAbout)
+                        }
+                    }
+                }
+
+                if (isShowingLicense) {
+                    androidx.compose.ui.window.Dialog(
+                        onDismissRequest = viewModel::hideLicense,
+                        properties = androidx.compose.ui.window.DialogProperties(
+                            usePlatformDefaultWidth = false,
+                            decorFitsSystemWindows = false
+                        )
+                    ) {
+                        Box(modifier = Modifier.background(MaterialTheme.colorScheme.background)) {
+                            LicenseScreen(onDismiss = viewModel::hideLicense)
                         }
                     }
                 }

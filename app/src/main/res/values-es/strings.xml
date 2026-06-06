@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Visualizador de Música Better Nothing</string>
+    <string name="app_name">Better Nothing Music Visualizer</string>
 
     <!-- Audio Screen -->
     <string name="audio_screen_title">Visualizador de Música\nBetter Nothing</string>
@@ -142,6 +142,27 @@
     <string name="unlock">Desbloquear</string>
     <string name="incorrect_password">Contraseña incorrecta</string>
     <string name="cancel">Cancelar</string>
+    <string name="back">Atrás</string>
+    <string name="visual_preset_editor">Editor de ajustes visuales</string>
+    <string name="share">Compartir</string>
+    <string name="save">Guardar</string>
+    <string name="community_presets">Ajustes de la comunidad</string>
+    <string name="share_to_community">Compartir en la comunidad</string>
+    <string name="share_preset_desc">Comparte tu ajuste con otros usuarios.</string>
+    <string name="author_name">Nombre del autor</string>
+    <string name="preset_name">Nombre del ajuste</string>
+    <string name="segments_selected">Segmentos (%d seleccionados)</string>
+    <string name="multi_select">Selección múltiple</string>
+    <string name="bulk_actions">Acciones en lote</string>
+    <string name="bulk_actions_desc">Aplicar ajustes a todos los segmentos seleccionados</string>
+    <string name="auto_distribute">Auto-distribuir</string>
+    <string name="editing_segment">Editando segmento #%d</string>
+    <string name="editing_segments_count">Editando %d segmentos</string>
+    <string name="frequency_range_label">Rango de frecuencia: %1$dHz - %2$dHz</string>
+    <string name="no_presets_found">No se encontraron ajustes. ¡Sé el primero en compartir uno!</string>
+    <string name="preset_by_author">por %1$s • %2$s</string>
+    <string name="downloads_count">%1$s • %2$d descargas</string>
+    <string name="clear">Borrar</string>
     <string name="global_announcements">Anuncios globales</string>
     <string name="global_announcements_desc">Notifica a todos los usuarios sobre actualizaciones o noticias</string>
     <string name="create">Crear</string>
@@ -201,4 +222,51 @@
     <string name="config_download_error">Error al descargar: %d</string>
     <string name="config_error_updating">Error al actualizar: %s</string>
     <string name="config_error_importing">Error al importar: %s</string>
+
+    <!-- License Screen -->
+    <string name="license_title">Licencia</string>
+    <string name="license_agreement">Acuerdo de licencia</string>
+    <string name="read_license">Leer la licencia del software</string>
+    <string name="license_agreement_title">ACUERDO DE LICENCIA DE BETTER-NOTHING-MUSIC-VISUALIZER</string>
+    <string name="license_version">Versión: 1.1</string>
+    <string name="license_date">Fecha: 16 de mayo de 2026</string>
+    <string name="license_licensor">Licenciante</string>
+    <string name="license_licensor_name">Oliver Lebaigue</string>
+    <string name="license_founder">Fundador</string>
+    <string name="license_founder_name">Aleks Levet</string>
+    <string name="license_organization">Organización</string>
+    <string name="license_organization_name">Luminus Labs</string>
+    <string name="license_section_1">1. PREÁMBULO</string>
+    <string name="license_preamble_1">Este Acuerdo de Licencia (\"Acuerdo\") es un acuerdo legal entre usted (\"Licenciatario\") y Oliver Lebaigue (\"Licenciante\") para el uso, revisión y modificación de la aplicación de software de visualizador de música conocida como \"better-nothing-music-visualizer\" (el \"Software\"), un proyecto fundado por Aleks Levet bajo la organización Luminus Labs.</string>
+    <string name="license_preamble_2">El código fuente del Software se aloja públicamente en https://github.com/aleks-levet/better-nothing-music-visualizer. Al acceder, descargar, copiar o utilizar de otro modo el Software o su Código Fuente, el Licenciatario acepta quedar vinculado por los términos de este Acuerdo.</string>
+    <string name="license_section_2">2. DEFINICIONES</string>
+    <string name="license_def_1">2.1 \"Software\" significará la aplicación de software better-nothing-music-visualizer, incluyendo pero no limitado al código fuente, módulos de procesamiento de audio, motores de renderizado, activos visuales, bibliotecas de gráficos, guiones de configuración, documentación, archivos de objeto, ejecutables binarios y cualquier medio o activo asociado.</string>
+    <string name="license_def_2">2.2 \"Código Fuente\" significará los archivos divulgados públicamente del Software, incluyendo todos los archivos de script, código de sombreadores, activos y configuraciones de compilación.</string>
+    <string name="license_section_3">3. CONCESIÓN DE LICENCIA Y ACCESIBILIDAD</string>
+    <string name="license_section_3_1">3.1 Disponibilidad Pública</string>
+    <string name="license_grant_3_1">El Licenciante reconoce que el Código Fuente es público. Se concede al Licenciatario una licencia no exclusiva, no transferible y revocable para descargar, ver y modificar el Código Fuente únicamente con fines de evaluación personal, educativa y no comercial.</string>
+    <string name="license_section_3_2">3.2 Restricciones</string>
+    <string name="license_grant_3_2">El Licenciatario NO podrá:</string>
+    <string name="license_restriction_a">* (a) Redistribuir el Software o versiones modificadas del mismo a terceros, excepto a través de bifurcaciones de repositorio estándar en GitHub, siempre que dichas bifurcaciones permanezcan vinculadas por esta misma Licencia.</string>
+    <string name="license_restriction_b">* (b) Utilizar el Software o cualquier obra derivada con fines comerciales, actuaciones públicas, transmisión comercial o cualquier actividad generadora de ingresos sin autorización previa por escrito.</string>
+    <string name="license_restriction_c">* (c) Eliminar, alterar u ocultar cualquier aviso de derechos de autor, marca registrada, patente o derechos de propiedad colocados en o dentro del Software, incluyendo referencias a Aleks Levet, Luminus Labs o al Licenciante.</string>
+    <string name="license_restriction_d">* (d) Utilizar el Software para desarrollar cualquier software o plataforma comercial de visualización de música de la competencia.</string>
+    <string name="license_section_4">4. DERECHOS DE PROPIEDAD INTELECTUAL</string>
+    <string name="license_section_4_1">4.1 Propiedad</string>
+    <string name="license_ownership">El Licenciante, Aleks Levet y Luminus Labs conservan todos los derechos, títulos e intereses respectivos en y sobre el Software, incluyendo todos los derechos de propiedad intelectual del mismo. La divulgación pública del Código Fuente no constituye una renuncia a los derechos de autor ni a la propiedad.</string>
+    <string name="license_section_5">5. SIN GARANTÍA</string>
+    <string name="license_section_5_1">5.1 Descargo de Responsabilidad</string>
+    <string name="license_warranty_disclaimer">EL SOFTWARE SE PROPORCIONA \"TAL CUAL\" Y \"CON TODOS SUS DEFECTOS\". EN LA MEDIDA MÁXIMA PERMITIDA POR LA LEY APLICABLE, EL LICENCIANTE RENUNCIA A TODAS LAS DEMÁS GARANTÍAS Y CONDICIONES, YA SEAN EXPRESAS, IMPLÍCITAS O LEGALES, INCLUYENDO, ENTRE OTRAS, CUALQUIER GARANTÍA IMPLÍCITA DE COMERCIABILIDAD, IDONEIDAD PARA UN PROPÓSITO PARTICULAR, TÍTULO Y NO INFRACCIÓN.</string>
+    <string name="license_section_5_2">5.2 Sin Soporte Técnico</string>
+    <string name="license_technical_support">El Licenciante, Aleks Levet y Luminus Labs no tienen la obligación de proporcionar soporte técnico, actualizaciones, mejoras o modificaciones al Software.</string>
+    <string name="license_section_6">6. LIMITACIÓN DE RESPONSABILIDAD</string>
+    <string name="license_section_6_1">6.1 Límite de Responsabilidad</string>
+    <string name="license_liability_cap">EN LA MEDIDA MÁXIMA PERMITIDA POR LA LEY APLICABLE, EN NINGÚN CASO EL LICENCIANTE, ALEKS LEVET O LUMINUS LABS SERÁN RESPONSABLES DE NINGÚN DAÑO INDIRECTO, INCIDENTAL, ESPECIAL, CONSECUENTE O PUNITIVO DE NINGÚN TIPO (INCLUYENDO, ENTRE OTROS, LA PÉRDIDA DE BENEFICIOS, LA INTERRUPCIÓN DEL NEGOCIO O CUALQUIER OTRA PÉRDIDA PECUNIARIA) QUE SURJA DEL USO O LA IMPOSIBILIDAD DE USAR EL SOFTWARE, INCLUSO SI SE HA ADVERTIDO DE LA POSIBILIDAD DE TALES DAÑOS.</string>
+    <string name="license_section_7">7. TERMINACIÓN</string>
+    <string name="license_section_7_1">7.1 Terminación Automática</string>
+    <string name="license_termination">Los derechos del Licenciatario bajo este Acuerdo terminarán automáticamente sin previo aviso del Licenciante si el Licenciatario no cumple con cualquier término de este Acuerdo. Tras la terminación, el Licenciatario deberá cesar todo uso y destruir todas las copias locales del Software.</string>
+    <string name="license_section_8">8. MISCELÁNEA</string>
+    <string name="license_section_8_1">8.1 Ley Aplicable</string>
+    <string name="license_governing_law">Este Acuerdo se regirá e interpretará de acuerdo con las leyes de la jurisdicción en la que reside Oliver Lebaigue, sin tener en cuenta sus principios de conflicto de leyes.</string>
+    <string name="end_of_license">FIN DEL ACUERDO DE LICENCIA</string>
 </resources>

@@ -1,6 +1,8 @@
 package com.better.nothing.music.vizualizer.ui
 
+import com.better.nothing.music.vizualizer.R
 import com.better.nothing.music.vizualizer.model.CommunityPreset
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -29,10 +31,10 @@ fun CommunityPresetsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Community Presets", color = Color.White) },
+                title = { Text(stringResource(R.string.community_presets), color = Color.White) },
                 navigationIcon = {
                     IconButton(onClick = onDismiss) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back), tint = Color.White)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Black)
@@ -45,7 +47,7 @@ fun CommunityPresetsScreen(
                 Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text("Error: $error", color = Color.Red, modifier = Modifier.padding(16.dp))
-                        Button(onClick = onDismiss) { Text("Back") }
+                        Button(onClick = onDismiss) { Text(stringResource(R.string.back)) }
                     }
                 }
             }
@@ -56,7 +58,7 @@ fun CommunityPresetsScreen(
             }
             presets.isEmpty() -> {
                 Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                    Text("No presets found. Be the first to share one!", color = Color.Gray)
+                    Text(stringResource(R.string.no_presets_found), color = Color.Gray)
                 }
             }
             else -> {
@@ -87,12 +89,12 @@ fun PresetCard(preset: CommunityPreset, onDownload: (CommunityPreset) -> Unit) {
         ) {
             Column(Modifier.weight(1f)) {
                 Text(preset.name, fontSize = 18.sp, color = Color.White, style = MaterialTheme.typography.titleMedium)
-                Text("by ${preset.author} • ${preset.phoneModel}", fontSize = 14.sp, color = Color.Gray)
+                Text(stringResource(R.string.preset_by_author, preset.author, preset.phoneModel), fontSize = 14.sp, color = Color.Gray)
                 
                 val date = remember(preset.timestamp) {
                     SimpleDateFormat("MMM d, yyyy", Locale.getDefault()).format(Date(preset.timestamp))
                 }
-                Text("$date • ${preset.downloads} downloads", fontSize = 12.sp, color = Color.DarkGray)
+                Text(stringResource(R.string.downloads_count, date, preset.downloads), fontSize = 12.sp, color = Color.DarkGray)
             }
             
             IconButton(
@@ -102,7 +104,7 @@ fun PresetCard(preset: CommunityPreset, onDownload: (CommunityPreset) -> Unit) {
                     contentColor = Color.Black
                 )
             ) {
-                Icon(Icons.Default.Download, contentDescription = "Download")
+                Icon(Icons.Default.Download, contentDescription = stringResource(R.string.download))
             }
         }
     }

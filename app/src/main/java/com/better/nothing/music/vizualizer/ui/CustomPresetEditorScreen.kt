@@ -1,7 +1,9 @@
 package com.better.nothing.music.vizualizer.ui
 
+import com.better.nothing.music.vizualizer.R
 import com.better.nothing.music.vizualizer.logic.AudioProcessor
 import com.better.nothing.music.vizualizer.model.DeviceProfile
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -88,10 +90,10 @@ fun CustomPresetEditorScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Visual Preset Editor", style = MaterialTheme.typography.titleLarge) },
+                title = { Text(stringResource(R.string.visual_preset_editor), style = MaterialTheme.typography.titleLarge) },
                 navigationIcon = {
                     IconButton(onClick = onDismiss) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
                     }
                 },
                 actions = {
@@ -106,7 +108,7 @@ fun CustomPresetEditorScreen(
                     ) {
                         Icon(Icons.Default.Public, contentDescription = "Share", modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(8.dp))
-                        Text("Share")
+                        Text(stringResource(R.string.share))
                     }
                     
                     Button(
@@ -118,7 +120,7 @@ fun CustomPresetEditorScreen(
                     ) {
                         Icon(Icons.Default.Save, contentDescription = "Save", modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(8.dp))
-                        Text("Save")
+                        Text(stringResource(R.string.save))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -134,14 +136,14 @@ fun CustomPresetEditorScreen(
         if (showShareDialog) {
             AlertDialog(
                 onDismissRequest = { showShareDialog = false },
-                title = { Text("Share to Community") },
+                title = { Text(stringResource(R.string.share_to_community)) },
                 text = {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text("Share your preset with other users.")
+                        Text(stringResource(R.string.share_preset_desc))
                         OutlinedTextField(
                             value = authorName,
                             onValueChange = { authorName = it },
-                            label = { Text("Author Name") },
+                            label = { Text(stringResource(R.string.author_name)) },
                             modifier = Modifier.fillMaxWidth()
                         )
                     }
@@ -151,12 +153,12 @@ fun CustomPresetEditorScreen(
                         onShare(presetName, authorName, zones.toList())
                         showShareDialog = false
                     }) {
-                        Text("Share")
+                        Text(stringResource(R.string.share))
                     }
                 },
                 dismissButton = {
                     TextButton(onClick = { showShareDialog = false }) {
-                        Text("Cancel")
+                        Text(stringResource(R.string.cancel))
                     }
                 }
             )
@@ -172,7 +174,7 @@ fun CustomPresetEditorScreen(
             OutlinedTextField(
                 value = presetName,
                 onValueChange = { presetName = it },
-                label = { Text("Preset Name") },
+                label = { Text(stringResource(R.string.preset_name)) },
                 modifier = Modifier.fillMaxWidth(),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedTextColor = Color.White,
@@ -216,16 +218,16 @@ fun CustomPresetEditorScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Segments (${selectedIndices.size} selected)", color = Color.White, style = MaterialTheme.typography.titleMedium)
+                Text(stringResource(R.string.segments_selected, selectedIndices.size), color = Color.White, style = MaterialTheme.typography.titleMedium)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                     FilterChip(
                         selected = isMultiSelect,
                         onClick = { isMultiSelect = !isMultiSelect },
-                        label = { Text("Multi-select") },
+                        label = { Text(stringResource(R.string.multi_select)) },
                         colors = FilterChipDefaults.filterChipColors(selectedContainerColor = MaterialTheme.colorScheme.primary)
                     )
                     IconButton(onClick = { selectedIndices.clear() }) {
-                        Icon(Icons.Default.Clear, contentDescription = "Clear", tint = Color.Gray)
+                        Icon(Icons.Default.Clear, contentDescription = stringResource(R.string.clear), tint = Color.Gray)
                     }
                 }
             }
@@ -278,11 +280,11 @@ fun CustomPresetEditorScreen(
                     ) {
                         Icon(Icons.Default.AutoAwesome, contentDescription = null)
                         Column(Modifier.weight(1f)) {
-                            Text("Bulk Actions", style = MaterialTheme.typography.titleSmall)
-                            Text("Apply settings to all selected segments", fontSize = 12.sp)
+                            Text(stringResource(R.string.bulk_actions), style = MaterialTheme.typography.titleSmall)
+                            Text(stringResource(R.string.bulk_actions_desc), fontSize = 12.sp)
                         }
                         Button(onClick = { distributeLogarithmically() }) {
-                            Text("Auto-Distribute")
+                            Text(stringResource(R.string.auto_distribute))
                         }
                     }
                 }
@@ -298,13 +300,13 @@ fun CustomPresetEditorScreen(
                 ) {
                     Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                         Text(
-                            text = if (selectedIndices.size == 1) "Editing Segment #${firstIdx + 1}" else "Editing ${selectedIndices.size} Segments",
+                            text = if (selectedIndices.size == 1) stringResource(R.string.editing_segment, firstIdx + 1) else stringResource(R.string.editing_segments_count, selectedIndices.size),
                             style = MaterialTheme.typography.titleMedium,
                             color = MaterialTheme.colorScheme.primary
                         )
                         
                         Text(
-                            text = "Frequency Range: ${zone.lowHz.toInt()}Hz - ${zone.highHz.toInt()}Hz",
+                            text = stringResource(R.string.frequency_range_label, zone.lowHz.toInt(), zone.highHz.toInt()),
                             style = MaterialTheme.typography.bodyLarge,
                             color = Color.White
                         )
