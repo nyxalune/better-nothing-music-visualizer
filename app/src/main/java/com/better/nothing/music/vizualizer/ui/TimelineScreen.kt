@@ -47,6 +47,8 @@ internal fun TimelineScreen(
             TimelineItem(
                 title = "Multiple Languages",
                 description = "Support for English, Spanish, and Chinese interfaces.",
+                isKey = false,
+                status = TimelineStatus.DONE
             ),
             TimelineItem(
                 "Flashlight Visualizer",

@@ -300,7 +300,7 @@ public class AudioCaptureService extends Service {
                 }
             }
             if (sIsRunning) {
-                mMainHandler.postDelayed(this, 33); // ~30fps for idle breathing
+                mMainHandler.postDelayed(this, 16); // 60fps for idle breathing
             }
         }
     };
@@ -1650,7 +1650,7 @@ public class AudioCaptureService extends Service {
                 throw new RuntimeException("Visualizer engine failed to initialize after retries");
             }
 
-            int captureSize = Visualizer.getCaptureSizeRange()[1];
+            int captureSize = Math.max(Visualizer.getCaptureSizeRange()[0], 512);
             mVisualizer.setCaptureSize(captureSize);
             mVisualizer.setDataCaptureListener(new Visualizer.OnDataCaptureListener() {
                 @Override
@@ -1662,7 +1662,7 @@ public class AudioCaptureService extends Service {
                 public void onFftDataCapture(Visualizer visualizer, byte[] fft, int samplingRate) {
                     // Using waveform captures instead of FFT directly so the existing audio processor can consume PCM-like data.
                 }
-            }, Visualizer.getMaxCaptureRate(), true, false);
+            }, Math.max(60000, Visualizer.getMaxCaptureRate()), true, false);
             mVisualizer.setEnabled(true);
         } catch (Exception e) {
             Log.e(TAG, "Failed to start Visualizer capture", e);
