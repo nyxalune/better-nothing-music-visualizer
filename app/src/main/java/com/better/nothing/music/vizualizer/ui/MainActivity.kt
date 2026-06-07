@@ -128,6 +128,7 @@ import java.net.HttpURLConnection
 import java.net.URL
 import kotlin.math.absoluteValue
 import kotlin.math.sqrt
+import kotlin.math.pow
 
 enum class Tab(val label: String, val labelRes: Int) {
     Audio("Audio", R.string.tab_audio), 
@@ -1415,6 +1416,7 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
                     sumSquares += magnitude[i] * magnitude[i]
                     sum += magnitude[i]
                 }
+                val count = binHi - binLo + 1
                 val rms = if (count > 0) kotlin.math.sqrt(sumSquares / count) else 0f
                 
                 // --- APPLY SETTINGS TO UI PREVIEW ---
@@ -1423,7 +1425,7 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
                 
                 val rawValue = rms * currentGain
                 val finalValue = if (_hapticMode.value == HapticMode.BASS_TO_AMPLITUDE) {
-                    kotlin.math.pow(rawValue.toDouble(), currentGamma.toDouble()).toFloat()
+                    rawValue.toDouble().pow(currentGamma.toDouble()).toFloat()
                 } else {
                     rawValue
                 }
