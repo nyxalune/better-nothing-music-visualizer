@@ -1,7 +1,9 @@
 package com.better.nothing.music.vizualizer.model
 
 import com.better.nothing.music.vizualizer.logic.AudioProcessor
+import androidx.annotation.Keep
 
+@Keep
 data class CommunityPreset(
     val id: String = "",
     val name: String = "",
@@ -12,6 +14,7 @@ data class CommunityPreset(
     val downloads: Int = 0
 )
 
+@Keep
 data class ZoneData(
     val lowHz: Float = 0f,
     val highHz: Float = 0f,

@@ -1612,8 +1612,9 @@ public class AudioCaptureService extends Service {
                 throw new RuntimeException("Visualizer engine failed to initialize after retries");
             }
 
-            int captureSize = Math.max(Visualizer.getCaptureSizeRange()[0], 512);
+            int captureSize = Math.min(Visualizer.getCaptureSizeRange()[1], 1024);
             mVisualizer.setCaptureSize(captureSize);
+            int maxRate = Visualizer.getMaxCaptureRate();
             mVisualizer.setDataCaptureListener(new Visualizer.OnDataCaptureListener() {
                 @Override
                 public void onWaveFormDataCapture(Visualizer visualizer, byte[] waveform, int samplingRate) {
@@ -1624,7 +1625,7 @@ public class AudioCaptureService extends Service {
                 public void onFftDataCapture(Visualizer visualizer, byte[] fft, int samplingRate) {
                     // Using waveform captures instead of FFT directly so the existing audio processor can consume PCM-like data.
                 }
-            }, Math.max(60000, Visualizer.getMaxCaptureRate()), true, false);
+            }, maxRate, true, false);
             mVisualizer.setEnabled(true);
         } catch (Exception e) {
             Log.e(TAG, "Failed to start Visualizer capture", e);
@@ -1634,6 +1635,8 @@ public class AudioCaptureService extends Service {
 
     private void processVisualizerWaveform(byte[] waveform, int samplingRate) {
         if (!mCapturing || mVisualizerConfig == null) return;
+        
+        Log.e(TAG, "Waveform received. Size: " + waveform.length + ", Rate: " + (samplingRate / 1000.0f) + " Hz");
 
         mAudioProcessor.updateFFTSize(samplingRate / 1000); // Visualizer API samplingRate is in mHz
 

@@ -1,5 +1,8 @@
 package com.better.nothing.music.vizualizer.model
 
+import androidx.annotation.Keep
+
+@Keep
 data class Announcement(
     val id: String = "",
     val title: String = "",

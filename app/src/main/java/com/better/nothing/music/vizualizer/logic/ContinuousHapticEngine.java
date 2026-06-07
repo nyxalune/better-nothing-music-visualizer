@@ -179,15 +179,14 @@ public final class ContinuousHapticEngine {
             lastSubmitMs = SystemClock.elapsedRealtime();
         } catch (RuntimeException e) {
             Log.w(TAG, "Failed to submit haptic waveform", e);
-            stopHapticsInternal();
         }
     }
 
     private void vibrate(VibrationEffect effect) {
-        if (vibratorManager != null) {
-            vibratorManager.vibrate(CombinedVibration.createParallel(effect));
-        } else {
+        if (vibrator != null) {
             vibrator.vibrate(effect);
+        } else if (vibratorManager != null) {
+            vibratorManager.vibrate(CombinedVibration.createParallel(effect));
         }
     }
 

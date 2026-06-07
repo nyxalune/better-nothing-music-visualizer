@@ -2,6 +2,7 @@
 
 package com.better.nothing.music.vizualizer.ui
 
+import android.os.SystemClock
 import android.view.MotionEvent
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateColorAsState
@@ -79,7 +80,6 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.material3.Typography
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
@@ -98,9 +98,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asComposePath
 import androidx.compose.ui.graphics.drawscope.Fill
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
@@ -315,53 +315,69 @@ fun FlowRowScope.OptionTile(
     enabled: Boolean = true
 ) {
     val interactionSource = remember { MutableInteractionSource() }
-    val isPressedReal by interactionSource.collectIsPressedAsState()
-    var isPressedDebounced by remember { mutableStateOf(false) }
 
-    LaunchedEffect(isPressedReal) {
-        if (isPressedReal) {
-            isPressedDebounced = true
-        } else {
-            delay(150)
-            isPressedDebounced = false
+    // This state controls the weight expansion explicitly
+    var isWeightExpanded by remember { mutableStateOf(false) }
+
+    // Guaranteeing a minimum 120ms animation window
+    LaunchedEffect(interactionSource) {
+        var pressStartTime = 0L
+
+        interactionSource.interactions.collectLatest { interaction ->
+            when (interaction) {
+                is PressInteraction.Press -> {
+                    pressStartTime = SystemClock.elapsedRealtime()
+                    isWeightExpanded = true
+                }
+                is PressInteraction.Release, is PressInteraction.Cancel -> {
+                    val elapsed = SystemClock.elapsedRealtime() - pressStartTime
+                    val remainingFloorDelay = 150L - elapsed
+
+                    // If the finger was released before 120ms, hold it open
+                    if (remainingFloorDelay > 0) {
+                        delay(remainingFloorDelay)
+                    }
+                    isWeightExpanded = false
+                }
+            }
         }
     }
 
-    val isEffectivelySelected = (isSelected || isPressedDebounced) && enabled
+    // Color States - Base them on selection OR active expansion animation
+    val isEffectivelySelected = (isSelected || isWeightExpanded) && enabled
     val backgroundColor by animateColorAsState(
         if (!enabled) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
-        else if (isEffectivelySelected) MaterialTheme.colorScheme.primary 
+        else if (isEffectivelySelected) MaterialTheme.colorScheme.primary
         else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.8f),
         label = "backgroundColor"
     )
     val contentColor by animateColorAsState(
         if (!enabled) MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
-        else if (isEffectivelySelected) MaterialTheme.colorScheme.onPrimary 
+        else if (isEffectivelySelected) MaterialTheme.colorScheme.onPrimary
         else MaterialTheme.colorScheme.onSurfaceVariant,
         label = "contentColor"
     )
 
+    // Corner Radius Animation
     val m3eEnabled = LocalM3EEnabled.current
     val targetRadius = if (isSelected && enabled) 32.dp else 20.dp
     val animatedRadius by animateDpAsState(
         targetValue = targetRadius,
         animationSpec = if (m3eEnabled) {
-            spring(
-                dampingRatio = Spring.DampingRatioMediumBouncy,
-                stiffness = Spring.StiffnessLow
-            )
+            spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow)
         } else {
             spring(stiffness = Spring.StiffnessMedium)
         },
         label = "cornerRadius"
     )
 
-    val targetWeight = if (isPressedDebounced && enabled) 1.2f else 1f
+    // Weight Animation using the managed isWeightExpanded state
+    val targetWeight = if (isWeightExpanded && enabled) 1.2f else 1f
     val animatedWeight by animateFloatAsState(
         targetValue = targetWeight,
         animationSpec = spring(
-            dampingRatio = Spring.DampingRatioLowBouncy,
-            stiffness = Spring.StiffnessLow
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessMedium
         ),
         label = "weight"
     )
