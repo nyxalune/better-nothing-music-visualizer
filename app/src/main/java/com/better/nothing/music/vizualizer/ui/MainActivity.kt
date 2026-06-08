@@ -97,6 +97,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.layout.fillMaxWidth
+import android.util.Base64
+import com.google.firebase.database.FirebaseDatabase
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.Spacer
@@ -148,6 +150,19 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
     private val communityRepository = CommunityRepository()
     private val announcementRepository = AnnouncementRepository()
     private val analytics = AnalyticsHelper(application)
+
+    private val _devPassword = MutableStateFlow<String?>(null)
+
+    fun verifyDeveloperPassword(input: String): Boolean {
+        if (input.isBlank()) return false
+        val encrypted = _devPassword.value ?: return false
+        val decrypted = try {
+            String(Base64.decode(encrypted, Base64.DEFAULT))
+        } catch (e: Exception) {
+            ""
+        }
+        return input == decrypted
+    }
 
     private val _thanksMessage = MutableStateFlow<String?>(null)
     val thanksMessage = _thanksMessage.asStateFlow()
@@ -256,6 +271,13 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
         _captureSource.value = AudioCaptureService.CaptureSource.valueOf(savedSource ?: AudioCaptureService.CaptureSource.INTERNAL.name)
 
         _shizukuSourceUnlocked.value = prefs.getBoolean("shizuku_source_unlocked", false)
+
+        FirebaseDatabase.getInstance("https://bnmv-67120-default-rtdb.europe-west1.firebasedatabase.app")
+            .getReference("config/dev_password")
+            .get()
+            .addOnSuccessListener { snapshot ->
+                _devPassword.value = snapshot.getValue(String::class.java)
+            }
 
         // Track app openings and show thanks messages
         val openCount = prefs.getInt("app_open_count", 0) + 1

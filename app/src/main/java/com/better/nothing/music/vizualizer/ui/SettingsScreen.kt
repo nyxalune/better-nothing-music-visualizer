@@ -28,6 +28,9 @@ import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.*
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
@@ -276,14 +279,19 @@ internal fun SettingsScreen(
                             label = { Text(stringResource(R.string.password)) },
                             singleLine = true,
                             modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(12.dp)
+                            shape = RoundedCornerShape(12.dp),
+                            visualTransformation = PasswordVisualTransformation(),
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Password,
+                                autoCorrect = false
+                            )
                         )
                     }
                 },
                 confirmButton = {
                     Button(
                         onClick = {
-                            if (passwordInput == "BNMV") {
+                            if (viewModel.verifyDeveloperPassword(passwordInput)) {
                                 viewModel.setDeveloperModeEnabled(true)
                                 showPasswordDialog = false
                                 passwordInput = ""
