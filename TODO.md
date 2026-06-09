@@ -1,4 +1,4 @@
-9# Better Nothing Music Visualizer - TODO list!
+# Better Nothing Music Visualizer - TODO list!
 
 ## To Do Fuckery
 
