@@ -51,7 +51,7 @@ class AnnouncementRepository {
         try {
             database.child("latest").setValue(announcement).await()
             // Also store in history
-            database.child("history").child(announcement.id).setValue(announcement).await()
+            database.child("history").child(announcement.id.toString()).setValue(announcement).await()
         } catch (e: Exception) {
             Log.e("AnnouncementRepo", "Post announcement failed", e)
             throw e

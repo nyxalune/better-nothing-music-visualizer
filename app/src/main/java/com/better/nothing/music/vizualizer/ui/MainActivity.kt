@@ -231,7 +231,7 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
         _showAnnouncementModal.value = false
         viewModelScope.launch(Dispatchers.IO) {
             ctx.getSharedPreferences("viz_prefs", Context.MODE_PRIVATE)
-                .edit { putString("last_seen_announcement_id", announcement.id) }
+                .edit { putString("last_seen_announcement_id", announcement.id.toString()) }
         }
     }
 
@@ -289,7 +289,7 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
                 if (announcement != null) {
                     val sharedPrefs = ctx.getSharedPreferences("viz_prefs", Context.MODE_PRIVATE)
                     val lastSeenId = sharedPrefs.getString("last_seen_announcement_id", "")
-                    if (announcement.id != lastSeenId) {
+                    if (announcement.id.toString() != lastSeenId) {
                         _showAnnouncementModal.value = true
                     }
                 }
@@ -607,7 +607,7 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
                 if (announcement != null) {
                     val sharedPrefs = ctx.getSharedPreferences("viz_prefs", Context.MODE_PRIVATE)
                     val lastSeenId = sharedPrefs.getString("last_seen_announcement_id", "")
-                    if (announcement.id != lastSeenId) {
+                    if (announcement.id.toString() != lastSeenId) {
                         _showAnnouncementModal.value = true
                     }
                 }
@@ -685,7 +685,7 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
                 if (announcement != null) {
                     val sharedPrefs = ctx.getSharedPreferences("viz_prefs", Context.MODE_PRIVATE)
                     val lastSeenId = sharedPrefs.getString("last_seen_announcement_id", "")
-                    if (announcement.id != lastSeenId) {
+                    if (announcement.id.toString() != lastSeenId) {
                         _showAnnouncementModal.value = true
                     }
                 }
@@ -1019,7 +1019,7 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
                 if (announcement != null) {
                     val sharedPrefs = ctx.getSharedPreferences("viz_prefs", Context.MODE_PRIVATE)
                     val lastSeenId = sharedPrefs.getString("last_seen_announcement_id", "")
-                    if (announcement.id != lastSeenId) {
+                    if (announcement.id.toString() != lastSeenId) {
                         _showAnnouncementModal.value = true
                     }
                 }
@@ -1057,7 +1057,7 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
                 if (announcement != null) {
                     val sharedPrefs = ctx.getSharedPreferences("viz_prefs", Context.MODE_PRIVATE)
                     val lastSeenId = sharedPrefs.getString("last_seen_announcement_id", "")
-                    if (announcement.id != lastSeenId) {
+                    if (announcement.id.toString() != lastSeenId) {
                         _showAnnouncementModal.value = true
                     }
                 }
@@ -1505,7 +1505,7 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
                 if (announcement != null) {
                     val sharedPrefs = ctx.getSharedPreferences("viz_prefs", Context.MODE_PRIVATE)
                     val lastSeenId = sharedPrefs.getString("last_seen_announcement_id", "")
-                    if (announcement.id != lastSeenId) {
+                    if (announcement.id.toString() != lastSeenId) {
                         _showAnnouncementModal.value = true
                     }
                 }
