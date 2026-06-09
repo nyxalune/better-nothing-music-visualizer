@@ -1,8 +1,7 @@
 ---
-name: Feature request
-about: Suggest an idea for the Better Nothing Music Visualizer.
-title: '[FEATURE] '
-labels: enhancement
+- # name: Feature request
+- ## about: Suggest an idea for the Better Nothing Music Visualizer.
+- ## labels: enhancement
 ---
 
 ## Is your feature request related to a problem? Please describe?
