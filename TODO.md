@@ -1,4 +1,4 @@
-# Better Nothing Music Visualizer - TODO list!
+9# Better Nothing Music Visualizer - TODO list!
 
 ## To Do Fuckery
 
@@ -35,6 +35,7 @@ with gemini of similar
 * make the collapsed sections a bit bigger
 
 ## Aleks' fucking todo
+* decrease the decay for the android built in vizualiser (make the decay 60 fps even if the incoming data is 20fps)
 * Add m3e split row selectors
   * Typography menu
   * Idle breathing
