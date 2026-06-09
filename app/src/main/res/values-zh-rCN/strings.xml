@@ -44,7 +44,6 @@
     <string name="haptics_mode_label">触感引擎模式</string>
     <string name="haptics_mode_bass">低音振幅</string>
     <string name="haptics_mode_beat">节拍检测</string>
-    <string name="haptics_mode_richtap">RichTap HD</string>
     <string name="haptics_beat_detection_desc">在所选频率范围内检测到节拍时振动。更平滑但有时不太稳定。这是一个 Beta 版功能。</string>
     <string name="haptics_motor_title">触感可视化</string>
     <string name="haptics_frequency_label">频率： %1$d - %2$d Hz</string>

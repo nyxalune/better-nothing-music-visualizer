@@ -44,7 +44,6 @@
     <string name="haptics_mode_label">Modd Peiriant Haptig</string>
     <string name="haptics_mode_bass">Osgled Bas</string>
     <string name="haptics_mode_beat">Canfod Curiad</string>
-    <string name="haptics_mode_richtap">RichTap HD</string>
     <string name="haptics_beat_detection_desc">Yn dirgrynu ar guriadau a ganfyddir o fewn yr ystod amlder a ddewiswyd. Yn llyfnach ond weithiau ddim mor sefydlog. Mae\'n nodwedd beta.</string>
     <string name="haptics_motor_title">Delweddu haptig</string>
     <string name="haptics_frequency_label">Amlder: %1$d - %2$d Hz</string>
@@ -52,8 +51,6 @@
     <string name="haptics_amplitude_label">Osgled: %.1fx</string>
     <string name="haptics_gamma_label">Gamma (Ymateb): %.1f</string>
     <string name="haptics_speed_label">Cyflymder: %.1f</string>
-    <string name="haptics_richtap_freq_label">Amlder RichTap: %d</string>
-
     <!-- Flashlight Screen -->
     <string name="flashlight_title">Fflachlamp</string>
     <string name="flashlight_header">Delweddydd fflachlamp</string>

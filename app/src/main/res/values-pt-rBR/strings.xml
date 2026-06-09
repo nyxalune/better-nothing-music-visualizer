@@ -44,7 +44,6 @@
     <string name="haptics_mode_label">Modo do Motor Háptico</string>
     <string name="haptics_mode_bass">Amplitude de Graves</string>
     <string name="haptics_mode_beat">Detecção de Batida</string>
-    <string name="haptics_mode_richtap">RichTap HD</string>
     <string name="haptics_beat_detection_desc">Vibra em batidas detectadas dentro da faixa de frequência selecionada. Mais suave, mas às vezes não tão estável. É um recurso beta.</string>
     <string name="haptics_motor_title">Visualização háptica</string>
     <string name="haptics_frequency_label">Frequência: %1$d - %2$d Hz</string>

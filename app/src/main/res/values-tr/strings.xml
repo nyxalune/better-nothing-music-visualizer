@@ -44,7 +44,6 @@
     <string name="haptics_mode_label">Haptik Motor Modu</string>
     <string name="haptics_mode_bass">Bas Genliği</string>
     <string name="haptics_mode_beat">Ritim Algılama</string>
-    <string name="haptics_mode_richtap">RichTap HD</string>
     <string name="haptics_beat_detection_desc">Seçilen frekans aralığında algılanan ritimlerde titrer. Daha pürüzsüzdür ancak bazen o kadar kararlı değildir. Beta özelliğidir.</string>
     <string name="haptics_motor_title">Haptik görselleştirme</string>
     <string name="haptics_frequency_label">Frekans: %1$d - %2$d Hz</string>

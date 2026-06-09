@@ -44,7 +44,6 @@
     <string name="haptics_mode_label">Modalità motore tattile</string>
     <string name="haptics_mode_bass">Ampiezza bassi</string>
     <string name="haptics_mode_beat">Rilevamento battito</string>
-    <string name="haptics_mode_richtap">RichTap HD</string>
     <string name="haptics_beat_detection_desc">Vibra sui battiti rilevati all\'interno dell\'intervallo di frequenza selezionato. Più fluido ma a volte meno stabile. È una funzione beta.</string>
     <string name="haptics_motor_title">Visualizzazione tattile</string>
     <string name="haptics_frequency_label">Frequenza: %1$d - %2$d Hz</string>

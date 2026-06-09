@@ -44,7 +44,6 @@
     <string name="haptics_mode_label">हैप्टिक इंजन मोड</string>
     <string name="haptics_mode_bass">बास आयाम</string>
     <string name="haptics_mode_beat">बीट डिटेक्शन</string>
-    <string name="haptics_mode_richtap">RichTap HD</string>
     <string name="haptics_beat_detection_desc">चयनित आवृत्ति सीमा के भीतर पता लगाए गए बीट्स पर कंपन करता है। स्मूथ लेकिन कभी-कभी उतना स्थिर नहीं। यह एक बीटा फीचर है।</string>
     <string name="haptics_motor_title">हैप्टिक विज़ुअलाइज़ेशन</string>
     <string name="haptics_frequency_label">आवृत्ति: %1$d - %2$d हर्ट्ज</string>

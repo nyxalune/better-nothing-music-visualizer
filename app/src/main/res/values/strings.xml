@@ -268,4 +268,6 @@
     <string name="license_section_8_1">8.1 Governing Law</string>
     <string name="license_governing_law">This Agreement shall be governed by and construed in accordance with the laws of the jurisdiction in which Oliver Lebaigue resides, without regard to its conflict of law principles.</string>
     <string name="end_of_license">END OF LICENSE AGREEMENT</string>
+    <string name="haptics_richtap_freq_label">h</string>
+    <string name="haptics_mode_richtap">h</string>
 </resources>

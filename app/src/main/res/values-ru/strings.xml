@@ -44,7 +44,6 @@
     <string name="haptics_mode_label">Режим тактильного движка</string>
     <string name="haptics_mode_bass">Амплитуда басов</string>
     <string name="haptics_mode_beat">Определение ритма</string>
-    <string name="haptics_mode_richtap">RichTap HD</string>
     <string name="haptics_beat_detection_desc">Вибрирует при обнаружении ударов в выбранном диапазоне частот. Плавнее, но иногда не так стабильно. Это бета-функция.</string>
     <string name="haptics_motor_title">Тактильная визуализация</string>
     <string name="haptics_frequency_label">Частота: %1$d - %2$d Гц</string>

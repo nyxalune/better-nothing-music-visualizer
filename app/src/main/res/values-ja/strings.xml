@@ -44,7 +44,6 @@
     <string name="haptics_mode_label">ハプティクスエンジン・モード</string>
     <string name="haptics_mode_bass">低音振幅</string>
     <string name="haptics_mode_beat">ビート検出</string>
-    <string name="haptics_mode_richtap">RichTap HD</string>
     <string name="haptics_beat_detection_desc">選択した周波数範囲内で検出されたビートに合わせて振動します。よりスムーズですが、時折不安定になることがあります。これはベータ機能です。</string>
     <string name="haptics_motor_title">ハプティクス視覚化</string>
     <string name="haptics_frequency_label">周波数： %1$d - %2$d Hz</string>
