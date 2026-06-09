@@ -9,6 +9,9 @@ import android.util.Log;
 
 import androidx.annotation.Nullable;
 
+import com.better.nothing.music.vizualizer.model.TorchMode;
+
+import java.util.Arrays;
 import java.util.Objects;
 
 /**
@@ -35,15 +38,26 @@ public final class FlashlightEngine {
     private int maxTorchStrength = 1;
 
     // User settings
+    private TorchMode torchMode = TorchMode.AMPLITUDE;
     private float flashlightMultiplier = 1.0f;
     private float flashlightGamma = DEFAULT_GAMMA;
     private float flashlightThreshold = 0.15f;
     private float flashlightSmoothing = 0.7f;
+    private float flashlightBeatSensitivity = 1.0f;
 
     // Dynamic state
     private float decayedState = 0f;
     private float peakTracker = EPSILON;
     private float smoothedIntensity = 0f;
+
+    // Beat detection state
+    private final float[] deltaHistory = new float[61];
+    private final float[] sortedHistory = new float[61];
+    private int deltaIndex = 0;
+    private int deltaCount = 0;
+    private float prevEnergy = 0f;
+    private long lastTriggerMs = 0L;
+    private float thresholdMask = 0f;
 
     private int lastLevel = -1;
     private long lastSubmitMs = 0L;
@@ -122,8 +136,33 @@ public final class FlashlightEngine {
         this.flashlightSmoothing = Math.max(0f, Math.min(0.99f, smoothing));
     }
 
-    public synchronized void performFlashlightFeedback(float rawPeak, @Nullable AudioProcessor.VisualizerConfig config) {
+    public synchronized void setTorchMode(TorchMode mode) {
+        this.torchMode = mode;
+        if (mode == TorchMode.BEAT_DETECTION) {
+            resetBeatDetection();
+        }
+    }
+
+    public synchronized void setFlashlightBeatSensitivity(float sensitivity) {
+        this.flashlightBeatSensitivity = Math.max(0.3f, Math.min(6.0f, sensitivity));
+    }
+
+    private void resetBeatDetection() {
+        deltaIndex = 0;
+        deltaCount = 0;
+        prevEnergy = 0f;
+        lastTriggerMs = 0L;
+        thresholdMask = 0f;
+        Arrays.fill(deltaHistory, 0f);
+    }
+
+    public synchronized void performFlashlightFeedback(float rawPeak, @Nullable AudioProcessor.VisualizerConfig config, float[] magnitude, int binLo, int binHi) {
         if (cameraId == null) return;
+
+        if (torchMode == TorchMode.BEAT_DETECTION) {
+            performBeatDetection(magnitude, binLo, binHi);
+            return;
+        }
 
         float current = Math.max(0f, rawPeak) * SPECTRUM_GAIN;
         final float decay = (config != null) ? config.decay : DEFAULT_DECAY;
@@ -180,6 +219,68 @@ public final class FlashlightEngine {
         }
 
         submitTorchLevel(level);
+    }
+
+    private synchronized void performBeatDetection(float[] magnitude, int binLo, int binHi) {
+        if (magnitude == null || magnitude.length == 0) return;
+
+        int start = Math.max(0, Math.min(binLo, magnitude.length - 1));
+        int end = Math.max(start, Math.min(binHi, magnitude.length - 1));
+
+        float sum = 0f;
+        for (int i = start; i <= end; i++) {
+            sum += magnitude[i];
+        }
+
+        float energy = (float) Math.log(1f + sum);
+        float delta = energy - prevEnergy;
+        prevEnergy = energy;
+
+        pushDelta(delta);
+
+        float threshold = Math.max(medianDelta() * (2.2f * flashlightBeatSensitivity), thresholdMask);
+        long now = SystemClock.elapsedRealtime();
+
+        if (delta > threshold && delta > 0.025f && (now - lastTriggerMs) >= 45L) {
+            submitTorchLevel(maxTorchStrength);
+            lastTriggerMs = now;
+            thresholdMask = delta * 0.9f;
+            
+            // For beat detection, we want a quick flash, so we'll schedule turning it off.
+            // However, this engine is called periodically.
+            // We can just set a state and let the next call (or a timer) turn it off.
+            // In BeatDetectionHapticEngine, it uses a waveform.
+            // For torch, we might want to just let it decay or turn off after some time.
+        } else {
+            // If no beat, we should probably turn it off if it was a beat flash.
+            if (now - lastTriggerMs > 50L) {
+                stopFlashlightInternal();
+            }
+        }
+
+        thresholdMask *= 0.85f;
+    }
+
+    private void pushDelta(float delta) {
+        deltaHistory[deltaIndex] = Math.max(delta, 0.0001f);
+        deltaIndex = (deltaIndex + 1) % deltaHistory.length;
+        if (deltaCount < deltaHistory.length) {
+            deltaCount++;
+        }
+    }
+
+    private float medianDelta() {
+        if (deltaCount == 0) return 0.01f;
+
+        System.arraycopy(deltaHistory, 0, sortedHistory, 0, deltaCount);
+        Arrays.sort(sortedHistory, 0, deltaCount);
+
+        if (deltaCount % 2 == 1) {
+            return sortedHistory[deltaCount / 2];
+        } else {
+            int mid = deltaCount / 2;
+            return (sortedHistory[mid - 1] + sortedHistory[mid]) * 0.5f;
+        }
     }
 
     public synchronized void stopFlashlight() {

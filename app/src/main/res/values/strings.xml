@@ -61,10 +61,14 @@
     <string name="flashlight_title">Flashlight</string>
     <string name="flashlight_header">Flashlight visualizer</string>
     <string name="flashlight_sync_title">Flashlight Sync</string>
+    <string name="flashlight_mode_label">Flashlight Engine Mode</string>
+    <string name="flashlight_mode_amplitude">Amplitude</string>
+    <string name="flashlight_mode_beat">Beat Detection</string>
     <string name="flashlight_frequency_label">Frequency: %1$d - %2$d Hz</string>
     <string name="flashlight_frequency_desc">The Hz range that the flashlight will react to. Lower for bass, higher for snare/vocals.</string>
     <string name="flashlight_sensitivity_label">Sensitivity Threshold: %.2f</string>
     <string name="flashlight_sensitivity_desc">Higher threshold filters out background noise/drums.</string>
+    <string name="flashlight_beat_sensitivity_label">Beat Sensitivity: %.1f</string>
     <string name="flashlight_smoothing_label">Smoothing: %.2f</string>
     <string name="flashlight_smoothing_desc">Higher smoothing makes the light pulse softly instead of strobing.</string>
     <string name="flashlight_gamma_label">Intensity Gamma: %.1f</string>

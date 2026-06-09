@@ -3,6 +3,7 @@ package com.better.nothing.music.vizualizer.ui
 import com.better.nothing.music.vizualizer.R
 import com.better.nothing.music.vizualizer.BuildConfig
 import com.better.nothing.music.vizualizer.model.HapticMode
+import com.better.nothing.music.vizualizer.model.TorchMode
 import com.better.nothing.music.vizualizer.model.DeviceProfile
 import com.better.nothing.music.vizualizer.logic.AudioProcessor
 import com.better.nothing.music.vizualizer.service.AudioCaptureService
@@ -1238,6 +1239,9 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
     private val _flashlightEnabled = MutableStateFlow(false)
     val flashlightEnabled = _flashlightEnabled.asStateFlow()
 
+    private val _flashlightMode = MutableStateFlow(TorchMode.AMPLITUDE)
+    val flashlightMode = _flashlightMode.asStateFlow()
+
     private val _flashlightFreqMin = MutableStateFlow(60f)
     val flashlightFreqMin = _flashlightFreqMin.asStateFlow()
 
@@ -1256,11 +1260,22 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
     private val _flashlightGamma = MutableStateFlow(2.2f)
     val flashlightGamma = _flashlightGamma.asStateFlow()
 
+    private val _flashlightBeatSensitivity = MutableStateFlow(1.0f)
+    val flashlightBeatSensitivity = _flashlightBeatSensitivity.asStateFlow()
+
     fun setFlashlightEnabled(enabled: Boolean) {
         _flashlightEnabled.value = enabled
         viewModelScope.launch(Dispatchers.IO) {
             ctx.getSharedPreferences("viz_prefs", Context.MODE_PRIVATE)
                 .edit { putBoolean("flashlight_enabled", enabled) }
+        }
+    }
+
+    fun setFlashlightMode(mode: TorchMode) {
+        _flashlightMode.value = mode
+        viewModelScope.launch(Dispatchers.IO) {
+            ctx.getSharedPreferences("viz_prefs", Context.MODE_PRIVATE)
+                .edit { putString("flashlight_mode", mode.name) }
         }
     }
 
@@ -1305,6 +1320,14 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
         viewModelScope.launch(Dispatchers.IO) {
             ctx.getSharedPreferences("viz_prefs", Context.MODE_PRIVATE)
                 .edit { putFloat("flashlight_gamma", gamma) }
+        }
+    }
+
+    fun setFlashlightBeatSensitivity(sensitivity: Float) {
+        _flashlightBeatSensitivity.value = sensitivity
+        viewModelScope.launch(Dispatchers.IO) {
+            ctx.getSharedPreferences("viz_prefs", Context.MODE_PRIVATE)
+                .edit { putFloat("flashlight_beat_sensitivity", sensitivity) }
         }
     }
 
@@ -1433,12 +1456,23 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
     private val _isBeatDetected = MutableStateFlow(false)
     val isBeatDetected = _isBeatDetected.asStateFlow()
 
+    private val _isFlashlightBeatDetected = MutableStateFlow(false)
+    val isFlashlightBeatDetected = _isFlashlightBeatDetected.asStateFlow()
+
     private var prevEnergy = 0f
     private val deltaHistory = FloatArray(61)
     private var deltaIndex = 0
     private var deltaCount = 0
     private var lastTriggerMs = 0L
     private var thresholdMask = 0f
+
+    private var fPrevEnergy = 0f
+    private val fDeltaHistory = FloatArray(61)
+    private var fDeltaIndex = 0
+    private var fDeltaCount = 0
+    private var fLastTriggerMs = 0L
+    private var fThresholdMask = 0f
+
     private var smoothedUiAmplitude = 0f
     private var smoothedHapticAmplitude = 0f
 
@@ -1487,8 +1521,10 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
                 val fBinLo = (_flashlightFreqMin.value / hzPerBin).toInt().coerceIn(0, magnitude.lastIndex)
                 val fBinHi = (_flashlightFreqMax.value / hzPerBin).toInt().coerceIn(fBinLo, magnitude.lastIndex)
                 var fSumSquares = 0f
+                var fSum = 0f
                 for (i in fBinLo..fBinHi) {
                     fSumSquares += magnitude[i] * magnitude[i]
+                    fSum += magnitude[i]
                 }
                 val fCount = fBinHi - fBinLo + 1
                 val fRms = if (fCount > 0) kotlin.math.sqrt(fSumSquares / fCount) else 0f
@@ -1504,7 +1540,7 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
                 val uiCount = uiBinHi - uiBinLo + 1
                 val uiRms = if (uiCount > 0) kotlin.math.sqrt(uiSumSquares / uiCount) else 0f
                 val target = (uiRms * 10f).coerceIn(0f, 1.0f).toDouble().pow(3.0).toFloat()
-                
+
                 // Asymmetric smoothing: very fast attack, slower decay
                 if (target > smoothedUiAmplitude) {
                     smoothedUiAmplitude = smoothedUiAmplitude * 0.1f + target * 0.9f
@@ -1537,19 +1573,6 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
                         thresholdMask = delta * 0.8f
                         // Auto-reset beat after a short duration for the UI flash
                         viewModelScope.launch {
-            announcementRepository.getLatestAnnouncement().collect { announcement ->
-                _latestAnnouncement.value = announcement
-                if (announcement != null) {
-                    val sharedPrefs = ctx.getSharedPreferences("viz_prefs", Context.MODE_PRIVATE)
-                    val lastSeenId = sharedPrefs.getString("last_seen_announcement_id", "")
-                    if (announcement.id.toString() != lastSeenId) {
-                        _showAnnouncementModal.value = true
-                    }
-                }
-            }
-        }
-
-        viewModelScope.launch {
                             delay(50)
                             _isBeatDetected.value = false
                         }
@@ -1557,6 +1580,35 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
                     thresholdMask *= 0.85f
                 } else {
                     _isBeatDetected.value = false
+                }
+
+                if (_flashlightMode.value == TorchMode.BEAT_DETECTION) {
+                    val energy = kotlin.math.ln(1f + fSum)
+                    val delta = energy - fPrevEnergy
+                    fPrevEnergy = energy
+
+                    fDeltaHistory[fDeltaIndex] = delta.coerceAtLeast(0.0001f)
+                    fDeltaIndex = (fDeltaIndex + 1) % fDeltaHistory.size
+                    if (fDeltaCount < fDeltaHistory.size) fDeltaCount++
+
+                    val sorted = fDeltaHistory.copyOf(fDeltaCount).apply { sort() }
+                    val median = if (fDeltaCount == 0) 0.01f else if (fDeltaCount % 2 == 1) sorted[fDeltaCount / 2] else (sorted[fDeltaCount / 2 - 1] + sorted[fDeltaCount / 2]) * 0.5f
+
+                    val threshold = kotlin.math.max(median * (2.2f * _flashlightBeatSensitivity.value), fThresholdMask)
+                    val now = SystemClock.elapsedRealtime()
+
+                    if (delta > threshold && delta > 0.025f && (now - fLastTriggerMs) >= 60L) {
+                        _isFlashlightBeatDetected.value = true
+                        fLastTriggerMs = now
+                        fThresholdMask = delta * 0.8f
+                        viewModelScope.launch {
+                            delay(50)
+                            _isFlashlightBeatDetected.value = false
+                        }
+                    }
+                    fThresholdMask *= 0.85f
+                } else {
+                    _isFlashlightBeatDetected.value = false
                 }
             }
         }
@@ -1643,12 +1695,15 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
                 _hapticBeatGamma.value = prefs.getFloat("haptic_beat_gamma", 8.0f).coerceIn(4f, 15f)
 
                 _flashlightEnabled.value = prefs.getBoolean("flashlight_enabled", false)
+                val torchModeName = prefs.getString("flashlight_mode", TorchMode.AMPLITUDE.name)
+                _flashlightMode.value = TorchMode.valueOf(torchModeName ?: TorchMode.AMPLITUDE.name)
                 _flashlightFreqMin.value = prefs.getInt("flashlight_freq_min", 60).toFloat()
                 _flashlightFreqMax.value = prefs.getInt("flashlight_freq_max", 250).toFloat()
                 _flashlightMultiplier.value = prefs.getFloat("flashlight_multiplier", 1.0f)
                 _flashlightThreshold.value = prefs.getFloat("flashlight_threshold", 0.15f)
                 _flashlightSmoothing.value = prefs.getFloat("flashlight_smoothing", 0.7f)
                 _flashlightGamma.value = prefs.getFloat("flashlight_gamma", 2.2f)
+                _flashlightBeatSensitivity.value = prefs.getFloat("flashlight_beat_sensitivity", 1.0f)
 
                 checkRemoteConfigVersion()
                 if (!BuildConfig.DEBUG) {
@@ -2008,13 +2063,16 @@ class MainActivity : ComponentActivity() {
                 val isBeatDetected by viewModel.isBeatDetected.collectAsStateWithLifecycle()
 
                 val flashlightEnabled by viewModel.flashlightEnabled.collectAsStateWithLifecycle()
+                val flashlightMode by viewModel.flashlightMode.collectAsStateWithLifecycle()
                 val flashlightFreqMin by viewModel.flashlightFreqMin.collectAsStateWithLifecycle()
                 val flashlightFreqMax by viewModel.flashlightFreqMax.collectAsStateWithLifecycle()
                 val flashlightMultiplier by viewModel.flashlightMultiplier.collectAsStateWithLifecycle()
                 val flashlightThreshold by viewModel.flashlightThreshold.collectAsStateWithLifecycle()
                 val flashlightSmoothing by viewModel.flashlightSmoothing.collectAsStateWithLifecycle()
                 val flashlightGamma by viewModel.flashlightGamma.collectAsStateWithLifecycle()
+                val flashlightBeatSensitivity by viewModel.flashlightBeatSensitivity.collectAsStateWithLifecycle()
                 val flashlightAmplitude by viewModel.flashlightAmplitude.collectAsStateWithLifecycle()
+                val isFlashlightBeatDetected by viewModel.isFlashlightBeatDetected.collectAsStateWithLifecycle()
 
                 val idleBreathingEnabled by viewModel.idleBreathingEnabled.collectAsStateWithLifecycle()
                 val idlePattern by viewModel.idlePattern.collectAsStateWithLifecycle()
@@ -2333,6 +2391,8 @@ class MainActivity : ComponentActivity() {
                     isBeatDetected = isBeatDetected,
                     flashlightEnabled = flashlightEnabled,
                     onFlashlightEnabledChanged = ::onFlashlightEnabledChanged,
+                    flashlightMode = flashlightMode,
+                    onFlashlightModeChanged = ::onFlashlightModeChanged,
                     flashlightFreqMin = flashlightFreqMin,
                     flashlightFreqMax = flashlightFreqMax,
                     onFlashlightFreqRangeChanged = ::onFlashlightFreqRangeChanged,
@@ -2344,7 +2404,10 @@ class MainActivity : ComponentActivity() {
                     onFlashlightSmoothingChanged = ::onFlashlightSmoothingChanged,
                     flashlightGamma = flashlightGamma,
                     onFlashlightGammaChanged = ::onFlashlightGammaChanged,
+                    flashlightBeatSensitivity = flashlightBeatSensitivity,
+                    onFlashlightBeatSensitivityChanged = ::onFlashlightBeatSensitivityChanged,
                     flashlightAmplitude = flashlightAmplitude,
+                    isFlashlightBeatDetected = isFlashlightBeatDetected,
                     idleBreathingEnabled = idleBreathingEnabled,
                     onIdleBreathingEnabledChanged = ::onIdleBreathingEnabledChanged,
                     idlePattern = idlePattern,
@@ -2492,6 +2555,11 @@ class MainActivity : ComponentActivity() {
         service?.setFlashlightEnabled(enabled)
     }
 
+    private fun onFlashlightModeChanged(mode: TorchMode) {
+        viewModel.setFlashlightMode(mode)
+        service?.setFlashlightMode(mode)
+    }
+
     private fun onFlashlightFreqRangeChanged(min: Float, max: Float) {
         viewModel.setFlashlightFreqRange(min, max)
         service?.setFlashlightFreqRange(min, max)
@@ -2515,6 +2583,11 @@ class MainActivity : ComponentActivity() {
     private fun onFlashlightGammaChanged(gamma: Float) {
         viewModel.setFlashlightGamma(gamma)
         service?.setFlashlightGamma(gamma)
+    }
+
+    private fun onFlashlightBeatSensitivityChanged(sensitivity: Float) {
+        viewModel.setFlashlightBeatSensitivity(sensitivity)
+        service?.setFlashlightBeatSensitivity(sensitivity)
     }
 
     private fun onIdleBreathingEnabledChanged(enabled: Boolean) {
@@ -2741,10 +2814,12 @@ class MainActivity : ComponentActivity() {
         service?.setDisableGlyphsWhenSilent(viewModel.disableGlyphsWhenSilent.value)
 
         service?.setFlashlightEnabled(viewModel.flashlightEnabled.value)
+        service?.setFlashlightMode(viewModel.flashlightMode.value)
         service?.setFlashlightFreqRange(viewModel.flashlightFreqMin.value, viewModel.flashlightFreqMax.value)
         service?.setFlashlightMultiplier(viewModel.flashlightMultiplier.value)
         service?.setFlashlightThreshold(viewModel.flashlightThreshold.value)
         service?.setFlashlightSmoothing(viewModel.flashlightSmoothing.value)
+        service?.setFlashlightBeatSensitivity(viewModel.flashlightBeatSensitivity.value)
 
         service?.setCaptureSource(viewModel.captureSource.value)
         val preset = viewModel.currentPreset()
@@ -2938,6 +3013,8 @@ private fun BetterVizApp(
     isBeatDetected: Boolean,
     flashlightEnabled: Boolean,
     onFlashlightEnabledChanged: (Boolean) -> Unit,
+    flashlightMode: TorchMode,
+    onFlashlightModeChanged: (TorchMode) -> Unit,
     flashlightFreqMin: Float,
     flashlightFreqMax: Float,
     onFlashlightFreqRangeChanged: (Float, Float) -> Unit,
@@ -2949,7 +3026,10 @@ private fun BetterVizApp(
     onFlashlightSmoothingChanged: (Float) -> Unit,
     flashlightGamma: Float,
     onFlashlightGammaChanged: (Float) -> Unit,
+    flashlightBeatSensitivity: Float,
+    onFlashlightBeatSensitivityChanged: (Float) -> Unit,
     flashlightAmplitude: Float,
+    isFlashlightBeatDetected: Boolean,
     idleBreathingEnabled: Boolean,
     onIdleBreathingEnabledChanged: (Boolean) -> Unit,
     idlePattern: String,
@@ -3151,6 +3231,8 @@ private fun BetterVizApp(
                         Tab.Flashlight -> FlashlightScreen(
                             flashlightEnabled = flashlightEnabled,
                             onFlashlightEnabledChanged = onFlashlightEnabledChanged,
+                            flashlightMode = flashlightMode,
+                            onFlashlightModeChanged = onFlashlightModeChanged,
                             flashlightFreqMin = flashlightFreqMin,
                             flashlightFreqMax = flashlightFreqMax,
                             onFlashlightFreqRangeChanged = onFlashlightFreqRangeChanged,
@@ -3162,7 +3244,10 @@ private fun BetterVizApp(
                             onFlashlightSmoothingChanged = onFlashlightSmoothingChanged,
                             flashlightGamma = flashlightGamma,
                             onFlashlightGammaChanged = onFlashlightGammaChanged,
+                            flashlightBeatSensitivity = flashlightBeatSensitivity,
+                            onFlashlightBeatSensitivityChanged = onFlashlightBeatSensitivityChanged,
                             flashlightAmplitudeProvider = { flashlightAmplitude },
+                            isBeatDetectedProvider = { isFlashlightBeatDetected },
                         )
                         Tab.Settings -> SettingsScreen(
                             viewModel = viewModel,

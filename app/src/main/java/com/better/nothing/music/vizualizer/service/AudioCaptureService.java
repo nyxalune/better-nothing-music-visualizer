@@ -2,6 +2,7 @@ package com.better.nothing.music.vizualizer.service;
 
 import com.better.nothing.music.vizualizer.model.DeviceProfile;
 import com.better.nothing.music.vizualizer.model.HapticMode;
+import com.better.nothing.music.vizualizer.model.TorchMode;
 import com.better.nothing.music.vizualizer.model.AudioRouteInfo;
 import com.better.nothing.music.vizualizer.logic.AudioProcessor;
 import com.better.nothing.music.vizualizer.logic.GlyphRenderer;
@@ -259,9 +260,11 @@ public class AudioCaptureService extends Service {
     private volatile float mHapticBeatGamma = 8.0f;
 
     private volatile boolean mFlashlightEnabled = false;
+    private volatile TorchMode mFlashlightMode = TorchMode.AMPLITUDE;
     private volatile float mFlashlightMinHz = 60;
     private volatile float mFlashlightMaxHz = 250;
     private volatile AudioProcessor.FrequencyRange mFlashlightRange;
+    private volatile float mFlashlightBeatSensitivity = 1.0f;
 
     private ContinuousHapticEngine mContinuousHapticEngine;
     private BeatDetectionHapticEngine mBeatDetectionEngine;
@@ -1107,6 +1110,20 @@ public class AudioCaptureService extends Service {
         }
     }
 
+    public void setFlashlightMode(TorchMode mode) {
+        mFlashlightMode = mode;
+        if (mFlashlightEngine != null) {
+            mFlashlightEngine.setTorchMode(mode);
+        }
+    }
+
+    public void setFlashlightBeatSensitivity(float sensitivity) {
+        mFlashlightBeatSensitivity = sensitivity;
+        if (mFlashlightEngine != null) {
+            mFlashlightEngine.setFlashlightBeatSensitivity(sensitivity);
+        }
+    }
+
     public void startCapture(int resultCode, Intent data) {
         startCaptureInternal(CaptureSource.INTERNAL, resultCode, data);
     }
@@ -1383,7 +1400,13 @@ public class AudioCaptureService extends Service {
             }
 
             if (mFlashlightEnabled && mFlashlightEngine != null) {
-                mFlashlightEngine.performFlashlightFeedback(pendingFrame.flashlightPeak, pendingFrame.config);
+                mFlashlightEngine.performFlashlightFeedback(
+                        pendingFrame.flashlightPeak,
+                        pendingFrame.config,
+                        pendingFrame.magnitude,
+                        mFlashlightRange != null ? mFlashlightRange.binLo : 0,
+                        mFlashlightRange != null ? mFlashlightRange.binHi : 0
+                );
             }
 
             processFrame(pendingFrame.uniqueMagnitudes, pendingFrame.hapticPeak, pendingFrame.config, pendingFrame.configVersion);
