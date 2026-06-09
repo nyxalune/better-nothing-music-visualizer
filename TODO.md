@@ -2,42 +2,42 @@
 
 ## To Do
 
-### UI/UX
-* M3E split and round those 2 /\ buttons
-* M3E selector capture source
-* Replace dropdowns with Material 3 Expressive Split Buttons
+* fix the app crash
+* remove preset favoriting, track preset usage time
+* track audio source playing time, not audio_source_change
+* track viz mode playing time (flashlight time, haptics time, glyphs time, these will be added up in the firebase charts ifpossible)
+* rework the qs tiles, make one for glyph viz, one for haptic viz, and one for flashlight viz. enable of disable the service automatically based on if we have anything running or not.
+* Add a disclaimer popup on first use of the media projection source that we do not record the screen, even if it looks like it.
+* and work on the translation tools so we can get hoomans to translate our app.
+* Remove richtap haptics and ALL CODE RELATED TO IT, ALSO DEPS
+* Improve notification (ALEKS DOES IT)
+* Fix the amplitude haptics (Aleks)
+* Add 3.0 gamma to the UI shift vizualisation and only have downward smoothing 
+
+* M3E split and round those 2 /\ buttons (ALEKS DOES IT)
 * Redesign about page for a proper hierarchical easy M3E design
 * Merge Git repo link card with app version card
 
-### Logic/Features
-* Adaptive Smoothing: Real-time decay adjustment based on music tempo
-* Proximity Visualization: Auto-pause when phone is face-up or in pocket
-* Latency Auto-Calibration: Sync Wizard using microphone to measure delay
-* Voice Assistant Visualization: Specialized mode for voice input detection
+* Adaptive Smoothing: Real-time decay adjustment based on music tempo (3c) WHY
+* Latency Auto-Calibration: Sync Wizard using microphone to measure delay (4a) interesting **OLIVER GO AHEAD**
 * Reduce bit depth haptics amplitude 
 
-### Visual
-* Screen Mirroring: On-screen visualizer overlay for when phone is face-up
-* Add one-shot spam haptics engine (from Oliver)
 * Refine beat detection engine haptics
-* Ask RichTap what is going on
 * Remove notification detection
 
-### Device Specific
-* **Change np1 preset with wider spectrum range (Aleks)**
 * Adapt ui depending on the audio source (Aleks)
 * Add an adjustment Hz range preset for Phone (4a)
-* Hide glyph tab if device is not a Nothing Phone
+* **Hide glyph tab if device is not a Nothing Phone AND DISABLE ALL CODE RELATED TO THE GLYPH UI**
 
-### Maintenance/Misc
-* Remove the debug disclaimer in readme one we release
-* change git link embed
-* Update notification (Oliver)
+* Check if auto update works 
 
-## In Progress
-* RichTap haptics (currently not working)
+---
 
 ## Done
+
+* Add one-shot spam haptics engine (from Oliver)
+* **Change np1 preset with wider spectrum range (Aleks)**
+* Remove the debug disclaimer in readme one we release
 * Dynamic UI Theming: Use Palette API to match app colors with album art
 * Dynamic Gain Normalization: Auto-Gain for quiet audio (Experimental)
 * Navigation Bar Overlay: Graphical bar visualizer on top of nav bar
