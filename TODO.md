@@ -27,6 +27,17 @@ with gemini of similar
 ## Oliver's todo
 * remove preset favoriting, track preset usage time instead
 * track audio source playing time, not audio_source_change
+
+* Maybe in the About section, add a statistics card, and inside of it you can add:
+  - Total time visualized
+  - Total time used Glyph visualization
+  - Total time used haptic visualization
+  - Total time used flashlight visualization
+  - Total time used on-screen navbar navigation
+  - Total Idle Time
+  - Total non-idle time 
+  - (Aleks will make later the UI a little more expressive with wiggly bars, which are very nice, but for now just focus on these. Make a card with only values and strings)
+
 * track viz mode playing time (flashlight time, haptics time, glyphs time, these will be added up in the firebase charts ifpossible)
 * Adaptive Smoothing: Real-time decay adjustment based on music tempo (3c) WHY
 * Latency Auto-Calibration: Sync Wizard using microphone to measure delay (4a) interesting **OLIVER GO AHEAD**
