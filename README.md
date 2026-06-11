@@ -1,7 +1,7 @@
 # <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Travel%20and%20places/Fire.png" alt="Fire" width="35" height="35" />Better Nothing Music Visualizer
 An android app that not only brings better music visualization on the Glyph interface of Nothing Phones, but also lets you feel your music through the haptic motor, and also lets you use the flashlight of your phone as a music visualizer!
 
-This android app grabs the live audio stream from your device using sources such as **Media Projection**, your microphone, the classic *Android Visualizer audio stream (not recommened)*, or even shizuku (in the future), and processes it directly into the glyphs, the haptic motor, or your flashlight. This means you can visualize music from **Spotify, YouTube Music**, and basically any other app! It can even work on games, and also you can use the microphone to vizualise music that others play, especially at a party!
+This android app grabs the live audio stream from your device using sources such as **Media Projection**, your **microphone**, the classic *Android Visualizer audio stream (not recommened)*, or even with shizuku (in the future), and processes it directly into the glyphs, the haptic motor, or your flashlight. This means you can visualize music from **Spotify, YouTube Music**, and basically any other app! It can even work on games, and also you can use the microphone to vizualise music that others play, especially at a party!
 
 
 <img 
