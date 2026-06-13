@@ -1255,6 +1255,38 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
         }
     }
 
+    fun deleteCustomPreset(presetKey: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val file = File(ctx.filesDir, "zones.config")
+                if (!file.exists()) return@launch
+
+                val json = JSONObject(file.readText())
+                if (json.has(presetKey)) {
+                    json.remove(presetKey)
+                    file.writeText(json.toString(2))
+                    
+                    // Remove from favorites if present
+                    val currentFavs = _favoritePresets.value.toMutableSet()
+                    if (currentFavs.remove(presetKey)) {
+                        _favoritePresets.value = currentFavs
+                        ctx.getSharedPreferences("viz_prefs", Context.MODE_PRIVATE)
+                            .edit().putStringSet("favorite_presets", currentFavs).apply()
+                    }
+
+                    refreshPresetsInternal()
+                    MainActivity.serviceStatic?.reloadConfig()
+
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(ctx, "Preset deleted", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("MainViewModel", "Failed to delete custom preset", e)
+            }
+        }
+    }
+
     fun downloadPreset(preset: CommunityPreset) {
         saveCustomPreset(preset.name, preset.zones.map { it.toZoneSpec() }, preset.author)
         analytics.logCommunityPresetDownloaded(preset.name, preset.author)

@@ -37,18 +37,13 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.FolderOpen
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Public
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -83,6 +78,29 @@ internal fun GlyphsScreen(
 
     val selectedInfo = remember(selectedPreset, presets) {
         presets.firstOrNull { it.key == selectedPreset } ?: presets.firstOrNull()
+    }
+
+    var showDeleteConfirm by remember { mutableStateOf<String?>(null) }
+
+    if (showDeleteConfirm != null) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirm = null },
+            title = { Text("Delete Preset?") },
+            text = { Text("Are you sure you want to delete the local preset '${showDeleteConfirm}'?") },
+            confirmButton = {
+                TextButton(onClick = { 
+                    showDeleteConfirm?.let { viewModel.deleteCustomPreset(it) }
+                    showDeleteConfirm = null
+                }) {
+                    Text("Delete", color = Color.Red)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteConfirm = null }) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
 
     Column(
@@ -245,17 +263,36 @@ internal fun GlyphsScreen(
                             )
                         ),
                 ) {
-                    Crossfade(
-                        targetState = selectedInfo?.description,
-                        label = "desc_fade",
-                        animationSpec = spring(stiffness = Spring.StiffnessMedium)
-                    ) { description ->
-                        Text(
-                            text = description ?: stringResource(R.string.glyph_no_config),
-                            style = MaterialTheme.typography.bodyLarge.copy(lineHeight = 22.sp),
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.9f),
-                            modifier = Modifier.fillMaxWidth(),
-                        )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Crossfade(
+                            targetState = selectedInfo?.description,
+                            label = "desc_fade",
+                            animationSpec = spring(stiffness = Spring.StiffnessMedium),
+                            modifier = Modifier.weight(1f)
+                        ) { description ->
+                            Text(
+                                text = description ?: stringResource(R.string.glyph_no_config),
+                                style = MaterialTheme.typography.bodyLarge.copy(lineHeight = 22.sp),
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.9f),
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+                        }
+
+                        if (selectedInfo?.description?.startsWith("Custom:") == true) {
+                            IconButton(
+                                onClick = { showDeleteConfirm = selectedInfo.key },
+                                modifier = Modifier.padding(start = 8.dp)
+                            ) {
+                                Icon(
+                                    Icons.Default.Delete,
+                                    contentDescription = "Delete Local Preset",
+                                    tint = MaterialTheme.colorScheme.error.copy(alpha = 0.7f)
+                                )
+                            }
+                        }
                     }
                 }
 
