@@ -34,8 +34,11 @@ class PermissionTrampolineActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val analytics = AnalyticsHelper(this)
+        analytics.logScreenView("permission_trampoline")
         
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+            analytics.logError("missing_permission", "RECORD_AUDIO missing in trampoline")
             // If essential recording permission is missing, redirect to main activity
             val intent = Intent(this, MainActivity::class.java)
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)

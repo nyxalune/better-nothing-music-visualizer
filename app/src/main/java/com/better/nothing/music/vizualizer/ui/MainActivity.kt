@@ -255,17 +255,25 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
 
     fun setShowSpoofingSettings(show: Boolean) {
         _showSpoofingSettings.value = show
+        analytics.logSettingChanged("show_spoofing_settings", show)
     }
 
-    fun showAnnouncementEditor() { _showAnnouncementEditor.value = true }
+    fun showAnnouncementEditor() { 
+        _showAnnouncementEditor.value = true
+        analytics.logScreenView("announcement_editor")
+    }
     fun hideAnnouncementEditor() { _showAnnouncementEditor.value = false }
 
-    fun showAnnouncementHistory() { _showAnnouncementHistory.value = true }
+    fun showAnnouncementHistory() { 
+        _showAnnouncementHistory.value = true
+        analytics.logScreenView("announcement_history")
+    }
     fun hideAnnouncementHistory() { _showAnnouncementHistory.value = false }
 
     fun dismissAnnouncement() {
         val announcement = _latestAnnouncement.value ?: return
         _showAnnouncementModal.value = false
+        analytics.logAnnouncementClicked(announcement.id.toString(), "dismiss")
         viewModelScope.launch(Dispatchers.IO) {
             ctx.getSharedPreferences("viz_prefs", Context.MODE_PRIVATE)
                 .edit { putString("last_seen_announcement_id", announcement.id.toString()) }
@@ -325,20 +333,23 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
         // Track app openings and show thanks messages
         val openCount = prefs.getInt("app_open_count", 0) + 1
         prefs.edit().putInt("app_open_count", openCount).apply()
+        analytics.logAppOpen(openCount)
 
         viewModelScope.launch {
             if (BuildConfig.DEBUG) {
-                // In debug, show start-up messages every time
-                showThanks(ctx.getString(R.string.thanks_downloading))
-                showThanks(ctx.getString(R.string.thanks_installing))
-                withContext(Dispatchers.Main) {
-                    Toast.makeText(ctx, ctx.getString(R.string.thanks_using), Toast.LENGTH_SHORT).show()
+                if (openCount == 1) {
+                    showThanks("thanks for downloading")
+                    showThanks("thanks for installing")
+                } else if (openCount >= 2) {
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(ctx, ctx.getString(R.string.thanks_using), Toast.LENGTH_SHORT).show()
+                    }
                 }
             } else {
                 if (openCount == 1) {
                     showThanks(ctx.getString(R.string.thanks_downloading))
                     showThanks(ctx.getString(R.string.thanks_installing))
-                } else if (openCount == 2) {
+                } else if (openCount > 1) {
                     withContext(Dispatchers.Main) {
                         Toast.makeText(ctx, ctx.getString(R.string.thanks_using), Toast.LENGTH_SHORT).show()
                     }
@@ -372,6 +383,7 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
 
     fun setM3EEnabled(enabled: Boolean) {
         _m3eEnabled.value = enabled
+        analytics.logSettingChanged("m3e_enabled", enabled)
         viewModelScope.launch(Dispatchers.IO) {
             ctx.getSharedPreferences("viz_prefs", Context.MODE_PRIVATE)
                 .edit { putBoolean("m3e_enabled", enabled) }
@@ -381,7 +393,10 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
     // ── Tab ───────────────────────────────────────────────────────────────────
     private val _selectedTab = MutableStateFlow(Tab.Audio)
     val selectedTab = _selectedTab.asStateFlow()
-    fun selectTab(tab: Tab) { _selectedTab.value = tab }
+    fun selectTab(tab: Tab) { 
+        _selectedTab.value = tab
+        analytics.logTabSelected(tab.name)
+    }
 
     fun setCaptureSource(source: AudioCaptureService.CaptureSource) {
         if (source == AudioCaptureService.CaptureSource.SHIZUKU) {
@@ -402,15 +417,18 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
         try {
             if (Shizuku.isPreV11()) return false
             if (Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED) {
+                analytics.logShizukuPermissionResult(true)
                 return true
             } else if (Shizuku.shouldShowRequestPermissionRationale()) {
                 Toast.makeText(ctx, ctx.getString(R.string.shizuku_permission_required), Toast.LENGTH_LONG).show()
+                analytics.logShizukuPermissionResult(false)
                 return false
             } else {
                 Shizuku.requestPermission(1001)
                 return false
             }
         } catch (e: Exception) {
+            analytics.logError("shizuku_error", e.message ?: "Unknown Shizuku error")
             Toast.makeText(ctx, ctx.getString(R.string.shizuku_not_running), Toast.LENGTH_LONG).show()
             return false
         }
@@ -429,6 +447,7 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
 
     fun setDeveloperModeEnabled(enabled: Boolean) {
         _developerModeEnabled.value = enabled
+        analytics.logSettingChanged("developer_mode", enabled)
         updateSelectedDevice()
         viewModelScope.launch(Dispatchers.IO) {
             ctx.getSharedPreferences("viz_prefs", Context.MODE_PRIVATE)
@@ -438,6 +457,7 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
 
     fun setSpoofedDevice(device: Int) {
         _spoofedDevice.value = device
+        analytics.logDeviceSpoofed(phoneModelForDevice(device))
         if (_developerModeEnabled.value) {
             updateSelectedDevice()
         }
@@ -475,6 +495,7 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
      */
     fun setLatencyMs(value: Int) {
         _latencyMs.value = value
+        analytics.logLatencyChanged(value, activeLatencyRouteKey())
         viewModelScope.launch(Dispatchers.IO) {
             AudioCaptureService.saveLatencyCompensationMs(
                 ctx,
@@ -495,6 +516,7 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
     val spectrumGain = _spectrumGain.asStateFlow()
     fun setSpectrumGain(value: Float) {
         _spectrumGain.value = value
+        analytics.logSettingChanged("spectrum_gain", value)
         viewModelScope.launch(Dispatchers.IO) {
             ctx.getSharedPreferences("viz_prefs", Context.MODE_PRIVATE)
                 .edit { putFloat("spectrum_gain", value) }
@@ -506,6 +528,7 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
     fun setMaxBrightness(value: Int) {
         val clamped = value.coerceIn(0, 4500)
         _maxBrightness.value = clamped
+        analytics.logSettingChanged("max_brightness", clamped)
         viewModelScope.launch(Dispatchers.IO) {
             ctx.getSharedPreferences("viz_prefs", Context.MODE_PRIVATE)
                 .edit { putInt("max_brightness", clamped) }
@@ -817,8 +840,10 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
                     val currentVersion = BuildConfig.VERSION_NAME
 
                     _appRemoteVersion.value = latestVersion
+                    val available = isNewerVersion(currentVersion, latestVersion)
+                    analytics.logUpdateChecked(currentVersion, latestVersion, available)
 
-                    if (isNewerVersion(currentVersion, latestVersion)) {
+                    if (available) {
                         _appUpdateStatus.value = AppUpdateStatus.Available(latestVersion, htmlUrl, body, apkUrl)
                         _showUpdateDialog.value = true
                     } else {
@@ -826,6 +851,7 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
                     }
                 } else {
                     val errorMsg = "Check failed: ${connection.responseCode}"
+                    analytics.logError("update_check_failed", errorMsg)
                     _appUpdateStatus.value = AppUpdateStatus.Error(errorMsg)
                     withContext(Dispatchers.Main) {
                         Toast.makeText(ctx, errorMsg, Toast.LENGTH_SHORT).show()
@@ -833,6 +859,7 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
                 }
             } catch (e: Exception) {
                 val errorMsg = "Update check error: ${e.message}"
+                analytics.logError("update_check_exception", errorMsg)
                 _appUpdateStatus.value = AppUpdateStatus.Error(errorMsg)
                 Log.e("MainViewModel", "App update check failed", e)
                 withContext(Dispatchers.Main) {
@@ -974,6 +1001,7 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
 
     fun setSelectedTheme(theme: String) {
         _selectedTheme.value = theme
+        analytics.logThemeChanged(theme)
         viewModelScope.launch(Dispatchers.IO) {
             ctx.getSharedPreferences("viz_prefs", Context.MODE_PRIVATE)
                 .edit { putString("selected_theme", theme) }
@@ -982,6 +1010,7 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
 
     fun setSelectedFont(font: String) {
         _selectedFont.value = font
+        analytics.logFontChanged(font)
         viewModelScope.launch(Dispatchers.IO) {
             ctx.getSharedPreferences("viz_prefs", Context.MODE_PRIVATE)
                 .edit { putString("selected_font", font) }
@@ -1009,32 +1038,48 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
     private val _isEditingPreset = MutableStateFlow(false)
     val isEditingPreset = _isEditingPreset.asStateFlow()
 
-    fun showEditor() { _isEditingPreset.value = true }
+    fun showEditor() { 
+        _isEditingPreset.value = true 
+        analytics.logScreenView("preset_editor")
+    }
     fun hideEditor() { _isEditingPreset.value = false }
 
     private val _isShowingAbout = MutableStateFlow(false)
     val isShowingAbout = _isShowingAbout.asStateFlow()
 
-    fun showAbout() { _isShowingAbout.value = true }
+    fun showAbout() { 
+        _isShowingAbout.value = true 
+        analytics.logScreenView("about")
+    }
     fun hideAbout() { _isShowingAbout.value = false }
 
     private val _isShowingLicense = MutableStateFlow(false)
     val isShowingLicense = _isShowingLicense.asStateFlow()
 
-    fun showLicense() { _isShowingLicense.value = true }
+    fun showLicense() { 
+        _isShowingLicense.value = true 
+        analytics.logScreenView("license")
+    }
     fun hideLicense() { _isShowingLicense.value = false }
 
     private val _isShowingCommunity = MutableStateFlow(false)
     val isShowingCommunity = _isShowingCommunity.asStateFlow()
 
-    fun showCommunity() { _isShowingCommunity.value = true }
+    fun showCommunity() { 
+        _isShowingCommunity.value = true 
+        analytics.logScreenView("community_presets")
+    }
     fun hideCommunity() { _isShowingCommunity.value = false }
 
-    fun showLeaderboard() { _isShowingLeaderboard.value = true }
+    fun showLeaderboard() { 
+        _isShowingLeaderboard.value = true 
+        analytics.logScreenView("leaderboard")
+    }
     fun hideLeaderboard() { _isShowingLeaderboard.value = false }
 
     fun setUserNickname(name: String) {
         _userNickname.value = name
+        analytics.logProfileUpdate("nickname")
         viewModelScope.launch(Dispatchers.IO) {
             ctx.getSharedPreferences("viz_prefs", Context.MODE_PRIVATE)
                 .edit { putString("user_nickname", name) }
@@ -1051,6 +1096,7 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
     }
 
     fun updateProfilePicture(uri: Uri) {
+        analytics.logProfileUpdate("profile_picture_uri")
         viewModelScope.launch {
             val userId = ctx.getSharedPreferences("viz_prefs", Context.MODE_PRIVATE).getString("user_id", null) ?: return@launch
             try {
@@ -1072,6 +1118,7 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
     }
 
     fun selectDefaultAvatar(resourceId: Int) {
+        analytics.logProfileUpdate("default_avatar")
         viewModelScope.launch {
             val userId = ctx.getSharedPreferences("viz_prefs", Context.MODE_PRIVATE).getString("user_id", null) ?: return@launch
             try {
@@ -1135,6 +1182,13 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
     private fun syncLeaderboard() {
         val userId = ctx.getSharedPreferences("viz_prefs", Context.MODE_PRIVATE)
             .getString("user_id", null) ?: return
+        
+        analytics.logStatsSynced(
+            _totalVisualizedTime.value,
+            _totalGlyphTime.value,
+            _totalHapticTime.value,
+            _totalFlashlightTime.value
+        )
         
         viewModelScope.launch(Dispatchers.IO) {
             try {
@@ -1367,6 +1421,7 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
 
     fun setHapticMotorEnabled(enabled: Boolean) {
         _hapticMotorEnabled.value = enabled
+        analytics.logSettingChanged("haptic_motor_enabled", enabled)
         viewModelScope.launch(Dispatchers.IO) {
             ctx.getSharedPreferences("viz_prefs", Context.MODE_PRIVATE)
                 .edit { putBoolean("haptic_motor_enabled", enabled) }
@@ -1376,6 +1431,7 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
 
     fun setHapticMode(mode: HapticMode) {
         _hapticMode.value = mode
+        analytics.logSettingChanged("haptic_mode", mode.name)
         viewModelScope.launch(Dispatchers.IO) {
             ctx.getSharedPreferences("viz_prefs", Context.MODE_PRIVATE)
                 .edit { putString("haptic_mode", mode.name) }
@@ -1461,6 +1517,7 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
 
     fun setFlashlightEnabled(enabled: Boolean) {
         _flashlightEnabled.value = enabled
+        analytics.logSettingChanged("flashlight_enabled", enabled)
         viewModelScope.launch(Dispatchers.IO) {
             ctx.getSharedPreferences("viz_prefs", Context.MODE_PRIVATE)
                 .edit { putBoolean("flashlight_enabled", enabled) }
@@ -1469,6 +1526,7 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
 
     fun setFlashlightMode(mode: TorchMode) {
         _flashlightMode.value = mode
+        analytics.logSettingChanged("flashlight_mode", mode.name)
         viewModelScope.launch(Dispatchers.IO) {
             ctx.getSharedPreferences("viz_prefs", Context.MODE_PRIVATE)
                 .edit { putString("flashlight_mode", mode.name) }
@@ -1533,6 +1591,7 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
 
     fun setIdleBreathingEnabled(enabled: Boolean) {
         _idleBreathingEnabled.value = enabled
+        analytics.logSettingChanged("idle_breathing_enabled", enabled)
         viewModelScope.launch(Dispatchers.IO) {
             ctx.getSharedPreferences("viz_prefs", Context.MODE_PRIVATE)
                 .edit { putBoolean("idle_breathing_enabled", enabled) }
@@ -1541,6 +1600,7 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
 
     fun setIdlePattern(pattern: String) {
         _idlePattern.value = pattern
+        analytics.logSettingChanged("idle_pattern", pattern)
         viewModelScope.launch(Dispatchers.IO) {
             ctx.getSharedPreferences("viz_prefs", Context.MODE_PRIVATE)
                 .edit { putString("idle_pattern", pattern) }
@@ -1549,6 +1609,7 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
 
     fun setNotificationFlashEnabled(enabled: Boolean) {
         _notificationFlashEnabled.value = enabled
+        analytics.logSettingChanged("notification_flash_enabled", enabled)
         viewModelScope.launch(Dispatchers.IO) {
             ctx.getSharedPreferences("viz_prefs", Context.MODE_PRIVATE)
                 .edit { putBoolean("notification_flash_enabled", enabled) }
@@ -1557,6 +1618,7 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
 
     fun setStrobeEnabled(enabled: Boolean) {
         _strobeEnabled.value = enabled
+        analytics.logSettingChanged("strobe_enabled", enabled)
         viewModelScope.launch(Dispatchers.IO) {
             ctx.getSharedPreferences("viz_prefs", Context.MODE_PRIVATE)
                 .edit { putBoolean("strobe_enabled", enabled) }
@@ -1565,6 +1627,7 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
 
     fun setDisableGlyphsWhenSilent(enabled: Boolean) {
         _disableGlyphsWhenSilent.value = enabled
+        analytics.logSettingChanged("disable_glyphs_when_silent", enabled)
         viewModelScope.launch(Dispatchers.IO) {
             ctx.getSharedPreferences("viz_prefs", Context.MODE_PRIVATE)
                 .edit { putBoolean("disable_glyphs_when_silent", enabled) }
@@ -1573,6 +1636,7 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
 
     fun setDynamicGainEnabled(enabled: Boolean) {
         _dynamicGainEnabled.value = enabled
+        analytics.logSettingChanged("dynamic_gain_enabled", enabled)
         viewModelScope.launch(Dispatchers.IO) {
             ctx.getSharedPreferences("viz_prefs", Context.MODE_PRIVATE)
                 .edit { putBoolean("dynamic_gain_enabled", enabled) }
@@ -1581,6 +1645,7 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
 
     fun setOverlayEnabled(enabled: Boolean) {
         _overlayEnabled.value = enabled
+        analytics.logSettingChanged("overlay_enabled", enabled)
         MainActivity.serviceStatic?.setOverlayEnabled(enabled)
         viewModelScope.launch(Dispatchers.IO) {
             ctx.getSharedPreferences("viz_prefs", Context.MODE_PRIVATE)
@@ -1617,6 +1682,7 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
 
     fun setAutoDeviceEnabled(enabled: Boolean): Int {
         _autoDeviceEnabled.value = enabled
+        analytics.logSettingChanged("auto_device_enabled", enabled)
         viewModelScope.launch(Dispatchers.IO) {
             ctx.getSharedPreferences("viz_prefs", Context.MODE_PRIVATE)
                 .edit { putBoolean("auto_device_enabled", enabled) }
@@ -2263,6 +2329,8 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val analytics = AnalyticsHelper(this)
+        analytics.logScreenView("main_screen")
 
         val auth = FirebaseAuth.getInstance()
         if (auth.currentUser == null) {

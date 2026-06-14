@@ -131,6 +131,7 @@ public class AudioCaptureService extends Service {
     private static volatile boolean sIsRunning = false;
     public static AudioCaptureService sInstance = null;
 
+    private com.better.nothing.music.vizualizer.util.AnalyticsHelper mAnalyticsHelper;
     private final IBinder mBinder = new LocalBinder();
     private final Object mCaptureLock = new Object();
     private final MediaProjection.Callback mProjectionCallback = new MediaProjection.Callback() {
@@ -376,6 +377,8 @@ public class AudioCaptureService extends Service {
     public void onCreate() {
         super.onCreate();
         sInstance = this;
+        mAnalyticsHelper = new com.better.nothing.music.vizualizer.util.AnalyticsHelper(this);
+        mAnalyticsHelper.logEvent("service_created", null);
 
         mWorkerThread = new HandlerThread("GlyphVizWorker", Process.THREAD_PRIORITY_BACKGROUND);
         mWorkerThread.start();
@@ -1178,6 +1181,7 @@ public class AudioCaptureService extends Service {
     }
 
     private void startCaptureInternal(CaptureSource source, int resultCode, Intent data) {
+        mAnalyticsHelper.logEvent("capture_start_attempt_" + source.name().toLowerCase(), null);
         mCaptureSource = source;
         MediaProjectionManager projectionManager = null;
         if (source == CaptureSource.INTERNAL) {
@@ -1316,6 +1320,7 @@ public class AudioCaptureService extends Service {
     }
 
     private void stopCaptureLocked() {
+        mAnalyticsHelper.logEvent("capture_stopped", null);
         mCapturing = false;
         sIsRunning = false;
         updateOverlayVisibility();
