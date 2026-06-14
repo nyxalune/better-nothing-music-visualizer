@@ -48,10 +48,14 @@
     <string name="haptics_motor_title">ハプティクス視覚化</string>
     <string name="haptics_frequency_label">周波数： %1$d - %2$d Hz</string>
     <string name="haptics_frequency_desc">この範囲のオーディオ振幅に基づいて振動します。</string>
-    <string name="haptics_amplitude_label">振幅： %.1fx</string>
-    <string name="haptics_gamma_label">ガンマ（レスポンス）： %.1f</string>
+    <string name="haptics_amplitude_label">強度： %.1fx</string>
+    <string name="haptics_gamma_label">ガンマ： %.1f</string>
+    <string name="haptics_decay_label">減衰： %.2f</string>
     <string name="haptics_speed_label">速度： %.1f</string>
-    <string name="haptics_richtap_freq_label">RichTap周波数： %d</string>
+    <string name="haptics_sensitivity_label">感度： %.1f</string>
+    <string name="haptics_motor_multiplier_desc">全体のバイブレーション強度倍率。</string>
+    <string name="haptics_decay_instant">スムージングなし（即時）</string>
+    <string name="haptics_decay_smooth">スムージング有効</string>
 
     <!-- Flashlight Screen -->
     <string name="flashlight_title">懐中電灯</string>

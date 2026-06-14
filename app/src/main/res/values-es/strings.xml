@@ -48,10 +48,14 @@
     <string name="haptics_motor_title">Visualización háptica</string>
     <string name="haptics_frequency_label">Frecuencia: %1$d - %2$d Hz</string>
     <string name="haptics_frequency_desc">Vibra según la amplitud de audio en este rango.</string>
-    <string name="haptics_amplitude_label">Amplitud: %.1fx</string>
-    <string name="haptics_gamma_label">Gamma (Respuesta): %.1f</string>
+    <string name="haptics_amplitude_label">Intensidad: %.1fx</string>
+    <string name="haptics_gamma_label">Gamma: %.1f</string>
+    <string name="haptics_decay_label">Decaimiento: %.2f</string>
     <string name="haptics_speed_label">Velocidad: %.1f</string>
-    <string name="haptics_richtap_freq_label">Frecuencia RichTap: %d</string>
+    <string name="haptics_sensitivity_label">Sensibilidad: %.1f</string>
+    <string name="haptics_motor_multiplier_desc">Multiplicador global de la fuerza de vibración.</string>
+    <string name="haptics_decay_instant">Sin suavizado (Instantáneo)</string>
+    <string name="haptics_decay_smooth">Suavizado activo</string>
 
     <!-- Flashlight Screen -->
     <string name="flashlight_title">Linterna</string>
@@ -207,7 +211,7 @@
     <string name="thanks_downloading">gracias por descargar</string>
     <string name="thanks_installing">gracias por instalar</string>
     <string name="thanks_using">gracias por usar la aplicación</string>
-    <string name="thanks_nothing">gracias por nada (nothing)</string>
+    <string name="thanks_nothing">gracias por nada (Nothing)</string>
     <string name="thanks_participating">gracias por participar en la comunidad</string>
 
     <string name="config_update_success">Zonas actualizadas con éxito</string>

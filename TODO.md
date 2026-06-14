@@ -20,9 +20,6 @@
 
 * Add disclaimer that this app uses google analytics
 
-* proof check translations 
-with gemini of similar
-
 * Check if auto update works 
 
 ## Oliver's todo

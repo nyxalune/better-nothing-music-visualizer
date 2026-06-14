@@ -80,6 +80,8 @@
     <string name="developer_mode_description">Enable advanced testing and device spoofing features.</string>
     <string name="spoof_device">Spoof Device</string>
     <string name="spoof_device_description">Forces the app to behave as if it\'s running on the selected device.</string>
+    <string name="spoof_locale">Spoof Locale</string>
+    <string name="spoof_locale_description">Force the app to use a specific language for testing.</string>
     <string name="idle_breathing_title">Idle Breathing</string>
     <string name="idle_breathing_desc">Glyphs pulse subtly when the visualizer is active but no audio is playing.</string>
     <string name="notification_flash_title">Notification Flash</string>

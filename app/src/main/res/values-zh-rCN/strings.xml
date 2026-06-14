@@ -48,10 +48,14 @@
     <string name="haptics_motor_title">触感可视化</string>
     <string name="haptics_frequency_label">频率： %1$d - %2$d Hz</string>
     <string name="haptics_frequency_desc">根据此范围内的音频振幅进行振动。</string>
-    <string name="haptics_amplitude_label">振幅： %.1fx</string>
-    <string name="haptics_gamma_label">伽马（响应）： %.1f</string>
+    <string name="haptics_amplitude_label">力度： %.1fx</string>
+    <string name="haptics_gamma_label">伽马： %.1f</string>
+    <string name="haptics_decay_label">衰减： %.2f</string>
     <string name="haptics_speed_label">速度： %.1f</string>
-    <string name="haptics_richtap_freq_label">RichTap 频率： %d</string>
+    <string name="haptics_sensitivity_label">灵敏度： %.1f</string>
+    <string name="haptics_motor_multiplier_desc">全局振动强度倍数。</string>
+    <string name="haptics_decay_instant">无平滑（即时）</string>
+    <string name="haptics_decay_smooth">平滑处理</string>
 
     <!-- Flashlight Screen -->
     <string name="flashlight_title">手电筒</string>

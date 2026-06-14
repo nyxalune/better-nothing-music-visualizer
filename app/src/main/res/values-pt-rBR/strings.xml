@@ -48,10 +48,14 @@
     <string name="haptics_motor_title">Visualização háptica</string>
     <string name="haptics_frequency_label">Frequência: %1$d - %2$d Hz</string>
     <string name="haptics_frequency_desc">Vibra com base na amplitude do áudio nesta faixa.</string>
-    <string name="haptics_amplitude_label">Amplitude: %.1fx</string>
-    <string name="haptics_gamma_label">Gamma (Resposta): %.1f</string>
+    <string name="haptics_amplitude_label">Intensidade: %.1fx</string>
+    <string name="haptics_gamma_label">Gamma: %.1f</string>
+    <string name="haptics_decay_label">Decaimento: %.2f</string>
     <string name="haptics_speed_label">Velocidade: %.1f</string>
-    <string name="haptics_richtap_freq_label">Frequência RichTap: %d</string>
+    <string name="haptics_sensitivity_label">Sensibilidade: %.1f</string>
+    <string name="haptics_motor_multiplier_desc">Multiplicador global de força das vibrações.</string>
+    <string name="haptics_decay_instant">Sem suavização (Instantâneo)</string>
+    <string name="haptics_decay_smooth">Suavização ativa</string>
 
     <!-- Flashlight Screen -->
     <string name="flashlight_title">Lanterna</string>

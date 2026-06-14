@@ -48,10 +48,14 @@
     <string name="haptics_motor_title">Haptik görselleştirme</string>
     <string name="haptics_frequency_label">Frekans: %1$d - %2$d Hz</string>
     <string name="haptics_frequency_desc">Bu aralıktaki ses genliğine göre titreşir.</string>
-    <string name="haptics_amplitude_label">Genlik: %.1fx</string>
-    <string name="haptics_gamma_label">Gama (Tepki): %.1f</string>
+    <string name="haptics_amplitude_label">Yoğunluk: %.1fx</string>
+    <string name="haptics_gamma_label">Gama: %.1f</string>
+    <string name="haptics_decay_label">Sönümlenme: %.2f</string>
     <string name="haptics_speed_label">Hız: %.1f</string>
-    <string name="haptics_richtap_freq_label">RichTap Frekansı: %d</string>
+    <string name="haptics_sensitivity_label">Hassasiyet: %.1f</string>
+    <string name="haptics_motor_multiplier_desc">Genel titreşim gücü çarpanı.</string>
+    <string name="haptics_decay_instant">Yumuşatma yok (Anlık)</string>
+    <string name="haptics_decay_smooth">Yumuşatma aktif</string>
 
     <!-- Flashlight Screen -->
     <string name="flashlight_title">Fener</string>

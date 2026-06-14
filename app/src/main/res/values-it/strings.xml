@@ -48,10 +48,14 @@
     <string name="haptics_motor_title">Visualizzazione tattile</string>
     <string name="haptics_frequency_label">Frequenza: %1$d - %2$d Hz</string>
     <string name="haptics_frequency_desc">Vibra in base all\'ampiezza audio in questo intervallo.</string>
-    <string name="haptics_amplitude_label">Ampiezza: %.1fx</string>
-    <string name="haptics_gamma_label">Gamma (Risposta): %.1f</string>
+    <string name="haptics_amplitude_label">Intensità: %.1fx</string>
+    <string name="haptics_gamma_label">Gamma: %.1f</string>
+    <string name="haptics_decay_label">Decadimento: %.2f</string>
     <string name="haptics_speed_label">Velocità: %.1f</string>
-    <string name="haptics_richtap_freq_label">Frequenza RichTap: %d</string>
+    <string name="haptics_sensitivity_label">Sensibilità: %.1f</string>
+    <string name="haptics_motor_multiplier_desc">Moltiplicatore globale della forza di vibrazione.</string>
+    <string name="haptics_decay_instant">Istantaneo (senza lissage)</string>
+    <string name="haptics_decay_smooth">Lissage attivo</string>
 
     <!-- Flashlight Screen -->
     <string name="flashlight_title">Torcia</string>
@@ -186,7 +190,7 @@
     <string name="thanks_downloading">grazie per il download</string>
     <string name="thanks_installing">grazie per l\'installazione</string>
     <string name="thanks_using">grazie per aver usato l\'app</string>
-    <string name="thanks_nothing">grazie di niente (nothing)</string>
+    <string name="thanks_nothing">grazie di niente (Nothing)</string>
     <string name="thanks_participating">grazie per la partecipazione alla community</string>
 
     <string name="config_update_success">zones.config aggiornato con successo</string>

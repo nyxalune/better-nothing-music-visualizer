@@ -6,7 +6,7 @@
     <string name="audio_screen_title">Better Nothing\nMusic Visualizer</string>
     <string name="audio_description_running">Le visualiseur audio en temps réel est actif. Votre téléphone danse désormais au rythme de la musique ! Aucun contenu n\'est enregistré et votre vie privée est respectée.</string>
     <string name="audio_description_idle">Cette application a été créée par Aleks Levet, rKyzen et Oliver Lebaigue.\n\nPour synchroniser l\'interface Glyph avec votre musique, cette application capture le flux audio de l\'appareil via Media Projection pour une visualisation haute fidélité.\n\nNote sur la confidentialité : seul le flux audio est utilisé. Aucun contenu à l\'écran n\'est enregistré.</string>
-    <string name="audio_warning_vizualizer">Attention : cette source utilise le flux audio standard du visualiseur Android. La fidélité est moindre et le résultat peut être médiocre.</string>
+    <string name="audio_warning_vizualizer">Attention : cette source utilise le flux audio standard du visualiseur Android. La fidélité est moindre et le résultat est dans la plupart des cas merdique.</string>
     <string name="auto_memorize_device">Mémorisation auto de l\'appareil</string>
     <string name="saving_latency_for">Latence enregistrée pour : %s</string>
     <string name="internal_speaker">Haut-parleur interne</string>
@@ -44,16 +44,17 @@
     <string name="haptics_mode_label">Mode du moteur haptique</string>
     <string name="haptics_mode_bass">Amplitude des basses</string>
     <string name="haptics_mode_beat">Détection du rythme</string>
-    <string name="haptics_beat_detection_desc">Vibre lors des pics détectés dans la plage de fréquences sélectionnée. Plus fluide mais parfois moins stable. (Fonctionnalité bêta)</string>
+    <string name="haptics_beat_detection_desc">Vibre sur les battements détectés dans la plage de fréquences sélectionnée. Plus fluide mais parfois moins stable. (Fonctionnalité bêta)</string>
     <string name="haptics_motor_title">Visualisation haptique</string>
     <string name="haptics_frequency_label">Fréquence : %1$d - %2$d Hz</string>
     <string name="haptics_frequency_desc">Vibre selon l\'amplitude audio dans cette plage.</string>
-    <string name="haptics_amplitude_label">Gain moteur : %.1fx</string>
+    <string name="haptics_amplitude_label">Intensité moteur : %.1fx</string>
     <string name="haptics_audio_gain_label">Gain audio : %.1fx</string>
     <string name="haptics_gamma_label">Gamma : %.1f</string>
     <string name="haptics_speed_label">Vitesse : %.1f</string>
     <string name="haptics_sensitivity_label">Sensibilité : %.1f</string>
-    <string name="haptics_motor_multiplier_desc">Multiplicateur de force global du vibreur.</string>
+    <string name="haptics_decay_label">Décroissance : %.2f</string>
+    <string name="haptics_motor_multiplier_desc">Multiplicateur de force global des vibrations.</string>
     <string name="haptics_decay_instant">Sans lissage (Instantané)</string>
     <string name="haptics_decay_smooth">Lissage actif</string>
 
@@ -123,7 +124,7 @@
     <string name="capture_shizuku">Shizuku</string>
     <string name="update_available">Mise à jour disponible : %s</string>
     <string name="update_now">Mettre à jour</string>
-    <string name="credit_alekslevet_role">Fondateur, coordinateur, idée originale, propriétaire</string>
+    <string name="credit_alekslevet_role">Fondateur, coordinateur, idée originale</string>
     <string name="credit_rkyzen_role">Développeur Android (flux musical temps réel)</string>
     <string name="credit_oliver_role">Co-développeur de cette application incroyable</string>
     <string name="credit_nicouschulas_role">Améliorations du Readme et du Wiki</string>
@@ -222,7 +223,7 @@
     <string name="thanks_downloading">merci pour le téléchargement</string>
     <string name="thanks_installing">merci pour l\'installation</string>
     <string name="thanks_using">merci d\'utiliser l\'application</string>
-    <string name="thanks_nothing">merci pour rien (nothing)</string>
+    <string name="thanks_nothing">merci pour rien (Nothing)</string>
     <string name="thanks_participating">merci de participer à la communauté</string>
 
     <string name="config_update_success">Mise à jour de zones.config réussie</string>
