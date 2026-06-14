@@ -8,7 +8,7 @@
 * Remove notification detection
 * Make the ui shift variable go from -0.3f to 1.0f
 * Add an adjustment Hz range preset for Phone (4a)
-* **Hide glyph tab if device is not a Nothing Phone AND DISABLE ALL CODE RELATED TO THE GLYPH UI**
+
 
 * *(Low priority)* nothing styled widget with:
     * 3 buttons for source,
@@ -66,6 +66,7 @@ with gemini of similar
 ---
 
 ## Done
+* Hide glyph tab if device is not a Nothing Phone AND DISABLE ALL CODE RELATED TO THE GLYPH UI
 * Fix microphone latency
 * decrease the decay for the android built in vizualiser (make the decay 60 fps even if the incoming data is 20fps)
 * Add a disclaimer popup on first use of the media projection source that we do not record the screen, even if it looks like it.
