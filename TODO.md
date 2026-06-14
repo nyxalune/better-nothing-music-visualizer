@@ -6,7 +6,6 @@
 * and work on the translation tools so we can get hoomans to translate our app.
 
 * Remove notification detection
-
 * Add an adjustment Hz range preset for Phone (4a)
 
 
