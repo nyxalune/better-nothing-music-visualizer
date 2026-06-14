@@ -14,8 +14,8 @@ android {
         applicationId "com.better.nothing.music.vizualizer"
         minSdk 32
         targetSdk 37
-        versionCode 8
-        versionName '3.2.1'
+        versionCode 9
+        versionName '3.3'
         buildConfigField "boolean", "SHOW_SHIZUKU", "true"
     }
 

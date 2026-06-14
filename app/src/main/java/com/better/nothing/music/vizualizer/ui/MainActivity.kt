@@ -68,6 +68,7 @@ import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.annotation.RequiresPermission
@@ -2289,6 +2290,7 @@ class MainActivity : ComponentActivity() {
         }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         val analytics = AnalyticsHelper(this)
         analytics.logScreenView("main_screen")
@@ -3437,11 +3439,10 @@ private fun BetterVizApp(
             )
         },
     ) { innerPadding ->
-        val bottomPadding = innerPadding.calculateBottomPadding()
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(bottom = bottomPadding)
+                .padding(innerPadding)
         ) {
             HorizontalPager(
                 state = pagerState,
