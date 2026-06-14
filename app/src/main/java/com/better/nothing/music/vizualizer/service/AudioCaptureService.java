@@ -237,7 +237,6 @@ public class AudioCaptureService extends Service {
     private boolean mIdleBreathingEnabled = false;
     private boolean mNotificationFlashEnabled = false;
     private boolean mDisableGlyphsWhenSilent = false;
-    private boolean mDynamicGainEnabled = false;
 
     private boolean mOverlayEnabled = false;
     private int mOverlayWidth = 120;
@@ -274,7 +273,6 @@ public class AudioCaptureService extends Service {
     private BeatDetectionHapticEngine mBeatDetectionEngine;
     private FlashlightEngine mFlashlightEngine;
 
-    private float mRollingMaxMagnitude = 0.05f;
     private AudioProcessor mAudioProcessor;
     private GlyphRenderer mGlyphRenderer;
     private long mLastSendMs = 0L;
@@ -953,7 +951,6 @@ public class AudioCaptureService extends Service {
     }
 
     public void setDynamicGainEnabled(boolean enabled) {
-        mDynamicGainEnabled = enabled;
         if (mAudioProcessor != null) {
             mAudioProcessor.setAutoGainEnabled(enabled);
         }
@@ -1398,7 +1395,7 @@ public class AudioCaptureService extends Service {
             int read = record.read(hop, 0, HOP, AudioRecord.READ_BLOCKING);
             if (read <= 0) continue;
 
-            AudioProcessor.AudioFrameResult result = mAudioProcessor.processAudioFrame(hop, config, mHapticRange);
+            AudioProcessor.AudioFrameResult result = mAudioProcessor.processAudioFrame(hop, config, mHapticRange, mCaptureSource != CaptureSource.MIC);
             if (result == null) continue;
 
             float flashlightPeak = 0f;
@@ -1467,23 +1464,6 @@ public class AudioCaptureService extends Service {
         long now = SystemClock.elapsedRealtime();
         
         float gain = mGlyphRenderer.getSpectrumGain();
-
-        if (mDynamicGainEnabled) {
-            float maxInFrame = 0f;
-            for (float m : uniqueMagnitudes) maxInFrame = Math.max(maxInFrame, m);
-            
-            // Dynamic Gain logic: track peak magnitude with slow decay
-            mRollingMaxMagnitude = Math.max(mRollingMaxMagnitude * 0.995f, maxInFrame);
-            
-            // If the signal is very quiet, boost it. If it's loud, leave it.
-            // Target peak is around 0.15 for these presets
-            float dynamicBoost = 1.0f;
-            if (mRollingMaxMagnitude > 0.005f) {
-                dynamicBoost = 0.15f / mRollingMaxMagnitude;
-                dynamicBoost = Math.max(0.5f, Math.min(4.0f, dynamicBoost));
-            }
-            gain *= dynamicBoost;
-        }
 
         boolean hasActivity = false;
         for (float mag : uniqueMagnitudes) {
@@ -1721,7 +1701,7 @@ public class AudioCaptureService extends Service {
             hop[i] = (short) (((waveform[i] & 0xFF) - 128) << 8);
         }
 
-        AudioProcessor.AudioFrameResult result = mAudioProcessor.processAudioFrame(hop, mVisualizerConfig, mHapticRange);
+        AudioProcessor.AudioFrameResult result = mAudioProcessor.processAudioFrame(hop, mVisualizerConfig, mHapticRange, false);
         if (result == null) return;
 
         float flashlightPeak = 0f;

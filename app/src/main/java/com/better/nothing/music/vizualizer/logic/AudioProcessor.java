@@ -30,7 +30,6 @@ public class AudioProcessor {
     private float mAutoGain = 1.0f;
     private boolean mAutoGainEnabled = false;
 
-    private static final float DECAY_FAST = 0.999f;
     private static final float DECAY_SLOW = 0.9998f;
     private static final float GAIN_SMOOTHING = 0.15f; // Alpha for gain smoothing
 
@@ -81,7 +80,7 @@ public class AudioProcessor {
         }
     }
 
-    public AudioFrameResult processAudioFrame(short[] hopBuffer, VisualizerConfig config, FrequencyRange hapticRange) {
+    public AudioFrameResult processAudioFrame(short[] hopBuffer, VisualizerConfig config, FrequencyRange hapticRange, boolean isInternalSource) {
         // Fill ring buffer
         for (short value : hopBuffer) {
             ring[ringPosition] = value / 32768f;
@@ -112,7 +111,9 @@ public class AudioProcessor {
             float boost = 1f + (freq / 15000f) * 5f;
             float rawMag = mag * boost;
 
-            if (mAutoGainEnabled) {
+            // Internal sources (MediaProjection) are already normalized by the system.
+            // Applying auto-gain to them often causes clipping/overshoot.
+            if (mAutoGainEnabled && !isInternalSource) {
                 // Update running max with adaptive decay: faster if we're way above target, slower if we're below
                 float decay = rawMag > mRunningMax ? 0.95f : DECAY_SLOW;
                 mRunningMax = Math.max(mRunningMax * decay, rawMag);

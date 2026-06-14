@@ -24,7 +24,7 @@ public final class FlashlightEngine {
     private static final float SPECTRUM_GAIN = 4.0f;
     private static final float EPSILON = 0.001f;
     private static final long MIN_RESUBMIT_INTERVAL_MS = 20L;
-    private static final long BEAT_MIN_COOLDOWN_MS = 45L;
+    private static final long BEAT_MIN_COOLDOWN_MS = 60L;
     private static final int BEAT_PATTERN_STEPS = 24;
 
     private final CameraManager cameraManager;
@@ -242,7 +242,7 @@ public final class FlashlightEngine {
 
         if (delta > threshold && delta > 0.025f && (now - lastTriggerMs) >= BEAT_MIN_COOLDOWN_MS) {
             lastTriggerMs = now;
-            thresholdMask = delta * 0.9f;
+            thresholdMask = delta * 0.8f;
             beatFlashStartMs = now;
             beatFlashDurationMs = (long) flashlightBeatSpeedMs;
             updateBeatFlashState();

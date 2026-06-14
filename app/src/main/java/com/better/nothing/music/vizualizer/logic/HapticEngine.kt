@@ -19,18 +19,8 @@ class BeatDetectionHapticEngine(context: Context) {
     private var hapticGamma = 8.0f // Default "speed"
     private var hapticSensitivity = 1.0f // Default
 
-    private val deltaHistory = FloatArray(61)
-    private val sortedHistory = FloatArray(61)
-
-    private var deltaIndex = 0
-    private var deltaCount = 0
-
-    private var prevEnergy = 0f
-    private var lastTriggerMs = 0L
-    private var thresholdMask = 0f
-
     // Lower cooldown = tighter beat following
-    private val cooldownMs = 45L
+    private val cooldownMs = 60L
 
     init {
         val appContext = context.applicationContext
