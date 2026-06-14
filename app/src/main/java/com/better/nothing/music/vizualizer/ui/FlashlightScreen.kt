@@ -200,7 +200,7 @@ fun FlashlightScreen(
                         ExpressiveSlider(
                             value = flashlightSpeedMs,
                             onValueChange = onFlashlightSpeedMsChanged,
-                            valueRange = 40f..150f,
+                            valueRange = 20f..150f,
                             modifier = Modifier.fillMaxWidth()
                         )
                         BodyText(
@@ -213,7 +213,7 @@ fun FlashlightScreen(
 
                 ExpressiveCard(
                     modifier = Modifier.fillMaxWidth(),
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 1f)
                 ) {
                     CardHeader(title = stringResource(R.string.flashlight_monitor_label))
 

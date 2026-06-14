@@ -24,7 +24,6 @@ public final class FlashlightEngine {
     private static final float SPECTRUM_GAIN = 4.0f;
     private static final float EPSILON = 0.001f;
     private static final long MIN_RESUBMIT_INTERVAL_MS = 20L;
-    private static final long BEAT_MIN_COOLDOWN_MS = 60L;
     private static final int BEAT_PATTERN_STEPS = 24;
 
     private final CameraManager cameraManager;
@@ -39,17 +38,10 @@ public final class FlashlightEngine {
     // to explain without branching the screen layout.
     private float amplitudeThresholdOrMultiplier = 0.15f;
 
-    private float flashlightBeatSensitivity = 1.0f;
     private float flashlightBeatSpeedMs = 90f;
 
-    private final float[] deltaHistory = new float[61];
-    private final float[] sortedHistory = new float[61];
+    private final BeatDetector beatDetector = new BeatDetector();
     private final float[] beatPattern = buildBeatPattern();
-    private int deltaIndex = 0;
-    private int deltaCount = 0;
-    private float prevEnergy = 0f;
-    private long lastTriggerMs = 0L;
-    private float thresholdMask = 0f;
 
     private long beatFlashStartMs = 0L;
     private long beatFlashDurationMs = 90L;
@@ -166,7 +158,7 @@ public final class FlashlightEngine {
     }
 
     public synchronized void setFlashlightBeatSensitivity(float sensitivity) {
-        this.flashlightBeatSensitivity = Math.max(0.3f, Math.min(6.0f, sensitivity));
+        beatDetector.setSensitivity(Math.max(0.3f, Math.min(6.0f, sensitivity)));
     }
 
     public synchronized void setFlashlightSpeedMs(float speedMs) {
@@ -216,43 +208,21 @@ public final class FlashlightEngine {
     }
 
     private synchronized void performBeatDetection(float[] magnitude, int binLo, int binHi) {
-        if (magnitude == null || magnitude.length == 0) {
-            if (beatFlashStartMs != 0L) {
-                updateBeatFlashState();
-            }
-            return;
+        if (beatDetector.detect(magnitude, binLo, binHi)) {
+            triggerBeat();
         }
 
-        int start = Math.max(0, Math.min(binLo, magnitude.length - 1));
-        int end = Math.max(start, Math.min(binHi, magnitude.length - 1));
-
-        float sum = 0f;
-        for (int i = start; i <= end; i++) {
-            sum += magnitude[i];
-        }
-
-        float energy = (float) Math.log(1f + sum);
-        float delta = energy - prevEnergy;
-        prevEnergy = energy;
-
-        pushDelta(delta);
-
-        float threshold = Math.max(medianDelta() * (2.2f * flashlightBeatSensitivity), thresholdMask);
-        long now = SystemClock.elapsedRealtime();
-
-        if (delta > threshold && delta > 0.025f && (now - lastTriggerMs) >= BEAT_MIN_COOLDOWN_MS) {
-            lastTriggerMs = now;
-            thresholdMask = delta * 0.8f;
-            beatFlashStartMs = now;
-            beatFlashDurationMs = (long) flashlightBeatSpeedMs;
-            updateBeatFlashState();
-        } else if (beatFlashStartMs != 0L) {
+        if (beatFlashStartMs != 0L) {
             updateBeatFlashState();
         } else {
             stopFlashlightInternal();
         }
+    }
 
-        thresholdMask *= 0.85f;
+    public synchronized void triggerBeat() {
+        beatFlashStartMs = SystemClock.elapsedRealtime();
+        beatFlashDurationMs = (long) flashlightBeatSpeedMs;
+        updateBeatFlashState();
     }
 
     private void updateBeatFlashState() {
@@ -294,36 +264,7 @@ public final class FlashlightEngine {
     }
 
     private void resetBeatDetection() {
-        deltaIndex = 0;
-        deltaCount = 0;
-        prevEnergy = 0f;
-        lastTriggerMs = 0L;
-        thresholdMask = 0f;
-        Arrays.fill(deltaHistory, 0f);
-    }
-
-    private void pushDelta(float delta) {
-        deltaHistory[deltaIndex] = Math.max(delta, 0.0001f);
-        deltaIndex = (deltaIndex + 1) % deltaHistory.length;
-        if (deltaCount < deltaHistory.length) {
-            deltaCount++;
-        }
-    }
-
-    private float medianDelta() {
-        if (deltaCount == 0) {
-            return 0.01f;
-        }
-
-        System.arraycopy(deltaHistory, 0, sortedHistory, 0, deltaCount);
-        Arrays.sort(sortedHistory, 0, deltaCount);
-
-        if (deltaCount % 2 == 1) {
-            return sortedHistory[deltaCount / 2];
-        }
-
-        int mid = deltaCount / 2;
-        return (sortedHistory[mid - 1] + sortedHistory[mid]) * 0.5f;
+        beatDetector.reset();
     }
 
     public synchronized void stopFlashlight() {

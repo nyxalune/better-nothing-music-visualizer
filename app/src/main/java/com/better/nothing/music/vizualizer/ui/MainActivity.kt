@@ -11,6 +11,7 @@ import com.better.nothing.music.vizualizer.service.HapticsTileService
 import com.better.nothing.music.vizualizer.service.VisualizerTileService
 import com.better.nothing.music.vizualizer.util.AnalyticsHelper
 import com.better.nothing.music.vizualizer.logic.FlashlightEngine
+import com.better.nothing.music.vizualizer.logic.BeatDetector
 import com.better.nothing.music.vizualizer.logic.CommunityRepository
 import com.better.nothing.music.vizualizer.logic.AnnouncementRepository
 import com.better.nothing.music.vizualizer.logic.LeaderboardRepository
@@ -1725,19 +1726,8 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
     private val _isFlashlightBeatDetected = MutableStateFlow(false)
     val isFlashlightBeatDetected = _isFlashlightBeatDetected.asStateFlow()
 
-    private var prevEnergy = 0f
-    private val deltaHistory = FloatArray(61)
-    private var deltaIndex = 0
-    private var deltaCount = 0
-    private var lastTriggerMs = 0L
-    private var thresholdMask = 0f
-
-    private var fPrevEnergy = 0f
-    private val fDeltaHistory = FloatArray(61)
-    private var fDeltaIndex = 0
-    private var fDeltaCount = 0
-    private var fLastTriggerMs = 0L
-    private var fThresholdMask = 0f
+    private val hapticBeatDetector = BeatDetector()
+    private val flashlightBeatDetector = BeatDetector()
 
     private var smoothedUiAmplitude = 0f
     private var smoothedHapticAmplitude = 0f
@@ -1817,62 +1807,28 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
 
                 // 2. Beat Detection (matching HapticEngine.kt logic)
                 if (_hapticMode.value == HapticMode.BEAT_DETECTION) {
-                    val energy = kotlin.math.ln(1f + sum)
-                    val delta = energy - prevEnergy
-                    prevEnergy = energy
-
-                    // Push delta
-                    deltaHistory[deltaIndex] = delta.coerceAtLeast(0.0001f)
-                    deltaIndex = (deltaIndex + 1) % deltaHistory.size
-                    if (deltaCount < deltaHistory.size) deltaCount++
-
-                    // Median
-                    val sorted = deltaHistory.copyOf(deltaCount).apply { sort() }
-                    val median = if (deltaCount == 0) 0.01f else if (deltaCount % 2 == 1) sorted[deltaCount / 2] else (sorted[deltaCount / 2 - 1] + sorted[deltaCount / 2]) * 0.5f
-                    
-                    val threshold = kotlin.math.max(median * (2.2f * _hapticBeatSensitivity.value), thresholdMask)
-                    val now = SystemClock.elapsedRealtime()
-                    
-                    if (delta > threshold && delta > 0.025f && (now - lastTriggerMs) >= 60L) {
+                    hapticBeatDetector.sensitivity = _hapticBeatSensitivity.value
+                    if (hapticBeatDetector.detect(magnitude, binLo, binHi)) {
                         _isBeatDetected.value = true
-                        lastTriggerMs = now
-                        thresholdMask = delta * 0.8f
                         // Auto-reset beat after a short duration for the UI flash
                         viewModelScope.launch {
                             delay(50)
                             _isBeatDetected.value = false
                         }
                     }
-                    thresholdMask *= 0.85f
                 } else {
                     _isBeatDetected.value = false
                 }
 
                 if (_flashlightMode.value == TorchMode.BEAT_DETECTION) {
-                    val energy = kotlin.math.ln(1f + fSum)
-                    val delta = energy - fPrevEnergy
-                    fPrevEnergy = energy
-
-                    fDeltaHistory[fDeltaIndex] = delta.coerceAtLeast(0.0001f)
-                    fDeltaIndex = (fDeltaIndex + 1) % fDeltaHistory.size
-                    if (fDeltaCount < fDeltaHistory.size) fDeltaCount++
-
-                    val sorted = fDeltaHistory.copyOf(fDeltaCount).apply { sort() }
-                    val median = if (fDeltaCount == 0) 0.01f else if (fDeltaCount % 2 == 1) sorted[fDeltaCount / 2] else (sorted[fDeltaCount / 2 - 1] + sorted[fDeltaCount / 2]) * 0.5f
-
-                    val threshold = kotlin.math.max(median * (2.2f * _flashlightBeatSensitivity.value), fThresholdMask)
-                    val now = SystemClock.elapsedRealtime()
-
-                    if (delta > threshold && delta > 0.025f && (now - fLastTriggerMs) >= 60L) {
+                    flashlightBeatDetector.sensitivity = _flashlightBeatSensitivity.value
+                    if (flashlightBeatDetector.detect(magnitude, fBinLo, fBinHi)) {
                         _isFlashlightBeatDetected.value = true
-                        fLastTriggerMs = now
-                        fThresholdMask = delta * 0.8f
                         viewModelScope.launch {
                             delay(50)
                             _isFlashlightBeatDetected.value = false
                         }
                     }
-                    fThresholdMask *= 0.85f
                 } else {
                     _isFlashlightBeatDetected.value = false
                 }
