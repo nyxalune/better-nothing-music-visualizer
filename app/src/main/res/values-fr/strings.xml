@@ -81,6 +81,8 @@
     <string name="developer_mode_description">Activez les tests avancés et la simulation d\'appareil.</string>
     <string name="spoof_device">Simuler l\'appareil</string>
     <string name="spoof_device_description">Force l\'application à se comporter comme si elle tournait sur l\'appareil sélectionné.</string>
+    <string name="spoof_locale">Simuler la langue</string>
+    <string name="spoof_locale_description">Force l\'application à utiliser une langue spécifique pour les tests.</string>
     <string name="idle_breathing_title">Respiration au repos</string>
     <string name="idle_breathing_desc">Les Glyphs pulsent subtilement lorsque le visualiseur est actif mais qu\'aucun son n\'est détecté.</string>
     <string name="notification_flash_title">Flash de notification</string>

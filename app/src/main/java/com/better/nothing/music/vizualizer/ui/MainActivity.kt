@@ -72,6 +72,8 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.annotation.RequiresPermission
+import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.os.LocaleListCompat
 import androidx.compose.animation.core.EaseOutQuart
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -324,6 +326,7 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
         _totalHapticTime.value = prefs.getLong("total_haptic_time", 0L)
         _totalFlashlightTime.value = prefs.getLong("total_flashlight_time", 0L)
         _userNickname.value = prefs.getString("user_nickname", "Anonymous") ?: "Anonymous"
+        _spoofLocale.value = prefs.getString("spoof_locale", null)
 
         var uId = prefs.getString("user_id", null)
         if (uId == null) {
@@ -447,6 +450,9 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
     private val _spoofedDevice = MutableStateFlow(DeviceProfile.DEVICE_NP1)
     val spoofedDevice = _spoofedDevice.asStateFlow()
 
+    private val _spoofLocale = MutableStateFlow<String?>(null)
+    val spoofLocale = _spoofLocale.asStateFlow()
+
     fun setDeveloperModeEnabled(enabled: Boolean) {
         _developerModeEnabled.value = enabled
         analytics.logSettingChanged("developer_mode", enabled)
@@ -466,6 +472,20 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
         viewModelScope.launch(Dispatchers.IO) {
             ctx.getSharedPreferences("viz_prefs", Context.MODE_PRIVATE)
                 .edit { putInt("spoofed_device", device) }
+        }
+    }
+
+    fun setSpoofLocale(localeTag: String?) {
+        _spoofLocale.value = localeTag
+        val appLocales = if (localeTag == null) {
+            LocaleListCompat.getEmptyLocaleList()
+        } else {
+            LocaleListCompat.forLanguageTags(localeTag)
+        }
+        AppCompatDelegate.setApplicationLocales(appLocales)
+        viewModelScope.launch(Dispatchers.IO) {
+            ctx.getSharedPreferences("viz_prefs", Context.MODE_PRIVATE)
+                .edit { putString("spoof_locale", localeTag) }
         }
     }
 
@@ -1792,16 +1812,17 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
                 val fRms = if (fCount > 0) kotlin.math.sqrt(fSumSquares / fCount) else 0f
                 _flashlightAmplitude.value = (fRms * 8f).coerceIn(0f, 1.2f)
 
-                // UI Amplitude (50-150 Hz) for global reactive UI elements
-                val uiBinLo = (50f / hzPerBin).toInt().coerceIn(0, magnitude.lastIndex)
-                val uiBinHi = (150f / hzPerBin).toInt().coerceIn(uiBinLo, magnitude.lastIndex)
+                // UI Amplitude (70-130 Hz) for global reactive UI elements
+                val uiBinLo = (70f / hzPerBin).toInt().coerceIn(0, magnitude.lastIndex)
+                val uiBinHi = (130f / hzPerBin).toInt().coerceIn(uiBinLo, magnitude.lastIndex)
                 var uiSumSquares = 0f
                 for (i in uiBinLo..uiBinHi) {
                     uiSumSquares += magnitude[i] * magnitude[i]
                 }
                 val uiCount = uiBinHi - uiBinLo + 1
                 val uiRms = if (uiCount > 0) kotlin.math.sqrt(uiSumSquares / uiCount) else 0f
-                val target = (uiRms * 10f).coerceIn(0f, 1.0f).toDouble().pow(3.0).toFloat()
+                val rawTarget = (uiRms * 10f).coerceIn(0f, 1.0f).toDouble().pow(3.0).toFloat()
+                val target = (rawTarget * 1.3f) - 0.3f
 
                 // Asymmetric smoothing: very fast attack, slower decay
                 if (target > smoothedUiAmplitude) {

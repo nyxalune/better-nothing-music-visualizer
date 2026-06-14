@@ -69,6 +69,8 @@
     <string name="developer_mode_description">Galluogi nodweddion profi uwch a ffugio dyfais.</string>
     <string name="spoof_device">Ffugio Dyfais</string>
     <string name="spoof_device_description">Gorfodi\'r ap i ymddwyn fel pe bai\'n rhedeg ar y ddyfais a ddewiswyd.</string>
+    <string name="spoof_locale">Ffugio Iaith</string>
+    <string name="spoof_locale_description">Gorfodi\'r ap i ddefnyddio iaith benodol ar gyfer profi.</string>
     <string name="idle_breathing_title">Anadlu Segur</string>
     <string name="idle_breathing_desc">Mae Glyphs yn bylsio\'n gynnil pan fydd y delweddydd yn weithredol ond nid oes sain yn chwarae.</string>
     <string name="notification_flash_title">Fflach Hysbysiad</string>

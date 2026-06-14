@@ -618,6 +618,57 @@ internal fun SettingsScreen(
                             }
                         }
                     }
+
+                    // 4. Locale Spoofing
+                    val currentSpoofLocale by viewModel.spoofLocale.collectAsStateWithLifecycle()
+                    Column {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                Icon(Icons.Default.Language, null, modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
+                                Text(stringResource(R.string.spoof_locale), style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+                            }
+                        }
+
+                        val locales = listOf(
+                            null to "System",
+                            "en" to "EN",
+                            "fr" to "FR",
+                            "it" to "IT",
+                            "de" to "DE",
+                            "es" to "ES",
+                            "ru" to "RU",
+                            "tr" to "TR",
+                            "pt-BR" to "PT-BR",
+                            "zh-CN" to "ZH-CN",
+                            "ja" to "JA",
+                            "hi" to "HI",
+                            "cy" to "CY"
+                        )
+
+                        FlowRow(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            locales.forEach { (tag, label) ->
+                                NativeFilterChip(
+                                    label = label,
+                                    selected = currentSpoofLocale == tag,
+                                    onClick = { viewModel.setSpoofLocale(tag) }
+                                )
+                            }
+                        }
+                        BodyText(
+                            text = stringResource(R.string.spoof_locale_description),
+                            size = 11.sp
+                        )
+                    }
                 }
             }
         }
