@@ -105,6 +105,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.layout.fillMaxWidth
 import android.util.Base64
 import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.auth.FirebaseAuth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.Spacer
@@ -320,50 +321,9 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
         }
         _userId.value = uId
 
-        viewModelScope.launch {
-            try {
-                val profile = userRepository.getUserProfile(uId)
-                if (profile != null) {
-                    _userProfile.value = profile
-                    _userNickname.value = profile.displayName
-                } else {
-                    // Create initial profile
-                    val newProfile = UserProfile(
-                        userId = uId,
-                        displayName = _userNickname.value,
-                        totalVisualizedTime = _totalVisualizedTime.value
-                    )
-                    userRepository.saveUserProfile(newProfile)
-                    _userProfile.value = newProfile
-                }
-            } catch (e: Exception) {
-                Log.e("MainViewModel", "Failed to load/create profile", e)
-            }
-        }
-
-        FirebaseDatabase.getInstance("https://bnmv-67120-default-rtdb.europe-west1.firebasedatabase.app")
-            .getReference("config/dev_password")
-            .get()
-            .addOnSuccessListener { snapshot ->
-                _devPassword.value = snapshot.getValue(String::class.java)
-            }
-
         // Track app openings and show thanks messages
         val openCount = prefs.getInt("app_open_count", 0) + 1
         prefs.edit().putInt("app_open_count", openCount).apply()
-
-        viewModelScope.launch {
-            announcementRepository.getLatestAnnouncement().collect { announcement ->
-                _latestAnnouncement.value = announcement
-                if (announcement != null) {
-                    val sharedPrefs = ctx.getSharedPreferences("viz_prefs", Context.MODE_PRIVATE)
-                    val lastSeenId = sharedPrefs.getString("last_seen_announcement_id", "")
-                    if (announcement.id.toString() != lastSeenId) {
-                        _showAnnouncementModal.value = true
-                    }
-                }
-            }
-        }
 
         viewModelScope.launch {
             if (BuildConfig.DEBUG) {
@@ -1894,9 +1854,6 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
                 _configVersion.value = configVersion
                 commitPresetInfos(infos)
                 val prefs = ctx.getSharedPreferences("viz_prefs", Context.MODE_PRIVATE)
-                _autoDeviceEnabled.value = prefs.getBoolean("auto_device_enabled", true)
-                _glyphTabEnabled.value = prefs.getBoolean("glyph_tab_enabled", true)
-                _hapticsTabEnabled.value = prefs.getBoolean("haptics_tab_enabled", true)
 
                 _idleBreathingEnabled.value = prefs.getBoolean("idle_breathing_enabled", false)
                 _idlePattern.value = prefs.getString("idle_pattern", "pulse") ?: "pulse"
@@ -1942,14 +1899,59 @@ internal class MainViewModel(application: Application) : AndroidViewModel(applic
                 _flashlightSmoothing.value = prefs.getFloat("flashlight_smoothing", 0.7f)
                 _flashlightGamma.value = prefs.getFloat("flashlight_gamma", 2.2f)
                 _flashlightBeatSensitivity.value = prefs.getFloat("flashlight_beat_sensitivity", 1.0f)
-
-                checkRemoteConfigVersion()
-                if (!BuildConfig.DEBUG) {
-                    checkAppUpdate()
-                }
             }
 
             startRunningStatePoller()
+        }
+    }
+
+    fun initDatabase() {
+        val uId = _userId.value ?: return
+        
+        viewModelScope.launch {
+            try {
+                val profile = userRepository.getUserProfile(uId)
+                if (profile != null) {
+                    _userProfile.value = profile
+                    _userNickname.value = profile.displayName
+                } else {
+                    // Create initial profile
+                    val newProfile = UserProfile(
+                        userId = uId,
+                        displayName = _userNickname.value,
+                        totalVisualizedTime = _totalVisualizedTime.value
+                    )
+                    userRepository.saveUserProfile(newProfile)
+                    _userProfile.value = newProfile
+                }
+            } catch (e: Exception) {
+                Log.e("MainViewModel", "Failed to load/create profile", e)
+            }
+        }
+
+        FirebaseDatabase.getInstance("https://bnmv-67120-default-rtdb.europe-west1.firebasedatabase.app")
+            .getReference("config/dev_password")
+            .get()
+            .addOnSuccessListener { snapshot ->
+                _devPassword.value = snapshot.getValue(String::class.java)
+            }
+
+        viewModelScope.launch {
+            announcementRepository.getLatestAnnouncement().collect { announcement ->
+                _latestAnnouncement.value = announcement
+                if (announcement != null) {
+                    val sharedPrefs = ctx.getSharedPreferences("viz_prefs", Context.MODE_PRIVATE)
+                    val lastSeenId = sharedPrefs.getString("last_seen_announcement_id", "")
+                    if (announcement.id.toString() != lastSeenId) {
+                        _showAnnouncementModal.value = true
+                    }
+                }
+            }
+        }
+
+        checkRemoteConfigVersion()
+        if (!BuildConfig.DEBUG) {
+            checkAppUpdate()
         }
     }
 
@@ -2257,6 +2259,20 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        val auth = FirebaseAuth.getInstance()
+        if (auth.currentUser == null) {
+            auth.signInAnonymously()
+                .addOnSuccessListener {
+                    initDatabase()
+                }
+                .addOnFailureListener { e ->
+                    Log.e("BetterViz", "Anonymous sign-in failed", e)
+                    initDatabase()
+                }
+        } else {
+            initDatabase()
+        }
 
         setContent {
             val selectedTheme by viewModel.selectedTheme.collectAsStateWithLifecycle()
@@ -2687,6 +2703,10 @@ class MainActivity : ComponentActivity() {
         if (savedInstanceState == null) {
             mainHandler.post { handleLaunchIntent(intent) }
         }
+    }
+
+    private fun initDatabase() {
+        viewModel.initDatabase()
     }
 
     override fun onNewIntent(intent: Intent) {
