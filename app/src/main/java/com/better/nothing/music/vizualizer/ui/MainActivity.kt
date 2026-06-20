@@ -8,7 +8,6 @@ import com.better.nothing.music.vizualizer.service.VisualizerTileService
 import com.better.nothing.music.vizualizer.service.GlyphNotificationListener
 
 import rikka.shizuku.Shizuku
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.delay
 
 import android.Manifest
@@ -89,7 +88,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.BorderStroke
-import androidx.core.content.ContextCompat
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.rememberScrollState
@@ -122,6 +120,8 @@ class MainActivity : ComponentActivity() {
     private var hasPendingToken = false
     private var pendingVisualizerStart = false
     private var showProjectionInfoDialog by mutableStateOf(false)
+
+    private val musicThemeHandler by lazy { MusicThemeHandler(this, viewModel) }
 
     companion object {
         const val EXTRA_REQUEST_START = "request_start"
@@ -249,6 +249,8 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
+        FirebaseFuckery.init()
+
         val intent = Intent(this, AudioCaptureService::class.java)
         startForegroundService(intent)
         bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE)
@@ -257,10 +259,10 @@ class MainActivity : ComponentActivity() {
 
         if (isNotificationServiceEnabled()) {
             mediaSessionManager.addOnActiveSessionsChangedListener(
-                sessionsChangedListener,
+                musicThemeHandler.sessionsChangedListener,
                 ComponentName(this, GlyphNotificationListener::class.java)
             )
-            updateActiveMediaController()
+            musicThemeHandler.updateActiveMediaController()
         }
 
         setContent {
@@ -400,7 +402,7 @@ class MainActivity : ComponentActivity() {
                 totalVisualizedTime = totalVisualizedTime,
                 shizukuUnlocked = shizukuUnlocked,
                 dynamicGainEnabled = dynamicGainEnabled,
-                connectedDeviceName = activeMediaController?.metadata?.getString(MediaMetadata.METADATA_KEY_TITLE) ?: "Unknown",
+                connectedDeviceName = musicThemeHandler.activeMediaController?.metadata?.getString(MediaMetadata.METADATA_KEY_TITLE) ?: "Unknown",
                 latencyMs = latencyMs,
                 autoDeviceEnabled = autoDeviceMemorize,
                 captureSource = captureSource,
@@ -622,7 +624,9 @@ class MainActivity : ComponentActivity() {
             pendingData = data
             hasPendingToken = true
             pendingVisualizerStart = true
-            val intent = Intent(this, AudioCaptureService::class.java)
+            FirebaseFuckery.init()
+
+        val intent = Intent(this, AudioCaptureService::class.java)
             bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE)
         }
     }
@@ -704,6 +708,16 @@ class MainActivity : ComponentActivity() {
         }
         return preferred?.toAudioRoute()
     }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        unbindService(serviceConnection)
+        audioManager.unregisterAudioDeviceCallback(audioDeviceCallback)
+        musicThemeHandler.onDestroy()
+        if (isNotificationServiceEnabled()) {
+            mediaSessionManager.removeOnActiveSessionsChangedListener(musicThemeHandler.sessionsChangedListener)
+        }
+    }
 }
 
 fun isUsefulOutputRoute(device: AudioDeviceInfo): Boolean {
@@ -725,27 +739,6 @@ fun AudioDeviceInfo.toAudioRoute(): AudioRoute {
 
 val HeavyEasingSpec = tween<Float>(durationMillis = 600)
 
-@Composable
-fun MediaProjectionInfoDialog(onConfirm: () -> Unit, onDismiss: () -> Unit) {
-    androidx.compose.material3.AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Audio Capture") },
-        text = { Text("To capture internal audio, this app uses MediaProjection. You will see a system prompt asking for permission.") },
-        confirmButton = {
-            Button(onClick = onConfirm) {
-                Text("GOT IT")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("CANCEL")
-            }
-        },
-        shape = RoundedCornerShape(28.dp),
-        containerColor = MaterialTheme.colorScheme.surface,
-        textContentColor = MaterialTheme.colorScheme.onSurface
-    )
-}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -957,141 +950,11 @@ internal fun BetterVizApp(
                     }
                 }
 
-                // Overlay Modals
-                val isShowingEditor by viewModel.isShowingEditor.collectAsStateWithLifecycle()
-                val isShowingAbout by viewModel.isShowingAbout.collectAsStateWithLifecycle()
-                val isShowingLicense by viewModel.isShowingLicense.collectAsStateWithLifecycle()
-                val isShowingCommunity by viewModel.isShowingCommunity.collectAsStateWithLifecycle()
-                val isShowingAnnouncementHistory by viewModel.showAnnouncementHistory.collectAsStateWithLifecycle()
-                val isShowingLeaderboard by viewModel.isShowingLeaderboard.collectAsStateWithLifecycle()
-
-                if (isShowingEditor) {
-                    CustomPresetEditorScreen(
-                        selectedDevice = selectedDevice,
-                        onDismiss = { viewModel.hideEditor() },
-                        onSave = { name, zones, key -> viewModel.saveCustomPreset(name, zones, key) },
-                        onShare = { name, author, zones -> /* Handle share */ }
-                    )
-                }
-
-                if (isShowingAbout) {
-                    AboutScreen(onDismiss = { viewModel.hideAbout() }, viewModel = viewModel)
-                }
-
-                if (isShowingLicense) {
-                    LicenseScreen(onDismiss = { viewModel.hideLicense() })
-                }
-
-                if (isShowingCommunity) {
-                    val userId by viewModel.userId.collectAsStateWithLifecycle()
-                    CommunityPresetsScreen(
-                        presets = emptyList(), // Load from repo or state
-                        currentUserId = userId,
-                        error = null,
-                        onDownload = { /* handle download */ },
-                        onDelete = { /* handle delete */ },
-                        onDismiss = { viewModel.hideCommunity() }
-                    )
-                }
-
-                if (isShowingAnnouncementHistory) {
-                    val announcements by viewModel.announcementHistory.collectAsStateWithLifecycle()
-                    AnnouncementHistoryScreen(
-                        announcements = announcements,
-                        onDismiss = { viewModel.hideAnnouncementHistory() }
-                    )
-                }
-
-                if (isShowingLeaderboard) {
-                    LeaderboardScreen(
-                        entries = emptyList(), // Load from state
-                        onDismiss = { viewModel.hideLeaderboard() }
-                    )
-                }
-
-                val latestAnnouncement by viewModel.latestAnnouncement.collectAsStateWithLifecycle()
-                val showAnnouncementModal by viewModel.showAnnouncementModal.collectAsStateWithLifecycle()
-                
-                if (showAnnouncementModal && latestAnnouncement != null) {
-                    AnnouncementModal(
-                        announcement = latestAnnouncement!!,
-                        onDismiss = { viewModel.dismissAnnouncement() }
-                    )
-                }
-
-                val thanksMessage by viewModel.thanksMessage.collectAsStateWithLifecycle()
-                if (thanksMessage != null) {
-                    ThanksModal(
-                        message = thanksMessage!!,
-                        onDismiss = { viewModel.dismissThanksMessage() }
-                    )
-                }
-                
-                val showAnnouncementEditor by viewModel.showAnnouncementEditor.collectAsStateWithLifecycle()
-                if (showAnnouncementEditor) {
-                    AnnouncementEditorScreen(
-                        onPost = { t, m, s, l, lt -> viewModel.postAnnouncement(t, m, s, l, lt) },
-                        onDismiss = { viewModel.hideAnnouncementEditor() }
-                    )
-                }
+                // Overlays
+                MainOverlays(viewModel = viewModel, selectedDevice = selectedDevice)
+                CommunityOverlays(viewModel = viewModel)
             }
         }
     }
 }
 
-@Composable
-fun ThanksModal(message: String, onDismiss: () -> Unit) {
-    androidx.compose.material3.AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
-            Text(
-                text = "BETTER NOTHING MUSIC VISUALIZER",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.ExtraBold,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth(),
-                color = MaterialTheme.colorScheme.primary
-            )
-        },
-        text = {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                Text(
-                    text = "WE APPRECIATE YOUR SUPPORT.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Bold,
-                    textAlign = TextAlign.Center,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Text(
-                    text = message.uppercase(),
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.ExtraBold,
-                    textAlign = TextAlign.Center,
-                    color = MaterialTheme.colorScheme.primary
-                )
-                Text(
-                    text = "YOU'RE WELCOME!",
-                    style = MaterialTheme.typography.labelLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.secondary
-                )
-            }
-        },
-        confirmButton = {
-            Button(
-                onClick = onDismiss,
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Text("PROCEED")
-            }
-        },
-        shape = RoundedCornerShape(28.dp),
-        containerColor = MaterialTheme.colorScheme.surface,
-        tonalElevation = 6.dp
-    )
-}

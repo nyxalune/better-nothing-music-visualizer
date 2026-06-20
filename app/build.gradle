@@ -12,7 +12,7 @@ android {
 
     defaultConfig {
         applicationId "com.better.nothing.music.vizualizer"
-        minSdk 32
+        minSdk 26
         targetSdk 37
         versionCode 9
         versionName '3.3'

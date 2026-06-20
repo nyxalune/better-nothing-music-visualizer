@@ -1,0 +1,21 @@
+{
+  "version": 3,
+  "artifactType": {
+    "type": "APK",
+    "kind": "Directory"
+  },
+  "applicationId": "com.better.nothing.music.vizualizer.debug",
+  "variantName": "googlePlayDebug",
+  "elements": [
+    {
+      "type": "SINGLE",
+      "filters": [],
+      "attributes": [],
+      "versionCode": 9,
+      "versionName": "3.3.debug",
+      "outputFile": "app-googlePlay-debug.apk"
+    }
+  ],
+  "elementType": "File",
+  "minSdkVersionForDexing": 26
+}
