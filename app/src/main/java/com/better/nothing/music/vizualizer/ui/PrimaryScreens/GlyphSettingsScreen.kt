@@ -6,7 +6,6 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
-import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
@@ -54,6 +53,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.better.nothing.music.vizualizer.R
 import com.better.nothing.music.vizualizer.service.AudioCaptureService
+import com.better.nothing.music.vizualizer.ui.CardHeader
 import com.better.nothing.music.vizualizer.ui.ExpressiveCard
 import com.better.nothing.music.vizualizer.ui.ExpressiveSegmentedButtonRow
 import com.better.nothing.music.vizualizer.ui.ExpressiveSplitButton
@@ -165,34 +165,6 @@ internal fun GlyphsScreen(
                 )
 
                 ExpressiveCard(
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    _root_ide_package_.com.better.nothing.music.vizualizer.ui.CardHeader(
-                        title = stringResource(
-                            R.string.gamma_control
-                        )
-                    )
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(14.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        GammaPreviewCard(gammaValue = gammaValue)
-                        _root_ide_package_.com.better.nothing.music.vizualizer.ui.BodyText(
-                            text = stringResource(R.string.gamma_description),
-                            modifier = Modifier.weight(1f),
-                            size = 14.sp,
-                            lineHeight = 22.sp,
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    GammaSlider(gammaValue = gammaValue, onGammaChanged = onGammaChanged)
-                }
-
-                ExpressiveCard(
                     modifier = Modifier
                         .fillMaxWidth()
                 ) {
@@ -202,12 +174,10 @@ internal fun GlyphsScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(
-                            text = stringResource(R.string.visualizer_presets),
-                            style = MaterialTheme.typography.headlineSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onBackground,
-                            modifier = Modifier.padding(bottom = 20.dp)
+                        CardHeader(
+                            title = stringResource(
+                                R.string.visualizer_presets
+                            )
                         )
                     }
 
@@ -217,7 +187,9 @@ internal fun GlyphsScreen(
                     }
 
                     FlowRow(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 20.dp),
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
@@ -301,7 +273,34 @@ internal fun GlyphsScreen(
                     )
                 }
 
-                // ── Zones Configuration ──────────────────────────────────────────────
+                ExpressiveCard( //gamma
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    CardHeader(
+                        title = stringResource(
+                            R.string.gamma_control
+                        )
+                    )
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(14.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        GammaPreviewCard(gammaValue = gammaValue)
+                        _root_ide_package_.com.better.nothing.music.vizualizer.ui.BodyText(
+                            text = stringResource(R.string.gamma_description),
+                            modifier = Modifier.weight(1f),
+                            size = 14.sp,
+                            lineHeight = 22.sp,
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    GammaSlider(gammaValue = gammaValue, onGammaChanged = onGammaChanged)
+                }
+                // ── Zones Config download ──────────────────────────────────────────────
                 val context = LocalContext.current
                 val configStatus by viewModel.configUpdateStatus.collectAsStateWithLifecycle()
                 val configVersion by viewModel.configVersion.collectAsStateWithLifecycle()
@@ -326,7 +325,7 @@ internal fun GlyphsScreen(
                 }
 
                 ExpressiveCard {
-                    _root_ide_package_.com.better.nothing.music.vizualizer.ui.CardHeader(title = "Visualizer Configuration")
+                    CardHeader(title = "Visualizer Configuration")
 
                     _root_ide_package_.com.better.nothing.music.vizualizer.ui.BodyText(
                         text = "The zones.config file defines how frequencies map to Glyph LEDs. Updating from GitHub ensures support for new devices and presets.",
@@ -443,7 +442,7 @@ fun BrightnessCard(
     ExpressiveCard(
         modifier = Modifier.fillMaxWidth(),
     ) {
-        _root_ide_package_.com.better.nothing.music.vizualizer.ui.CardHeader(
+        CardHeader(
             title = "Brightness:",
             trailingContent = {
                 Text(
@@ -472,16 +471,16 @@ fun GammaSlider(
     gammaValue: Float,
     onGammaChanged: (Float) -> Unit,
 ) {
-        _root_ide_package_.com.better.nothing.music.vizualizer.ui.CardHeader(
-            title = stringResource(
-                R.string.light_gamma
-            ), trailingContent = {
-                Text(
-                    text = String.format("%.1f", gammaValue),
-                    color = MaterialTheme.colorScheme.primary,
-                    style = MaterialTheme.typography.titleMedium
-                )
-            })
+    CardHeader(
+        title = stringResource(
+            R.string.light_gamma
+        ), trailingContent = {
+            Text(
+                text = String.format("%.1f", gammaValue),
+                color = MaterialTheme.colorScheme.primary,
+                style = MaterialTheme.typography.titleMedium
+            )
+        })
 
         _root_ide_package_.com.better.nothing.music.vizualizer.ui.ExpressiveSlider(
             value = gammaValue,
