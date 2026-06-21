@@ -1,8 +1,8 @@
 package com.better.nothing.music.vizualizer.ui
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.ComponentName
-import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
 import android.content.pm.PackageManager
@@ -15,7 +15,6 @@ import android.media.projection.MediaProjectionManager
 import android.media.session.MediaController
 import android.media.session.MediaSessionManager
 import android.media.session.PlaybackState
-import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
@@ -41,8 +40,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -63,17 +60,16 @@ import com.better.nothing.music.vizualizer.ui.PrimaryScreens.GlyphsScreen
 import com.better.nothing.music.vizualizer.ui.PrimaryScreens.HapticsScreen
 import com.better.nothing.music.vizualizer.ui.PrimaryScreens.SettingsScreen
 import androidx.compose.runtime.collectAsState
+import kotlin.time.Duration.Companion.milliseconds
+import androidx.core.net.toUri
 
 class MainActivity : ComponentActivity() {
     private val viewModel: MainViewModel by viewModels()
 
     private val audioManager by lazy {
-        getSystemService(Context.AUDIO_SERVICE) as AudioManager
+        getSystemService(AUDIO_SERVICE) as AudioManager
     }
 
-    private val projectionManager by lazy {
-        getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
-    }
 
     private var service: AudioCaptureService? = null
     private var bound = false
@@ -81,14 +77,11 @@ class MainActivity : ComponentActivity() {
     private var pendingData: Intent? = null
     private var hasPendingToken = false
     private var pendingVisualizerStart = false
-    private var showProjectionInfoDialog by mutableStateOf(false)
 
     private val musicThemeHandler by lazy { MusicThemeHandler(this, viewModel) }
 
     companion object {
         const val EXTRA_REQUEST_START = "request_start"
-        const val PREF_PROJECTION_INFO_SHOWN = "projection_info_shown"
-        const val PREFS_NAME = "viz_prefs"
         var serviceStatic: AudioCaptureService? = null
     }
 
@@ -106,7 +99,7 @@ class MainActivity : ComponentActivity() {
     private val serviceConnection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName, binder: IBinder) {
             val localBinder = binder as AudioCaptureService.LocalBinder
-            service = localBinder.getService()
+            service = localBinder.service
             serviceStatic = service
             bound = true
             
@@ -142,12 +135,6 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private val notificationLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
-        if (isGranted) {
-            // Permission granted
-        }
-    }
-
     private val audioPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
         if (isGranted) {
             toggleVisualizer()
@@ -159,7 +146,7 @@ class MainActivity : ComponentActivity() {
 
 
     private val mediaSessionManager by lazy {
-        getSystemService(Context.MEDIA_SESSION_SERVICE) as MediaSessionManager
+        getSystemService(MEDIA_SESSION_SERVICE) as MediaSessionManager
     }
     private var activeMediaController: MediaController? = null
     private val mediaCallback = object : MediaController.Callback() {
@@ -170,10 +157,6 @@ class MainActivity : ComponentActivity() {
 
         override fun onPlaybackStateChanged(state: PlaybackState?) {
         }
-    }
-
-    private val sessionsChangedListener = MediaSessionManager.OnActiveSessionsChangedListener { 
-        updateActiveMediaController()
     }
 
     private fun updateActiveMediaController() {
@@ -191,7 +174,7 @@ class MainActivity : ComponentActivity() {
                 val artwork = getArtworkBitmap(activeMediaController?.metadata)
                 viewModel.setMusicArtwork(artwork)
             }
-        } catch (e: SecurityException) {
+        } catch (_: SecurityException) {
             Log.w("MainActivity", "No notification access to get media sessions")
         }
     }
@@ -202,7 +185,7 @@ class MainActivity : ComponentActivity() {
             metadata.getBitmap(MediaMetadata.METADATA_KEY_ALBUM_ART)
                 ?: metadata.getBitmap(MediaMetadata.METADATA_KEY_ART)
                 ?: metadata.getBitmap(MediaMetadata.METADATA_KEY_DISPLAY_ICON)
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             null
         }
     }
@@ -223,7 +206,7 @@ class MainActivity : ComponentActivity() {
 
         val intent = Intent(this, AudioCaptureService::class.java)
         startForegroundService(intent)
-        bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE)
+        bindService(intent, serviceConnection, BIND_AUTO_CREATE)
 
         audioManager.registerAudioDeviceCallback(audioDeviceCallback, mainHandler)
 
@@ -244,13 +227,13 @@ class MainActivity : ComponentActivity() {
             LaunchedEffect(isRunning) {
                 if (isRunning) {
                     while (true) {
-                        service?.getCurrentLightState()?.let {
+                        service?.currentLightState?.let {
                             viewModel.setVisualizerState(it)
                         }
-                        service?.getLatestMagnitudes()?.let {
+                        service?.latestMagnitudes?.let {
                             viewModel.setFftState(it)
                         }
-                        delay(33)
+                        delay(33.milliseconds)
                     }
                 } else {
                     viewModel.setFftState(floatArrayOf())
@@ -269,7 +252,7 @@ class MainActivity : ComponentActivity() {
                     onToggleVisualizer = { toggleVisualizer() },
                     onGoogleSignIn = { launchGoogleSignIn() },
                     onOverlayPermissionRequest = { 
-                        val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName"))
+                        val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, "package:$packageName".toUri())
                         overlayPermissionLauncher.launch(intent)
                     }
                 )
@@ -294,13 +277,10 @@ class MainActivity : ComponentActivity() {
         return false
     }
 
-  fun onPresetSelected(preset: String) {
-        viewModel.setSelectedPreset(preset)
-    }
 
     private fun toggleVisualizer() {
         val s = service ?: return
-        if (s.isVisualizerRunning()) {
+        if (s.isVisualizerRunning) {
             s.stopVisualizer()
         } else {
             val source = viewModel.captureSource.value
@@ -331,25 +311,8 @@ class MainActivity : ComponentActivity() {
             } else {
                 Shizuku.requestPermission(1001)
             }
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             Toast.makeText(this, getString(R.string.shizuku_not_running), Toast.LENGTH_LONG).show()
-        }
-    }
-
-    private fun startStandardVisualizer() {
-        val s = service ?: return
-        if (viewModel.captureSource.value == AudioCaptureService.CaptureSource.INTERNAL) {
-            requestProjection()
-        } else {
-            s.startVisualizer()
-        }
-    }
-
-    private fun requestProjection() {
-        if (shouldShowProjectionInfo()) {
-            showProjectionInfoDialog = true
-        } else {
-            launchProjection()
         }
     }
 
@@ -404,21 +367,6 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun stopEverything() {
-        service?.stopVisualizer()
-    }
-
-    private fun handleLaunchIntent(intent: Intent?) {
-        if (intent?.getBooleanExtra(EXTRA_REQUEST_START, false) == true) {
-            toggleVisualizer()
-        }
-    }
-
-    private fun shouldShowProjectionInfo(): Boolean {
-        val prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
-        return !prefs.getBoolean(PREF_PROJECTION_INFO_SHOWN, false)
-    }
-
     private fun resolvePreferredAudioRoute(): AudioRoute? {
         val outputs = audioManager.getDevices(AudioManager.GET_DEVICES_OUTPUTS)
         var preferred: AudioDeviceInfo? = null
@@ -460,7 +408,11 @@ class MainActivity : ComponentActivity() {
 
 fun AudioDeviceInfo.isBluetoothOutput(): Boolean {
     return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-        type == AudioDeviceInfo.TYPE_BLUETOOTH_A2DP || type == AudioDeviceInfo.TYPE_BLE_HEADSET || type == AudioDeviceInfo.TYPE_BLE_SPEAKER || type == AudioDeviceInfo.TYPE_BLE_BROADCAST
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            type == AudioDeviceInfo.TYPE_BLUETOOTH_A2DP || type == AudioDeviceInfo.TYPE_BLE_HEADSET || type == AudioDeviceInfo.TYPE_BLE_SPEAKER || type == AudioDeviceInfo.TYPE_BLE_BROADCAST
+        } else {
+            TODO("VERSION.SDK_INT < TIRAMISU")
+        }
     } else {
         TODO("VERSION.SDK_INT < S")
     }
@@ -478,6 +430,7 @@ fun AudioDeviceInfo.toAudioRoute(): AudioRoute {
 val HeavyEasingSpec = tween<Float>(durationMillis = 600)
 
 
+@SuppressLint("FrequentlyChangingValue")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun BetterVizApp(
@@ -545,6 +498,13 @@ internal fun BetterVizApp(
                                 scaleX = scale
                                 scaleY = scale
                                 alpha = fraction * fraction
+
+                                // Calculate rotation: 0 deg when fully visible, 20 deg when hidden
+                                val maxRotation = 20f
+                                val rotationAmount = maxRotation * (1f - fraction)
+
+                                // Use the sign of pageOffset to determine +20 or -20
+                                rotationZ = if (pageOffset > 0) rotationAmount else -rotationAmount
                             }
                     ) {
                         when (tab) {
@@ -555,7 +515,6 @@ internal fun BetterVizApp(
                                 val fftData by viewModel.fftState.collectAsStateWithLifecycle()
                                 val captureSource by viewModel.captureSource.collectAsStateWithLifecycle()
                                 val shizukuUnlocked by viewModel.shizukuSourceUnlocked.collectAsStateWithLifecycle()
-                                val dynamicGainEnabled by viewModel.dynamicGainEnabled.collectAsStateWithLifecycle()
 
                                 AudioScreen(
                                     isRunning = isRunning,
