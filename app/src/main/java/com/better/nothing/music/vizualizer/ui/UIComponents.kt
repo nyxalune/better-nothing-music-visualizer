@@ -381,7 +381,7 @@ fun FlowRowScope.OptionTile(
         targetValue = targetWeight,
         animationSpec = spring(
             dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessMedium
+            stiffness = Spring.StiffnessMediumLow
         ),
         label = "weight"
     )
