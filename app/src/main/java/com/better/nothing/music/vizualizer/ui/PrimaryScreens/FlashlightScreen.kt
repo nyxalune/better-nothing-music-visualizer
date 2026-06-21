@@ -1,4 +1,4 @@
-package com.better.nothing.music.vizualizer.ui
+package com.better.nothing.music.vizualizer.ui.screens
 
 import com.better.nothing.music.vizualizer.R
 import androidx.compose.animation.AnimatedVisibility
@@ -29,6 +29,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -36,6 +37,17 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.better.nothing.music.vizualizer.model.TorchMode
+import com.better.nothing.music.vizualizer.ui.AnimatedToggleCard
+import com.better.nothing.music.vizualizer.ui.BodyText
+import com.better.nothing.music.vizualizer.ui.CardHeader
+import com.better.nothing.music.vizualizer.ui.ExpressiveCard
+import com.better.nothing.music.vizualizer.ui.ExpressiveRangeSlider
+import com.better.nothing.music.vizualizer.ui.ExpressiveSegmentedButtonRow
+import com.better.nothing.music.vizualizer.ui.ExpressiveSlider
+import com.better.nothing.music.vizualizer.ui.MorphingPolygon
+import com.better.nothing.music.vizualizer.ui.ScreenTitle
+import com.better.nothing.music.vizualizer.ui.invLerpLog
+import com.better.nothing.music.vizualizer.ui.lerpLog
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -97,7 +109,12 @@ fun FlashlightScreen(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 ExpressiveCard(modifier = Modifier.fillMaxWidth()) {
-                    CardHeader(title = stringResource(R.string.flashlight_intensity_label, flashlightIntensityLevels))
+                    CardHeader(
+                        title = stringResource(
+                            R.string.flashlight_intensity_label,
+                            flashlightIntensityLevels
+                        )
+                    )
                     BodyText(
                         text = if (supportsMultiIntensity) {
                             "This torch can use multiple brightness levels."
@@ -118,7 +135,11 @@ fun FlashlightScreen(
                         )
                     )
 
-                    val currentRange = invLerpLog(flashlightFreqMin, 20f, 1000f)..invLerpLog(flashlightFreqMax, 20f, 1000f)
+                    val currentRange = invLerpLog(flashlightFreqMin, 20f, 1000f)..invLerpLog(
+                        flashlightFreqMax,
+                        20f,
+                        1000f
+                    )
 
                     ExpressiveRangeSlider(
                         value = currentRange,
@@ -160,7 +181,12 @@ fun FlashlightScreen(
 
                 if (flashlightMode == TorchMode.AMPLITUDE) {
                     ExpressiveCard(modifier = Modifier.fillMaxWidth()) {
-                        CardHeader(title = stringResource(R.string.flashlight_threshold_label, flashlightThreshold))
+                        CardHeader(
+                            title = stringResource(
+                                R.string.flashlight_threshold_label,
+                                flashlightThreshold
+                            )
+                        )
 
                         ExpressiveSlider(
                             value = flashlightThreshold,
@@ -179,7 +205,12 @@ fun FlashlightScreen(
 
                 if (flashlightMode == TorchMode.BEAT_DETECTION) {
                     ExpressiveCard(modifier = Modifier.fillMaxWidth()) {
-                        CardHeader(title = stringResource(R.string.flashlight_beat_sensitivity_label, flashlightBeatSensitivity))
+                        CardHeader(
+                            title = stringResource(
+                                R.string.flashlight_beat_sensitivity_label,
+                                flashlightBeatSensitivity
+                            )
+                        )
                         ExpressiveSlider(
                             value = flashlightBeatSensitivity,
                             onValueChange = onFlashlightBeatSensitivityChanged,
@@ -196,10 +227,10 @@ fun FlashlightScreen(
                     ExpressiveCard(modifier = Modifier.fillMaxWidth()) {
                         CardHeader(
                             title = if (supportsMultiIntensity) {
-                            "Fade out duration: ${flashlightSpeedMs.toInt()}ms"
-                        } else {
-                            stringResource(R.string.flashlight_speed_label, flashlightSpeedMs)
-                        }
+                                "Fade out duration: ${flashlightSpeedMs.toInt()}ms"
+                            } else {
+                                stringResource(R.string.flashlight_speed_label, flashlightSpeedMs)
+                            }
                         )
                         ExpressiveSlider(
                             value = flashlightSpeedMs,
@@ -238,9 +269,14 @@ fun FlashlightScreen(
                             .fillMaxWidth()
                             .height(220.dp)
                             .background(
-                                brush = androidx.compose.ui.graphics.Brush.radialGradient(
+                                brush = Brush.radialGradient(
                                     colors = listOf(
-                                        flashColor.copy(alpha = 0.08f * flashlightAmplitude.coerceIn(0f, 1.2f)),
+                                        flashColor.copy(
+                                            alpha = 0.08f * flashlightAmplitude.coerceIn(
+                                                0f,
+                                                1.2f
+                                            )
+                                        ),
                                         Color.Transparent
                                     ),
                                     radius = 350f

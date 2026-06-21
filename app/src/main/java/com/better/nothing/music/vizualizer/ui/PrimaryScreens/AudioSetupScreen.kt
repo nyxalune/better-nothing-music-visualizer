@@ -1,4 +1,4 @@
-package com.better.nothing.music.vizualizer.ui
+package com.better.nothing.music.vizualizer.ui.screens
 
 import android.Manifest
 import android.content.pm.PackageManager
@@ -77,6 +77,7 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import com.better.nothing.music.vizualizer.R
 import com.better.nothing.music.vizualizer.service.AudioCaptureService
+import com.better.nothing.music.vizualizer.ui.OptionTile
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import java.util.Locale
@@ -150,7 +151,11 @@ fun AudioScreen(
             .verticalScroll(scrollState),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        ScreenTitle(text = stringResource(R.string.audio_screen_title))
+        _root_ide_package_.com.better.nothing.music.vizualizer.ui.ScreenTitle(
+            text = stringResource(
+                R.string.audio_screen_title
+            )
+        )
 
         CaptureSourceCard(
             selectedSource = captureSource,
@@ -183,16 +188,23 @@ fun AudioScreen(
         } else {
             stringResource(R.string.audio_description_idle)
         }
-        
-        ExpressiveCard(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.5f)) {
-            BodyText(text = descriptionText, size = 14.sp)
+
+        _root_ide_package_.com.better.nothing.music.vizualizer.ui.ExpressiveCard(
+            containerColor = MaterialTheme.colorScheme.surface.copy(
+                alpha = 0.5f
+            )
+        ) {
+            _root_ide_package_.com.better.nothing.music.vizualizer.ui.BodyText(
+                text = descriptionText,
+                size = 14.sp
+            )
         }
 
         AnimatedVisibility(visible = isRunning) {
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
 
-                ExpressiveCard {
-                    CardHeader(title = "Auto-Memorize Device")
+                _root_ide_package_.com.better.nothing.music.vizualizer.ui.ExpressiveCard {
+                    _root_ide_package_.com.better.nothing.music.vizualizer.ui.CardHeader(title = "Auto-Memorize Device")
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
@@ -201,7 +213,11 @@ fun AudioScreen(
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 text = if (autoDeviceEnabled)
-                                    stringResource(R.string.saving_latency_for, connectedDeviceName ?: stringResource(R.string.internal_speaker))
+                                    stringResource(
+                                        R.string.saving_latency_for,
+                                        connectedDeviceName
+                                            ?: stringResource(R.string.internal_speaker)
+                                    )
                                 else stringResource(R.string.manual_mode_global_latency),
                                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                                 style = MaterialTheme.typography.bodySmall
@@ -229,8 +245,10 @@ fun AudioScreen(
 
                 FFTSpectrumCard(fftData = fftData)
 
-                ExpressiveCard(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.3f)) {
-                    BodyText(
+                _root_ide_package_.com.better.nothing.music.vizualizer.ui.ExpressiveCard(
+                    containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.3f)
+                ) {
+                    _root_ide_package_.com.better.nothing.music.vizualizer.ui.BodyText(
                         text = stringResource(R.string.latency_compensation_description),
                         size = 12.sp
                     )
@@ -248,13 +266,29 @@ fun CaptureSourceCard(
     onSourceSelected: (AudioCaptureService.CaptureSource) -> Unit,
     shizukuUnlocked: Boolean
 ) {
-    ExpressiveCard(modifier = Modifier.fillMaxWidth()) {
-        CardHeader(title = "Capture Source")
+    _root_ide_package_.com.better.nothing.music.vizualizer.ui.ExpressiveCard(modifier = Modifier.fillMaxWidth()) {
+        _root_ide_package_.com.better.nothing.music.vizualizer.ui.CardHeader(title = "Capture Source")
         val sources = listOf(
-            Triple(AudioCaptureService.CaptureSource.INTERNAL, stringResource(R.string.capture_media_projection), Icons.Default.PhoneAndroid),
-            Triple(AudioCaptureService.CaptureSource.MIC, stringResource(R.string.capture_microphone), Icons.Default.Mic),
-            Triple(AudioCaptureService.CaptureSource.VIZUALIZER, stringResource(R.string.capture_vizualizer), Icons.Default.GraphicEq),
-            Triple(AudioCaptureService.CaptureSource.SHIZUKU, stringResource(R.string.capture_shizuku), Icons.Default.Terminal)
+            Triple(
+                AudioCaptureService.CaptureSource.INTERNAL,
+                stringResource(R.string.capture_media_projection),
+                Icons.Default.PhoneAndroid
+            ),
+            Triple(
+                AudioCaptureService.CaptureSource.MIC,
+                stringResource(R.string.capture_microphone),
+                Icons.Default.Mic
+            ),
+            Triple(
+                AudioCaptureService.CaptureSource.VIZUALIZER,
+                stringResource(R.string.capture_vizualizer),
+                Icons.Default.GraphicEq
+            ),
+            Triple(
+                AudioCaptureService.CaptureSource.SHIZUKU,
+                stringResource(R.string.capture_shizuku),
+                Icons.Default.Terminal
+            )
         )
 
         FlowRow(
@@ -267,12 +301,13 @@ fun CaptureSourceCard(
                 val isSelected = selectedSource == source
                 val isShizuku = source == AudioCaptureService.CaptureSource.SHIZUKU
                 val isInternal = source == AudioCaptureService.CaptureSource.INTERNAL
-                val isEnabled = (!isShizuku || shizukuUnlocked) && (!isInternal || Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
+                val isEnabled =
+                    (!isShizuku || shizukuUnlocked) && (!isInternal || Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
 
                 OptionTile(
-                    label = if (isShizuku && !shizukuUnlocked) "$label (Locked)" 
-                            else if (isInternal && Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) "$label (API 29+)"
-                            else label,
+                    label = if (isShizuku && !shizukuUnlocked) "$label (Locked)"
+                    else if (isInternal && Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) "$label (API 29+)"
+                    else label,
                     icon = icon,
                     isSelected = isSelected,
                     enabled = isEnabled,
@@ -340,20 +375,26 @@ fun LatencyCard(
         }
     }
 
-    ExpressiveCard(modifier = Modifier.fillMaxWidth()) {
-        CardHeader(title = stringResource(R.string.latency_compensation), trailingContent = {
-            Text(
-                text = "${latencyMs}ms",
-                color = MaterialTheme.colorScheme.primary,
-                fontWeight = FontWeight.Bold
-            )
-        })
+    _root_ide_package_.com.better.nothing.music.vizualizer.ui.ExpressiveCard(modifier = Modifier.fillMaxWidth()) {
+        _root_ide_package_.com.better.nothing.music.vizualizer.ui.CardHeader(
+            title = stringResource(
+                R.string.latency_compensation
+            ), trailingContent = {
+                Text(
+                    text = "${latencyMs}ms",
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Bold
+                )
+            })
 
         BoxWithConstraints(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(48.dp)
-                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f), MaterialTheme.shapes.large)
+                .background(
+                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                    MaterialTheme.shapes.large
+                )
                 .padding(4.dp)
         ) {
             val spacing = 4.dp
@@ -396,7 +437,7 @@ fun LatencyCard(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        ExpressiveSlider(
+        _root_ide_package_.com.better.nothing.music.vizualizer.ui.ExpressiveSlider(
             value = latencyMs.toFloat(),
             onValueChange = { updateLatency(it.toInt()) },
             valueRange = 0f..500f,
@@ -427,8 +468,12 @@ fun LatencyCard(
 fun FFTSpectrumCard(fftData: FloatArray) {
     var touchX by remember { mutableStateOf<Float?>(null) }
 
-    ExpressiveCard(modifier = Modifier.fillMaxWidth()) {
-        CardHeader(title = stringResource(R.string.live_spectrum))
+    _root_ide_package_.com.better.nothing.music.vizualizer.ui.ExpressiveCard(modifier = Modifier.fillMaxWidth()) {
+        _root_ide_package_.com.better.nothing.music.vizualizer.ui.CardHeader(
+            title = stringResource(
+                R.string.live_spectrum
+            )
+        )
 
         BoxWithConstraints(
             modifier = Modifier
@@ -491,12 +536,12 @@ fun FFTSpectrumCard(fftData: FloatArray) {
 
                 val w = size.width
                 val h = size.height
-                
+
                 // Draw Grid
                 val gridColor = Color.White.copy(alpha = 0.03f)
-                drawLine(gridColor, Offset(0f, h*0.25f), Offset(w, h*0.25f), 1f)
-                drawLine(gridColor, Offset(0f, h*0.5f), Offset(w, h*0.5f), 1f)
-                drawLine(gridColor, Offset(0f, h*0.75f), Offset(w, h*0.75f), 1f)
+                drawLine(gridColor, Offset(0f, h * 0.25f), Offset(w, h * 0.25f), 1f)
+                drawLine(gridColor, Offset(0f, h * 0.5f), Offset(w, h * 0.5f), 1f)
+                drawLine(gridColor, Offset(0f, h * 0.75f), Offset(w, h * 0.75f), 1f)
 
                 val minFreq = 20f
                 val maxFreq = 20000f
@@ -512,7 +557,10 @@ fun FFTSpectrumCard(fftData: FloatArray) {
 
                 // Dynamic gradient based on amplitude
                 val gradient = Brush.verticalGradient(
-                    colors = listOf(primaryColor.copy(alpha = 0.4f), primaryColor.copy(alpha = 0.02f)),
+                    colors = listOf(
+                        primaryColor.copy(alpha = 0.4f),
+                        primaryColor.copy(alpha = 0.02f)
+                    ),
                     startY = 0f,
                     endY = h
                 )
@@ -553,19 +601,27 @@ fun FFTSpectrumCard(fftData: FloatArray) {
                 }
 
                 drawPath(path = fillPath, brush = gradient)
-                
+
                 // Outer glow
                 drawPath(
                     path = barPath,
                     color = primaryColor.copy(alpha = 0.3f),
-                    style = Stroke(width = 6.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round)
+                    style = Stroke(
+                        width = 6.dp.toPx(),
+                        cap = StrokeCap.Round,
+                        join = StrokeJoin.Round
+                    )
                 )
-                
+
                 // Main line
                 drawPath(
                     path = barPath,
                     color = primaryColor,
-                    style = Stroke(width = 2.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round)
+                    style = Stroke(
+                        width = 2.dp.toPx(),
+                        cap = StrokeCap.Round,
+                        join = StrokeJoin.Round
+                    )
                 )
 
                 touchX?.let { tx ->
@@ -587,7 +643,11 @@ fun FFTSpectrumCard(fftData: FloatArray) {
                 val logFreq = logMin + fraction * (logMax - logMin)
                 val freq = 10f.pow(logFreq)
 
-                val text = if (freq >= 1000) String.format(Locale.US, "%.1fkHz", freq / 1000f) else String.format(Locale.US, "%dHz", freq.toInt())
+                val text = if (freq >= 1000) String.format(
+                    Locale.US,
+                    "%.1fkHz",
+                    freq / 1000f
+                ) else String.format(Locale.US, "%dHz", freq.toInt())
                 val txDp = with(density) { tx.toDp() }
 
                 Surface(
@@ -612,7 +672,7 @@ fun FFTSpectrumCard(fftData: FloatArray) {
         }
 
         Spacer(modifier = Modifier.height(8.dp))
-        
+
         // Frequency labels
         Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),

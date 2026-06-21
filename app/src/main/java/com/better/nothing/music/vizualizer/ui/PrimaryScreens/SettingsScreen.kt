@@ -1,5 +1,6 @@
-package com.better.nothing.music.vizualizer.ui
+package com.better.nothing.music.vizualizer.ui.screens
 
+import android.content.Intent
 import com.better.nothing.music.vizualizer.R
 import com.better.nothing.music.vizualizer.BuildConfig
 import com.better.nothing.music.vizualizer.model.DeviceProfile
@@ -42,7 +43,20 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.AnnotatedString
+import com.better.nothing.music.vizualizer.ui.AuthDialog
+import com.better.nothing.music.vizualizer.ui.BodyText
+import com.better.nothing.music.vizualizer.ui.CardHeader
+import com.better.nothing.music.vizualizer.ui.ExpressiveCard
+import com.better.nothing.music.vizualizer.ui.ExpressiveSegmentedButtonRow
+import com.better.nothing.music.vizualizer.ui.ExpressiveSlider
+import com.better.nothing.music.vizualizer.ui.MainViewModel
+import com.better.nothing.music.vizualizer.ui.NativeFilterChip
+import com.better.nothing.music.vizualizer.ui.OptionTile
+import com.better.nothing.music.vizualizer.ui.ScreenTitle
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -96,9 +110,9 @@ internal fun SettingsScreen(
     ) {
         ScreenTitle(
             text = stringResource(R.string.settings_title),
-            onLongPress = { 
+            onLongPress = {
                 haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                showDevModePanel = !showDevModePanel 
+                showDevModePanel = !showDevModePanel
             }
         )
 
@@ -141,7 +155,7 @@ internal fun SettingsScreen(
             val userNickname by viewModel.userNickname.collectAsStateWithLifecycle()
             val userProfile by viewModel.userProfile.collectAsStateWithLifecycle()
             var nicknameInput by remember(userNickname) { mutableStateOf(userNickname) }
-            
+
             val launcher = rememberLauncherForActivityResult(
                 contract = ActivityResultContracts.GetContent()
             ) { uri ->
@@ -176,7 +190,7 @@ internal fun SettingsScreen(
                             tint = MaterialTheme.colorScheme.primary
                         )
                     }
-                    
+
                     Surface(
                         modifier = Modifier
                             .align(Alignment.BottomEnd)
@@ -196,7 +210,7 @@ internal fun SettingsScreen(
                 Column(modifier = Modifier.weight(1f)) {
                     OutlinedTextField(
                         value = nicknameInput,
-                        onValueChange = { 
+                        onValueChange = {
                             nicknameInput = it
                             if (it.length <= 20) viewModel.setUserNickname(it)
                         },
@@ -208,8 +222,8 @@ internal fun SettingsScreen(
                             Icon(Icons.Default.Edit, null, modifier = Modifier.size(18.dp))
                         }
                     )
-                    
-                    val clipboardManager = androidx.compose.ui.platform.LocalClipboardManager.current
+
+                    val clipboardManager = LocalClipboardManager.current
                     val currentUid = viewModel.userId.collectAsStateWithLifecycle().value
                     Text(
                         text = "UID: ${currentUid ?: "None"}",
@@ -219,14 +233,18 @@ internal fun SettingsScreen(
                             .padding(top = 4.dp, start = 4.dp)
                             .clickable {
                                 currentUid?.let {
-                                    clipboardManager.setText(androidx.compose.ui.text.AnnotatedString(it))
-                                    Toast.makeText(localContext, "UID copied to clipboard", Toast.LENGTH_SHORT).show()
+                                    clipboardManager.setText(AnnotatedString(it))
+                                    Toast.makeText(
+                                        localContext,
+                                        "UID copied to clipboard",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
                                 }
                             }
                     )
                 }
             }
-            
+
             Spacer(modifier = Modifier.height(16.dp))
             Text(
                 text = "Choose an avatar",
@@ -234,7 +252,7 @@ internal fun SettingsScreen(
                 color = MaterialTheme.colorScheme.primary
             )
             Spacer(modifier = Modifier.height(8.dp))
-            
+
             val defaultAvatars = listOf(
                 R.drawable.avatar_1,
                 R.drawable.avatar_2,
@@ -263,7 +281,7 @@ internal fun SettingsScreen(
                     }
                 }
             }
-            
+
             Spacer(modifier = Modifier.height(12.dp))
             BodyText(
                 text = stringResource(R.string.profile_help_text),
@@ -295,7 +313,9 @@ internal fun SettingsScreen(
 
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = if (isAnonymous) stringResource(R.string.anonymous_user) else stringResource(R.string.authenticated_user),
+                        text = if (isAnonymous) stringResource(R.string.anonymous_user) else stringResource(
+                            R.string.authenticated_user
+                        ),
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold
                     )
@@ -315,7 +335,11 @@ internal fun SettingsScreen(
                     }
                 } else {
                     IconButton(onClick = { viewModel.signOut() }) {
-                        Icon(Icons.AutoMirrored.Filled.Logout, null, tint = MaterialTheme.colorScheme.error)
+                        Icon(
+                            Icons.AutoMirrored.Filled.Logout,
+                            null,
+                            tint = MaterialTheme.colorScheme.error
+                        )
                     }
                 }
             }
@@ -328,15 +352,22 @@ internal fun SettingsScreen(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable { 
+                    .clickable {
                         haptics.performHapticFeedback(HapticFeedbackType.SegmentTick)
-                        themeExpanded = !themeExpanded 
+                        themeExpanded = !themeExpanded
                     },
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Icon(Icons.Default.Palette, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Icon(
+                        Icons.Default.Palette,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary
+                    )
                     Text(
                         text = stringResource(R.string.app_theme),
                         style = MaterialTheme.typography.titleMedium,
@@ -351,19 +382,26 @@ internal fun SettingsScreen(
             }
 
             AnimatedVisibility(visible = themeExpanded) {
-                Column(modifier = Modifier.padding(top = 16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                Column(
+                    modifier = Modifier.padding(top = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
                     // Typography
                     Text(
                         text = stringResource(R.string.typography),
                         style = MaterialTheme.typography.labelLarge,
                         color = MaterialTheme.colorScheme.primary
                     )
-                    
+
                     ExpressiveSegmentedButtonRow(
                         items = listOf("NDot", "NType"),
                         selectedItem = selectedFont,
                         onItemSelection = { viewModel.setSelectedFont(it) },
-                        labelProvider = { if (it == "NDot") stringResource(R.string.font_ndot) else stringResource(R.string.font_ntype) },
+                        labelProvider = {
+                            if (it == "NDot") stringResource(R.string.font_ndot) else stringResource(
+                                R.string.font_ntype
+                            )
+                        },
                         modifier = Modifier.fillMaxWidth()
                     )
 
@@ -376,11 +414,31 @@ internal fun SettingsScreen(
 
                     // Theme Options
                     val themeOptions = listOf(
-                        Triple("Default", stringResource(R.string.theme_normal), Icons.Default.BrightnessAuto),
-                        Triple("Liquorice Black", stringResource(R.string.theme_liquorice), Icons.Default.DarkMode),
-                        Triple("Nothing", stringResource(R.string.theme_nothing), Icons.Default.Settings),
-                        Triple("Material You", stringResource(R.string.theme_material_you), Icons.Default.Palette),
-                        Triple("Music", stringResource(R.string.theme_music), Icons.Default.MusicNote)
+                        Triple(
+                            "Default",
+                            stringResource(R.string.theme_normal),
+                            Icons.Default.BrightnessAuto
+                        ),
+                        Triple(
+                            "Liquorice Black",
+                            stringResource(R.string.theme_liquorice),
+                            Icons.Default.DarkMode
+                        ),
+                        Triple(
+                            "Nothing",
+                            stringResource(R.string.theme_nothing),
+                            Icons.Default.Settings
+                        ),
+                        Triple(
+                            "Material You",
+                            stringResource(R.string.theme_material_you),
+                            Icons.Default.Palette
+                        ),
+                        Triple(
+                            "Music",
+                            stringResource(R.string.theme_music),
+                            Icons.Default.MusicNote
+                        )
                     )
 
                     FlowRow(
@@ -395,11 +453,13 @@ internal fun SettingsScreen(
                                 label = label,
                                 icon = icon,
                                 isSelected = isSelected,
-                                onClick = { 
+                                onClick = {
                                     if (key == "Music" && !viewModel.isNotificationAccessGranted()) {
-                                        val message = localContext.getString(R.string.music_theme_notification_access)
-                                        Toast.makeText(localContext, message, Toast.LENGTH_LONG).show()
-                                        localContext.startActivity(android.content.Intent("android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS"))
+                                        val message =
+                                            localContext.getString(R.string.music_theme_notification_access)
+                                        Toast.makeText(localContext, message, Toast.LENGTH_LONG)
+                                            .show()
+                                        localContext.startActivity(Intent("android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS"))
                                     } else {
                                         viewModel.setSelectedTheme(key)
                                     }
@@ -548,217 +608,302 @@ internal fun SettingsScreen(
             )
         }
 
-        ExpressiveCard {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(end = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.weight(1f)) {
-                    Icon(Icons.Default.Code, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = stringResource(R.string.developer_mode),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
+            ExpressiveCard {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(end = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Icon(
+                            Icons.Default.Code,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary
                         )
-                        Text(
-                            text = stringResource(R.string.developer_mode_description),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                        )
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = stringResource(R.string.developer_mode),
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = stringResource(R.string.developer_mode_description),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                            )
+                        }
                     }
+                    Switch(
+                        checked = devModeEnabled,
+                        onCheckedChange = { enabled ->
+                            if (enabled) {
+                                showPasswordDialog = true
+                            } else {
+                                viewModel.setDeveloperModeEnabled(false)
+                            }
+                        },
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = Color.White,
+                            checkedTrackColor = MaterialTheme.colorScheme.primary
+                        ),
+                        modifier = Modifier.size(height = 24.dp, width = 48.dp)
+                    )
                 }
-                Switch(
-                    checked = devModeEnabled,
-                    onCheckedChange = { enabled ->
-                        if (enabled) {
-                            showPasswordDialog = true
-                        } else {
-                            viewModel.setDeveloperModeEnabled(false)
-                        }
-                    },
-                    colors = SwitchDefaults.colors(
-                        checkedThumbColor = Color.White,
-                        checkedTrackColor = MaterialTheme.colorScheme.primary
-                    ),
-                    modifier = Modifier.size(height = 24.dp, width = 48.dp)
-                )
-            }
 
-            AnimatedVisibility(visible = devModeEnabled) {
-                Column(modifier = Modifier.padding(top = 16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    // 1. Announcements
-                    val isAdmin by viewModel.isAdmin.collectAsStateWithLifecycle()
-                    ExpressiveCard(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.2f))
+                AnimatedVisibility(visible = devModeEnabled) {
+                    Column(
+                        modifier = Modifier.padding(top = 16.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(16.dp)
-                        ) {
-                            Icon(Icons.Default.Campaign, null, tint = MaterialTheme.colorScheme.primary)
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(stringResource(R.string.global_announcements), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-                                Text(stringResource(R.string.global_announcements_desc), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
-                            }
-                            if (isAdmin || BuildConfig.DEBUG) {
-                                Button(
-                                    onClick = { viewModel.showAnnouncementEditor() },
-                                    shape = RoundedCornerShape(12.dp),
-                                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
-                                ) {
-                                    Text(stringResource(R.string.create), style = MaterialTheme.typography.labelMedium)
-                                }
-                            }
-                        }
-                    }
-
-                    // 2. Shizuku Source Toggle
-                    val shizukuUnlocked by viewModel.shizukuSourceUnlocked.collectAsStateWithLifecycle()
-                    ExpressiveCard(
-                        containerColor = if (shizukuUnlocked) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-                        border = BorderStroke(1.dp, if (shizukuUnlocked) MaterialTheme.colorScheme.primary.copy(alpha = 0.3f) else MaterialTheme.colorScheme.outline.copy(alpha = 0.1f))
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(end = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.weight(1f)) {
-                                Icon(Icons.Default.Terminal, null, tint = if (shizukuUnlocked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(stringResource(R.string.unlock_shizuku_source), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-                                    Text(stringResource(R.string.unlock_shizuku_source_desc), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
-                                }
-                            }
-                            Switch(
-                                checked = shizukuUnlocked,
-                                onCheckedChange = { viewModel.setShizukuSourceUnlocked(it) },
-                                colors = SwitchDefaults.colors(
-                                    checkedThumbColor = Color.White,
-                                    checkedTrackColor = MaterialTheme.colorScheme.primary
-                                ),
-                                modifier = Modifier.size(height = 24.dp, width = 48.dp)
+                        // 1. Announcements
+                        val isAdmin by viewModel.isAdmin.collectAsStateWithLifecycle()
+                        ExpressiveCard(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                            border = BorderStroke(
+                                1.dp,
+                                MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
                             )
-                        }
-                    }
-
-                    // 3. Device Spoofing Toggle
-                    val showSpoofing by viewModel.showSpoofingSettings.collectAsStateWithLifecycle()
-                    Column {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { viewModel.setShowSpoofingSettings(!showSpoofing) }
-                                .padding(vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                Icon(Icons.Default.Dns, null, modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
-                                Text(stringResource(R.string.spoof_device), style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
-                            }
-                            Icon(
-                                if (showSpoofing) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                                null,
-                                tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
-                            )
-                        }
-
-                        AnimatedVisibility(visible = showSpoofing) {
-                            Column(modifier = Modifier.padding(top = 8.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                                val spoofedDevice by viewModel.spoofedDevice.collectAsStateWithLifecycle()
-                                val devices = listOf(
-                                    DeviceProfile.DEVICE_NP1,
-                                    DeviceProfile.DEVICE_NP2,
-                                    DeviceProfile.DEVICE_NP2A,
-                                    DeviceProfile.DEVICE_NP3A,
-                                    DeviceProfile.DEVICE_NP4A,
-                                    DeviceProfile.DEVICE_NP4APRO,
-                                    DeviceProfile.DEVICE_NP3
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                            ) {
+                                Icon(
+                                    Icons.Default.Campaign,
+                                    null,
+                                    tint = MaterialTheme.colorScheme.primary
                                 )
-
-                                FlowRow(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    devices.forEach { dev ->
-                                        NativeFilterChip(
-                                            label = DeviceProfile.deviceName(dev).replace("Nothing Phone ", ""),
-                                            selected = spoofedDevice == dev,
-                                            onClick = { viewModel.setSpoofedDevice(dev) }
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        stringResource(R.string.global_announcements),
+                                        style = MaterialTheme.typography.titleSmall,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Text(
+                                        stringResource(R.string.global_announcements_desc),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                    )
+                                }
+                                if (isAdmin || BuildConfig.DEBUG) {
+                                    Button(
+                                        onClick = { viewModel.showAnnouncementEditor() },
+                                        shape = RoundedCornerShape(12.dp),
+                                        contentPadding = PaddingValues(
+                                            horizontal = 12.dp,
+                                            vertical = 8.dp
+                                        )
+                                    ) {
+                                        Text(
+                                            stringResource(R.string.create),
+                                            style = MaterialTheme.typography.labelMedium
                                         )
                                     }
                                 }
-                                BodyText(
-                                    text = stringResource(R.string.spoof_device_description),
-                                    size = 11.sp
+                            }
+                        }
+
+                        // 2. Shizuku Source Toggle
+                        val shizukuUnlocked by viewModel.shizukuSourceUnlocked.collectAsStateWithLifecycle()
+                        ExpressiveCard(
+                            containerColor = if (shizukuUnlocked) MaterialTheme.colorScheme.primary.copy(
+                                alpha = 0.1f
+                            ) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                            border = BorderStroke(
+                                1.dp,
+                                if (shizukuUnlocked) MaterialTheme.colorScheme.primary.copy(alpha = 0.3f) else MaterialTheme.colorScheme.outline.copy(
+                                    alpha = 0.1f
+                                )
+                            )
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(end = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Icon(
+                                        Icons.Default.Terminal,
+                                        null,
+                                        tint = if (shizukuUnlocked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(
+                                            alpha = 0.6f
+                                        )
+                                    )
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            stringResource(R.string.unlock_shizuku_source),
+                                            style = MaterialTheme.typography.titleSmall,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                        Text(
+                                            stringResource(R.string.unlock_shizuku_source_desc),
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                        )
+                                    }
+                                }
+                                Switch(
+                                    checked = shizukuUnlocked,
+                                    onCheckedChange = { viewModel.setShizukuSourceUnlocked(it) },
+                                    colors = SwitchDefaults.colors(
+                                        checkedThumbColor = Color.White,
+                                        checkedTrackColor = MaterialTheme.colorScheme.primary
+                                    ),
+                                    modifier = Modifier.size(height = 24.dp, width = 48.dp)
                                 )
                             }
                         }
-                    }
 
-                    // 4. Locale Spoofing
-                    val currentSpoofLocale by viewModel.spoofLocale.collectAsStateWithLifecycle()
-                    Column {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                Icon(Icons.Default.Language, null, modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
-                                Text(stringResource(R.string.spoof_locale), style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
-                            }
-                        }
-
-                        val locales = listOf(
-                            null to "System",
-                            "en" to "EN",
-                            "fr" to "FR",
-                            "it" to "IT",
-                            "de" to "DE",
-                            "es" to "ES",
-                            "ru" to "RU",
-                            "tr" to "TR",
-                            "pt-BR" to "PT-BR",
-                            "zh-CN" to "ZH-CN",
-                            "ja" to "JA",
-                            "hi" to "HI",
-                            "cy" to "CY"
-                        )
-
-                        FlowRow(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            locales.forEach { (tag, label) ->
-                                NativeFilterChip(
-                                    label = label,
-                                    selected = currentSpoofLocale == tag,
-                                    onClick = { viewModel.setSpoofLocale(tag) }
+                        // 3. Device Spoofing Toggle
+                        val showSpoofing by viewModel.showSpoofingSettings.collectAsStateWithLifecycle()
+                        Column {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { viewModel.setShowSpoofingSettings(!showSpoofing) }
+                                    .padding(vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                ) {
+                                    Icon(
+                                        Icons.Default.Dns,
+                                        null,
+                                        modifier = Modifier.size(18.dp),
+                                        tint = MaterialTheme.colorScheme.primary
+                                    )
+                                    Text(
+                                        stringResource(R.string.spoof_device),
+                                        style = MaterialTheme.typography.labelLarge,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                                Icon(
+                                    if (showSpoofing) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                                    null,
+                                    tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
                                 )
                             }
+
+                            AnimatedVisibility(visible = showSpoofing) {
+                                Column(
+                                    modifier = Modifier.padding(top = 8.dp),
+                                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                                ) {
+                                    val spoofedDevice by viewModel.spoofedDevice.collectAsStateWithLifecycle()
+                                    val devices = listOf(
+                                        DeviceProfile.DEVICE_NP1,
+                                        DeviceProfile.DEVICE_NP2,
+                                        DeviceProfile.DEVICE_NP2A,
+                                        DeviceProfile.DEVICE_NP3A,
+                                        DeviceProfile.DEVICE_NP4A,
+                                        DeviceProfile.DEVICE_NP4APRO,
+                                        DeviceProfile.DEVICE_NP3
+                                    )
+
+                                    FlowRow(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        devices.forEach { dev ->
+                                            NativeFilterChip(
+                                                label = DeviceProfile.deviceName(dev)
+                                                    .replace("Nothing Phone ", ""),
+                                                selected = spoofedDevice == dev,
+                                                onClick = { viewModel.setSpoofedDevice(dev) }
+                                            )
+                                        }
+                                    }
+                                    BodyText(
+                                        text = stringResource(R.string.spoof_device_description),
+                                        size = 11.sp
+                                    )
+                                }
+                            }
                         }
-                        BodyText(
-                            text = stringResource(R.string.spoof_locale_description),
-                            size = 11.sp
-                        )
+
+                        // 4. Locale Spoofing
+                        val currentSpoofLocale by viewModel.spoofLocale.collectAsStateWithLifecycle()
+                        Column {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                ) {
+                                    Icon(
+                                        Icons.Default.Language,
+                                        null,
+                                        modifier = Modifier.size(18.dp),
+                                        tint = MaterialTheme.colorScheme.primary
+                                    )
+                                    Text(
+                                        stringResource(R.string.spoof_locale),
+                                        style = MaterialTheme.typography.labelLarge,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
+
+                            val locales = listOf(
+                                null to "System",
+                                "en" to "EN",
+                                "fr" to "FR",
+                                "it" to "IT",
+                                "de" to "DE",
+                                "es" to "ES",
+                                "ru" to "RU",
+                                "tr" to "TR",
+                                "pt-BR" to "PT-BR",
+                                "zh-CN" to "ZH-CN",
+                                "ja" to "JA",
+                                "hi" to "HI",
+                                "cy" to "CY"
+                            )
+
+                            FlowRow(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                locales.forEach { (tag, label) ->
+                                    NativeFilterChip(
+                                        label = label,
+                                        selected = currentSpoofLocale == tag,
+                                        onClick = { viewModel.setSpoofLocale(tag) }
+                                    )
+                                }
+                            }
+                            BodyText(
+                                text = stringResource(R.string.spoof_locale_description),
+                                size = 11.sp
+                            )
+                        }
                     }
                 }
             }
-        }
         }
 
         // ── Experimental Features ───────────────────────────────────────────
@@ -768,15 +913,22 @@ internal fun SettingsScreen(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable { 
+                    .clickable {
                         haptics.performHapticFeedback(HapticFeedbackType.SegmentTick)
-                        experimentalExpanded = !experimentalExpanded 
+                        experimentalExpanded = !experimentalExpanded
                     },
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Icon(Icons.Default.Tune, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Icon(
+                        Icons.Default.Tune,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary
+                    )
                     Text(
                         text = stringResource(R.string.experimental_features),
                         style = MaterialTheme.typography.titleMedium,
@@ -791,7 +943,10 @@ internal fun SettingsScreen(
             }
 
             AnimatedVisibility(visible = experimentalExpanded) {
-                Column(modifier = Modifier.padding(top = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Column(
+                    modifier = Modifier.padding(top = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
                     FlowRow(
                         modifier = Modifier.fillMaxWidth(),
                         maxItemsInEachRow = 2,
@@ -922,7 +1077,7 @@ internal fun SettingsScreen(
 @Composable
 private fun LinkCard(
     title: String,
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    icon: ImageVector,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {

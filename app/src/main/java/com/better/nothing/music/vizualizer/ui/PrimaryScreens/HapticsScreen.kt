@@ -1,4 +1,4 @@
-package com.better.nothing.music.vizualizer.ui
+package com.better.nothing.music.vizualizer.ui.screens
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
@@ -25,6 +25,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -33,6 +34,17 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.better.nothing.music.vizualizer.R
 import com.better.nothing.music.vizualizer.model.HapticMode
+import com.better.nothing.music.vizualizer.ui.AnimatedToggleCard
+import com.better.nothing.music.vizualizer.ui.BodyText
+import com.better.nothing.music.vizualizer.ui.CardHeader
+import com.better.nothing.music.vizualizer.ui.ExpressiveCard
+import com.better.nothing.music.vizualizer.ui.ExpressiveRangeSlider
+import com.better.nothing.music.vizualizer.ui.ExpressiveSegmentedButtonRow
+import com.better.nothing.music.vizualizer.ui.ExpressiveSlider
+import com.better.nothing.music.vizualizer.ui.MorphingPolygon
+import com.better.nothing.music.vizualizer.ui.ScreenTitle
+import com.better.nothing.music.vizualizer.ui.invLerpLog
+import com.better.nothing.music.vizualizer.ui.lerpLog
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -96,7 +108,12 @@ fun HapticsScreen(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 ExpressiveCard(modifier = Modifier.fillMaxWidth()) {
-                    CardHeader(title = stringResource(R.string.haptics_amplitude_label, hapticMultiplier))
+                    CardHeader(
+                        title = stringResource(
+                            R.string.haptics_amplitude_label,
+                            hapticMultiplier
+                        )
+                    )
                     ExpressiveSlider(
                         value = hapticMultiplier,
                         onValueChange = onHapticMultiplierChanged,
@@ -119,7 +136,8 @@ fun HapticsScreen(
                         )
                     )
 
-                    val currentRange = invLerpLog(hapticFreqMin, 20f, 1000f)..invLerpLog(hapticFreqMax, 20f, 1000f)
+                    val currentRange =
+                        invLerpLog(hapticFreqMin, 20f, 1000f)..invLerpLog(hapticFreqMax, 20f, 1000f)
 
                     ExpressiveRangeSlider(
                         value = currentRange,
@@ -161,7 +179,12 @@ fun HapticsScreen(
 
                 if (hapticMode == HapticMode.BASS_TO_AMPLITUDE) {
                     ExpressiveCard(modifier = Modifier.fillMaxWidth()) {
-                        CardHeader(title = stringResource(R.string.haptics_audio_gain_label, hapticAudioGain))
+                        CardHeader(
+                            title = stringResource(
+                                R.string.haptics_audio_gain_label,
+                                hapticAudioGain
+                            )
+                        )
                         ExpressiveSlider(
                             value = hapticAudioGain,
                             onValueChange = onHapticAudioGainChanged,
@@ -171,7 +194,12 @@ fun HapticsScreen(
                     }
 
                     ExpressiveCard(modifier = Modifier.fillMaxWidth()) {
-                        CardHeader(title = stringResource(R.string.haptics_gamma_label, hapticGamma))
+                        CardHeader(
+                            title = stringResource(
+                                R.string.haptics_gamma_label,
+                                hapticGamma
+                            )
+                        )
                         ExpressiveSlider(
                             value = hapticGamma,
                             onValueChange = onHapticGammaChanged,
@@ -183,7 +211,12 @@ fun HapticsScreen(
 
                 if (hapticMode == HapticMode.BEAT_DETECTION) {
                     ExpressiveCard(modifier = Modifier.fillMaxWidth()) {
-                        CardHeader(title = stringResource(R.string.haptics_sensitivity_label, hapticBeatSensitivity))
+                        CardHeader(
+                            title = stringResource(
+                                R.string.haptics_sensitivity_label,
+                                hapticBeatSensitivity
+                            )
+                        )
                         ExpressiveSlider(
                             value = hapticBeatSensitivity,
                             onValueChange = onHapticBeatSensitivityChanged,
@@ -193,7 +226,12 @@ fun HapticsScreen(
                     }
 
                     ExpressiveCard(modifier = Modifier.fillMaxWidth()) {
-                        CardHeader(title = stringResource(R.string.haptics_speed_label, hapticBeatGamma))
+                        CardHeader(
+                            title = stringResource(
+                                R.string.haptics_speed_label,
+                                hapticBeatGamma
+                            )
+                        )
                         ExpressiveSlider(
                             value = hapticBeatGamma,
                             onValueChange = onHapticBeatGammaChanged,
@@ -218,7 +256,9 @@ fun HapticsScreen(
                     val hapticAmplitude = hapticAmplitudeProvider()
 
                     val flashColor by animateColorAsState(
-                        targetValue = if (isBeatDetected) Color.White else MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
+                        targetValue = if (isBeatDetected) Color.White else MaterialTheme.colorScheme.primary.copy(
+                            alpha = 0.8f
+                        ),
                         animationSpec = if (isBeatDetected) snap() else spring(stiffness = Spring.StiffnessVeryLow),
                         label = "flashColor"
                     )
@@ -228,8 +268,11 @@ fun HapticsScreen(
                             .fillMaxWidth()
                             .height(220.dp)
                             .background(
-                                brush = androidx.compose.ui.graphics.Brush.radialGradient(
-                                    colors = listOf(flashColor.copy(alpha = 0.1f * hapticAmplitude), Color.Transparent),
+                                brush = Brush.radialGradient(
+                                    colors = listOf(
+                                        flashColor.copy(alpha = 0.1f * hapticAmplitude),
+                                        Color.Transparent
+                                    ),
                                     radius = 300f
                                 )
                             ),
