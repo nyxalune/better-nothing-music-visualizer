@@ -1242,7 +1242,7 @@ fun BetterVizTheme(
 
     val animatedEdge by animateDpAsState(
         targetValue = if (themeName == "Default" || themeName == "OLED Black") 6.dp else 16.dp,
-        animationSpec = tween(500),
+        animationSpec = tween(700),
         label = "edgeSpacing"
     )
 
