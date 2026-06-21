@@ -54,7 +54,6 @@ import com.better.nothing.music.vizualizer.ui.ExpressiveCard
 import com.better.nothing.music.vizualizer.ui.ExpressiveSegmentedButtonRow
 import com.better.nothing.music.vizualizer.ui.ExpressiveSlider
 import com.better.nothing.music.vizualizer.ui.MainViewModel
-import com.better.nothing.music.vizualizer.ui.NativeFilterChip
 import com.better.nothing.music.vizualizer.ui.OptionTile
 import com.better.nothing.music.vizualizer.ui.ScreenTitle
 
@@ -889,13 +888,13 @@ internal fun SettingsScreen(
                                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                                 verticalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
-                                locales.forEach { (tag, label) ->
-                                    NativeFilterChip(
-                                        label = label,
-                                        selected = currentSpoofLocale == tag,
-                                        onClick = { viewModel.setSpoofLocale(tag) }
-                                    )
-                                }
+                                ExpressiveSegmentedButtonRow(
+                                    items = locales.keys.toList(),
+                                    selectedItem = currentSpoofLocale,
+                                    onItemSelection = { tag -> viewModel.setSpoofLocale(tag) },
+                                    labelProvider = { tag -> locales[tag].orEmpty() },
+                                    modifier = Modifier.fillMaxWidth()
+                                )
                             }
                             BodyText(
                                 text = stringResource(R.string.spoof_locale_description),
