@@ -66,6 +66,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.FlowRowScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
@@ -100,6 +101,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Matrix
 import androidx.compose.ui.graphics.asComposePath
 import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.rotate
@@ -109,6 +111,7 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.pointerInteropFilter
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
@@ -213,7 +216,7 @@ fun MorphingPolygon(
         val scale = size * (0.15f + (animatedAmplitude * 0.7f))
         
         path.reset()
-        val matrix = androidx.compose.ui.graphics.Matrix()
+        val matrix = Matrix()
         matrix.scale(scale, scale)
         matrix.translate(size / (2 * scale), size / (2 * scale))
         
@@ -264,7 +267,7 @@ fun ExpressiveSplitButton(
             shape = RoundedCornerShape(16.dp),
             color = MaterialTheme.colorScheme.primary,
             contentColor = MaterialTheme.colorScheme.onPrimary,
-            modifier = Modifier.weight(1.5f).fillMaxHeight()
+            modifier = Modifier.weight(2f).fillMaxHeight()
         ) {
             Row(
                 modifier = Modifier.fillMaxSize(),
@@ -768,119 +771,168 @@ fun <T> ExpressiveSegmentedButtonRow(
     items: List<T>,
     selectedItem: T,
     onItemSelection: (T) -> Unit,
-    labelProvider: @Composable (T) -> String,
+    labelProvider: @Composable (T) -> String, // Restored @Composable context
     modifier: Modifier = Modifier
 ) {
     val haptics = LocalHapticFeedback.current
     val scope = rememberCoroutineScope()
 
-    Row(
+    // 1. Resolve Composable labels into plain strings safely in the Composable pipeline
+    val resolvedLabels = items.associateWith { labelProvider(it) }
+
+    // 2. Chunk items into rows using the resolved plain string map
+    val chunkedRows = remember(items, resolvedLabels) {
+        val rows = mutableListOf<MutableList<T>>()
+        var currentRow = mutableListOf<T>()
+        var currentCharacterCount = 0
+
+        // Threshold budget limit per row
+        val maxCharactersPerRow = 32
+
+        items.forEach { item ->
+            val labelText = resolvedLabels[item].orEmpty()
+            val textLength = labelText.length
+
+            if (currentCharacterCount + textLength > maxCharactersPerRow && currentRow.isNotEmpty()) {
+                rows.add(currentRow)
+                currentRow = mutableListOf()
+                currentCharacterCount = 0
+            }
+            currentRow.add(item)
+            currentCharacterCount += textLength
+        }
+        if (currentRow.isNotEmpty()) {
+            rows.add(currentRow)
+        }
+        rows
+    }
+
+    Column(
         modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
-        verticalAlignment = Alignment.CenterVertically
+        verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
-        items.forEachIndexed { index, item ->
-            val isSelected = item == selectedItem
+        chunkedRows.forEach { rowItems ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                rowItems.forEachIndexed { index, item ->
+                    val isSelected = item == selectedItem
+                    var isPressed by remember { mutableStateOf(false) }
 
-            var isPressed by remember { mutableStateOf(false) }
+                    val bouncySpec = spring<Float>(
+                        dampingRatio = Spring.DampingRatioHighBouncy,
+                        stiffness = Spring.StiffnessMediumLow
+                    )
+                    val dpBouncySpec = spring<androidx.compose.ui.unit.Dp>(
+                        dampingRatio = Spring.DampingRatioLowBouncy,
+                        stiffness = Spring.StiffnessMedium
+                    )
 
-            // Elastic bouncy spring configuration
-            val bouncySpec = spring<Float>(
-                dampingRatio = Spring.DampingRatioHighBouncy,
-                stiffness = Spring.StiffnessMediumLow
-            )
-            val dpBouncySpec = spring<androidx.compose.ui.unit.Dp>(
-                dampingRatio = Spring.DampingRatioLowBouncy,
-                stiffness = Spring.StiffnessMedium
-            )
+                    val animatedWeight by animateFloatAsState(
+                        targetValue = if (isPressed) 0.89f else if (isSelected) 1.2f else 1.0f,
+                        animationSpec = bouncySpec,
+                        label = "ExpressiveWeightAnimation"
+                    )
 
-            // 1. Dynamic layout expansion weight (grows wider horizontally)
-            val animatedWeight by animateFloatAsState(
-                targetValue = if (isPressed) 0.89f else if (isSelected) 1.2f else 1.0f,
-                animationSpec = bouncySpec,
-                label = "ExpressiveWeightAnimation"
-            )
+                    // Color transitions
+                    val targetContainerColor = if (isSelected) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.surfaceContainerHighest
+                    }
 
-            // 3. Dynamic corner fluid morphing (becomes a pill when selected)
-            val fullyRounded = 40.dp
-            val slightlyRounded = 8.dp
+                    val targetContentColor = if (isSelected) {
+                        MaterialTheme.colorScheme.onPrimary
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    }
 
-            val targetTopStart = if (isSelected || index == 0 || items.size == 1) fullyRounded else slightlyRounded
-            val targetBottomStart = if (isSelected || index == 0 || items.size == 1) fullyRounded else slightlyRounded
-            val targetTopEnd = if (isSelected || index == items.size - 1 || items.size == 1) fullyRounded else slightlyRounded
-            val targetBottomEnd = if (isSelected || index == items.size - 1 || items.size == 1) fullyRounded else slightlyRounded
+                    val containerColor by animateColorAsState(
+                        targetValue = targetContainerColor,
+                        animationSpec = tween(durationMillis = 250),
+                        label = "ContainerColorAnimation"
+                    )
 
-            val topStart by animateDpAsState(targetValue = targetTopStart, animationSpec = dpBouncySpec, label = "TopStart")
-            val bottomStart by animateDpAsState(targetValue = targetBottomStart, animationSpec = dpBouncySpec, label = "BottomStart")
-            val topEnd by animateDpAsState(targetValue = targetTopEnd, animationSpec = dpBouncySpec, label = "TopEnd")
-            val bottomEnd by animateDpAsState(targetValue = targetBottomEnd, animationSpec = dpBouncySpec, label = "BottomEnd")
+                    val contentColor by animateColorAsState(
+                        targetValue = targetContentColor,
+                        animationSpec = tween(durationMillis = 250),
+                        label = "ContentColorAnimation"
+                    )
 
-            val dynamicButtonShape = RoundedCornerShape(
-                topStart = topStart.coerceAtLeast(0.dp),
-                bottomStart = bottomStart.coerceAtLeast(0.dp),
-                topEnd = topEnd.coerceAtLeast(0.dp),
-                bottomEnd = bottomEnd.coerceAtLeast(0.dp)
-            )
+                    // Edge rounding physics logic
+                    val fullyRounded = 40.dp
+                    val slightlyRounded = 8.dp
 
-            val containerColor = if (isSelected) {
-                MaterialTheme.colorScheme.primary
-            } else {
-                MaterialTheme.colorScheme.surfaceContainerHighest
-            }
+                    val isFirstInRow = index == 0
+                    val isLastInRow = index == rowItems.size - 1
+                    val isOnlyInRow = rowItems.size == 1
 
-            val contentColor = if (isSelected) {
-                MaterialTheme.colorScheme.onPrimary
-            } else {
-                MaterialTheme.colorScheme.onSurfaceVariant
-            }
+                    val targetTopStart = if (isSelected || isFirstInRow || isOnlyInRow) fullyRounded else slightlyRounded
+                    val targetBottomStart = if (isSelected || isFirstInRow || isOnlyInRow) fullyRounded else slightlyRounded
+                    val targetTopEnd = if (isSelected || isLastInRow || isOnlyInRow) fullyRounded else slightlyRounded
+                    val targetBottomEnd = if (isSelected || isLastInRow || isOnlyInRow) fullyRounded else slightlyRounded
 
-            Surface(
-                color = containerColor,
-                contentColor = contentColor,
-                shape = dynamicButtonShape,
-                modifier = Modifier
-                    .weight(animatedWeight) // Restored horizontal weight expansion
-                    .pointerInput(item, isSelected) {
-                        detectTapGestures(
-                            onPress = {
-                                val startTime = System.currentTimeMillis()
-                                isPressed = true
-                                haptics.performHapticFeedback(HapticFeedbackType.SegmentTick)
+                    val topStart by animateDpAsState(targetValue = targetTopStart, animationSpec = dpBouncySpec, label = "TopStart")
+                    val bottomStart by animateDpAsState(targetValue = targetBottomStart, animationSpec = dpBouncySpec, label = "BottomStart")
+                    val topEnd by animateDpAsState(targetValue = targetTopEnd, animationSpec = dpBouncySpec, label = "TopEnd")
+                    val bottomEnd by animateDpAsState(targetValue = targetBottomEnd, animationSpec = dpBouncySpec, label = "BottomEnd")
 
-                                try {
-                                    awaitRelease()
-                                } finally {
-                                    haptics.performHapticFeedback(HapticFeedbackType.SegmentFrequentTick)
-                                    val elapsedTime = System.currentTimeMillis() - startTime
-                                    val remainingTime = 150L - elapsedTime
+                    val dynamicButtonShape = RoundedCornerShape(
+                        topStart = topStart.coerceAtLeast(0.dp),
+                        bottomStart = bottomStart.coerceAtLeast(0.dp),
+                        topEnd = topEnd.coerceAtLeast(0.dp),
+                        bottomEnd = bottomEnd.coerceAtLeast(0.dp)
+                    )
 
-                                    scope.launch {
-                                        if (remainingTime > 0) {
-                                            delay(remainingTime.milliseconds)
-                                        }
-                                        isPressed = false
-                                        if (!isSelected) {
-                                            onItemSelection(item)
+                    Surface(
+                        color = containerColor,
+                        contentColor = contentColor,
+                        shape = dynamicButtonShape,
+                        modifier = Modifier
+                            .weight(animatedWeight)
+                            .pointerInput(item, isSelected) {
+                                detectTapGestures(
+                                    onPress = {
+                                        val startTime = System.currentTimeMillis()
+                                        isPressed = true
+                                        haptics.performHapticFeedback(HapticFeedbackType.SegmentTick)
+
+                                        try {
+                                            awaitRelease()
+                                        } finally {
+                                            haptics.performHapticFeedback(HapticFeedbackType.SegmentFrequentTick)
+                                            val elapsedTime = System.currentTimeMillis() - startTime
+                                            val remainingTime = 150L - elapsedTime
+
+                                            scope.launch {
+                                                if (remainingTime > 0) {
+                                                    delay(remainingTime.milliseconds)
+                                                }
+                                                isPressed = false
+                                                if (!isSelected) {
+                                                    onItemSelection(item)
+                                                }
+                                            }
                                         }
                                     }
-                                }
+                                )
                             }
-                        )
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 10.dp),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = resolvedLabels[item] ?: "",
+                                style = MaterialTheme.typography.labelLarge,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
                     }
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 10.dp),
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    // 4. Smooth Icon Slide + Fade Entry
-
-                    Text(
-                        text = labelProvider(item),
-                        style = MaterialTheme.typography.labelLarge,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
                 }
             }
         }
@@ -1195,7 +1247,7 @@ private fun AnimatedToggleCardLayout(
     titleToSwitchSpacing: Dp,
     modifier: Modifier = Modifier,
 ) {
-    val spacingPx = with(androidx.compose.ui.platform.LocalDensity.current) {
+    val spacingPx = with(LocalDensity.current) {
         titleToSwitchSpacing.roundToPx()
     }
 

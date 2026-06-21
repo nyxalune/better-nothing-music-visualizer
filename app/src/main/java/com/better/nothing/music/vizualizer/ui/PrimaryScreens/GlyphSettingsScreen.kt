@@ -2,21 +2,19 @@ package com.better.nothing.music.vizualizer.ui.PrimaryScreens
 
 import android.annotation.SuppressLint
 import android.widget.Toast
-import com.better.nothing.music.vizualizer.R
-import com.better.nothing.music.vizualizer.service.AudioCaptureService
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.core.spring
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -29,17 +27,16 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CloudDownload
-import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material.icons.filled.Public
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Sync
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -55,7 +52,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.better.nothing.music.vizualizer.R
+import com.better.nothing.music.vizualizer.service.AudioCaptureService
+import com.better.nothing.music.vizualizer.ui.ExpressiveSegmentedButtonRow
+import com.better.nothing.music.vizualizer.ui.ExpressiveSplitButton
 import kotlin.math.pow
+
+sealed interface SecondaryAction {
+    object CreateNew : SecondaryAction
+    object ExploreCommunity : SecondaryAction
+}
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -200,19 +206,6 @@ internal fun GlyphsScreen(
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onBackground,
                     )
-                    Button(
-                        onClick = { viewModel.showCommunity() },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                            contentColor = MaterialTheme.colorScheme.primary
-                        ),
-                        shape = MaterialTheme.shapes.medium,
-                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
-                    ) {
-                        Icon(Icons.Default.Public, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text("Explore Community", style = MaterialTheme.typography.labelLarge)
-                    }
                 }
 
                 val favorites by viewModel.favoritePresets.collectAsStateWithLifecycle()
@@ -225,32 +218,28 @@ internal fun GlyphsScreen(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    sortedPresets.forEach { preset ->
-                        key(preset.key) {
-                            val isFavorite = favorites.contains(preset.key)
-                            _root_ide_package_.com.better.nothing.music.vizualizer.ui.NativeFilterChip(
-                                label = preset.key,
-                                selected = preset.key == selectedPreset,
-                                onClick = { onPresetSelected(preset.key) },
-                                onLongClick = { viewModel.toggleFavorite(preset.key) },
-                                trailingIcon = {
-                                    if (isFavorite) {
-                                        Icon(
-                                            Icons.Default.Star,
-                                            contentDescription = null,
-                                            modifier = Modifier.size(16.dp),
-                                            tint = if (preset.key == selectedPreset) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.primary
-                                        )
-                                    }
-                                }
-                            )
-                        }
-                    }
+                    // 1. Grouped Expressive Row for your presets
+                    // Wrapping it allows it to sit neatly alongside the "+ Create New" button inside the FlowRow
+                    ExpressiveSegmentedButtonRow(
+                        items = sortedPresets,
+                        // If no preset matches, safely fall back to the first item in the list
+                        selectedItem = sortedPresets.firstOrNull { it.key == selectedPreset }
+                            ?: sortedPresets.first(),
+                        onItemSelection = { preset -> onPresetSelected(preset.key) },
+                        labelProvider = { preset -> preset.key },
+                        modifier = Modifier.fillMaxWidth(),
+                    )
 
-                    _root_ide_package_.com.better.nothing.music.vizualizer.ui.NativeFilterChip(
-                        label = "+ Create New",
-                        selected = false,
-                        onClick = { viewModel.showEditor() },
+                    ExpressiveSplitButton(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 16.dp),
+                        primaryText = "Create New",
+                        primaryIcon = Icons.Default.Add,
+                        onPrimaryClick = { viewModel.showEditor() },
+                        secondaryText = "Explore Community",
+                        secondaryIcon = Icons.Default.Public,
+                        onSecondaryClick = { viewModel.showCommunity() }
                     )
                 }
 
