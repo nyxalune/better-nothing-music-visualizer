@@ -1,4 +1,4 @@
-package com.better.nothing.music.vizualizer.ui
+package com.better.nothing.music.vizualizer.ui.SecondaryScreens
 
 import com.better.nothing.music.vizualizer.R
 import com.better.nothing.music.vizualizer.logic.AudioProcessor
@@ -9,37 +9,39 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Public
 import androidx.compose.material.icons.filled.Save
-import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.RoundRect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.graphics.vector.PathParser
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.better.nothing.music.vizualizer.ui.ExpressiveRangeSlider
+import com.better.nothing.music.vizualizer.ui.invLerpLog
+import com.better.nothing.music.vizualizer.ui.lerpLog
 import kotlin.math.*
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -311,15 +313,24 @@ fun CustomPresetEditorScreen(
                             color = Color.White
                         )
                         
-                        val currentRange = invLerpLog(zone.lowHz, 20f, 20000f)..invLerpLog(zone.highHz, 20f, 20000f)
-                        
+                        val currentRange = invLerpLog(
+                            zone.lowHz,
+                            20f,
+                            20000f
+                        )..invLerpLog(zone.highHz, 20f, 20000f)
+
                         ExpressiveRangeSlider(
                             value = currentRange,
                             onValueChange = { newRange ->
                                 val newLow = lerpLog(newRange.start, 20f, 20000f)
                                 val newHigh = lerpLog(newRange.endInclusive, 20f, 20000f)
                                 selectedIndices.forEach { idx ->
-                                    zones[idx] = AudioProcessor.ZoneSpec(newLow, newHigh, zone.lowPercent, zone.highPercent)
+                                    zones[idx] = AudioProcessor.ZoneSpec(
+                                        newLow,
+                                        newHigh,
+                                        zone.lowPercent,
+                                        zone.highPercent
+                                    )
                                 }
                             },
                             valueRange = 0f..1f,
@@ -415,7 +426,7 @@ private fun drawEditorGlyphs(scope: DrawScope, device: Int, selectedIndices: Lis
             // Camera Plate
             paths["p12_cam_plate"]?.let {
                 scope.drawPath(it, Color.White.copy(alpha = 0.05f))
-                scope.drawPath(it, Color.White.copy(alpha = 0.15f), style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1f))
+                scope.drawPath(it, Color.White.copy(alpha = 0.15f), style = Stroke(width = 1f))
             }
 
             paths["p1_cam"]?.let { scope.drawPath(it, getColor(0), alpha = getAlpha(0)) }
@@ -434,7 +445,7 @@ private fun drawEditorGlyphs(scope: DrawScope, device: Int, selectedIndices: Lis
                 // Camera Plate
                 paths["p2_cam_plate"]?.let {
                     drawPath(it, Color.White.copy(alpha = 0.05f))
-                    drawPath(it, Color.White.copy(alpha = 0.15f), style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1f))
+                    drawPath(it, Color.White.copy(alpha = 0.15f), style = Stroke(width = 1f))
                 }
             }
 
@@ -481,7 +492,7 @@ private fun drawEditorGlyphs(scope: DrawScope, device: Int, selectedIndices: Lis
             if (isPro) {
                 paths["p4ap_island"]?.let {
                     scope.drawPath(it, Color.White.copy(alpha = 0.05f))
-                    scope.drawPath(it, Color.White.copy(alpha = 0.15f), style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1f))
+                    scope.drawPath(it, Color.White.copy(alpha = 0.15f), style = Stroke(width = 1f))
                 }
             }
 
@@ -600,7 +611,7 @@ private fun getGlyphPaths(parser: PathParser): Map<String, Path> {
         val p12CamY = 7f
         put("p12_cam_plate", Path().apply {
             addRoundRect(
-                androidx.compose.ui.geometry.RoundRect(
+                RoundRect(
                     left = p12CamX,
                     top = p12CamY,
                     right = p12CamX + 56f,
@@ -613,7 +624,7 @@ private fun getGlyphPaths(parser: PathParser): Map<String, Path> {
         // --- Phone (2) Camera Plate (Taller) ---
         put("p2_cam_plate", Path().apply {
             addRoundRect(
-                androidx.compose.ui.geometry.RoundRect(
+                RoundRect(
                     left = p12CamX,
                     top = p12CamY,
                     right = p12CamX + 56f,
@@ -654,7 +665,7 @@ private fun getGlyphPaths(parser: PathParser): Map<String, Path> {
         val p4apCamRadius = 28f
         put("p4ap_island", Path().apply {
             addRoundRect(
-                androidx.compose.ui.geometry.RoundRect(
+                RoundRect(
                     left = 5.5f,
                     top = 5f,
                     right = 176.5f,
@@ -668,7 +679,7 @@ private fun getGlyphPaths(parser: PathParser): Map<String, Path> {
         val p3aCamRadius = 18f
         put("p3a_cam_plate", Path().apply {
             addRoundRect(
-                androidx.compose.ui.geometry.RoundRect(
+                RoundRect(
                     left = 78f,
                     top = 57f,
                     right = 122f,
@@ -681,6 +692,6 @@ private fun getGlyphPaths(parser: PathParser): Map<String, Path> {
 }
 
 @Composable
-fun Text(text: String, size: androidx.compose.ui.unit.TextUnit, color: Color) {
-    androidx.compose.material3.Text(text = text, fontSize = size, color = color)
+fun Text(text: String, size: TextUnit, color: Color) {
+    Text(text = text, fontSize = size, color = color)
 }

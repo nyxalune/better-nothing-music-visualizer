@@ -1,4 +1,4 @@
-package com.better.nothing.music.vizualizer.ui
+package com.better.nothing.music.vizualizer.ui.SecondaryScreens
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -6,11 +6,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.EmojiEvents
-import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -26,6 +24,8 @@ import androidx.compose.ui.layout.ContentScale
 import coil3.compose.AsyncImage
 import com.better.nothing.music.vizualizer.R
 import com.better.nothing.music.vizualizer.model.LeaderboardEntry
+import com.better.nothing.music.vizualizer.ui.ExpressiveCard
+import com.better.nothing.music.vizualizer.ui.ScreenTitle
 import java.util.concurrent.TimeUnit
 
 @Composable
@@ -46,7 +46,7 @@ internal fun LeaderboardScreen(
                 contentDescription = stringResource(R.string.back)
             )
         }
-        
+
         ScreenTitle(text = "Leaderboard")
         Text(
             text = "Weekly top visualizers",
@@ -124,7 +124,7 @@ private fun LeaderboardItem(rank: Int, entry: LeaderboardEntry) {
                         )
                     }
                 }
-                
+
                 if (entry.profilePictureUrl != null) {
                     // Overlay rank if we have a profile picture
                     Surface(

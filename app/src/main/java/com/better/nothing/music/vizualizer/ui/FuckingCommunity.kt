@@ -3,6 +3,8 @@ package com.better.nothing.music.vizualizer.ui
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.better.nothing.music.vizualizer.ui.SecondaryScreens.CommunityPresetsScreen
+import com.better.nothing.music.vizualizer.ui.SecondaryScreens.LeaderboardScreen
 import kotlinx.coroutines.launch
 
 @Composable
@@ -20,12 +22,12 @@ internal fun CommunityOverlays(
         val userId by viewModel.userId.collectAsStateWithLifecycle()
         val presets by viewModel.communityRepository.getPresets().collectAsStateWithLifecycle(initialValue = null)
         val scope = androidx.compose.runtime.rememberCoroutineScope()
-        
+
         CommunityPresetsScreen(
             presets = presets,
             currentUserId = userId,
             error = null,
-            onDownload = { preset -> 
+            onDownload = { preset ->
                 scope.launch {
                     try {
                         viewModel.communityRepository.incrementDownloadCount(preset.id)

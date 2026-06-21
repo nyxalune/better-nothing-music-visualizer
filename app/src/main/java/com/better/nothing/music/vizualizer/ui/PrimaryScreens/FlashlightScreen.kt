@@ -1,4 +1,4 @@
-package com.better.nothing.music.vizualizer.ui.screens
+package com.better.nothing.music.vizualizer.ui.PrimaryScreens
 
 import com.better.nothing.music.vizualizer.R
 import androidx.compose.animation.AnimatedVisibility

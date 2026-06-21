@@ -11,6 +11,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.better.nothing.music.vizualizer.ui.SecondaryScreens.AboutScreen
+import com.better.nothing.music.vizualizer.ui.SecondaryScreens.CustomPresetEditorScreen
+import com.better.nothing.music.vizualizer.ui.SecondaryScreens.LicenseScreen
 
 @Composable
 internal fun MainOverlays(

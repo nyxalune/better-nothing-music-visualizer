@@ -1,4 +1,4 @@
-package com.better.nothing.music.vizualizer.ui
+package com.better.nothing.music.vizualizer.ui.SecondaryScreens
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -57,6 +57,13 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.better.nothing.music.vizualizer.BuildConfig
 import com.better.nothing.music.vizualizer.R
+import com.better.nothing.music.vizualizer.ui.BodyText
+import com.better.nothing.music.vizualizer.ui.CardHeader
+import com.better.nothing.music.vizualizer.ui.ExpressiveCard
+import com.better.nothing.music.vizualizer.ui.MainViewModel
+import com.better.nothing.music.vizualizer.ui.ScreenTitle
+import com.better.nothing.music.vizualizer.ui.SectionHeader
+import java.util.concurrent.TimeUnit
 
 @Composable
 internal fun AboutScreen(
@@ -145,7 +152,7 @@ internal fun AboutScreen(
                         )
                     }
                 }
-                
+
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = stringResource(R.string.app_name),
@@ -203,7 +210,7 @@ internal fun AboutScreen(
                 icon = Icons.Default.Sync,
                 title = "Software Update",
                 subtitle = statusText,
-                onClick = { 
+                onClick = {
                     val status = appUpdateStatus
                     if (status is MainViewModel.AppUpdateStatus.Available) {
                         if (status.apkUrl != null) {
@@ -218,7 +225,10 @@ internal fun AboutScreen(
                 trailingContent = {
                     val status = appUpdateStatus
                     if (status is MainViewModel.AppUpdateStatus.Checking) {
-                        CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp),
+                            strokeWidth = 2.dp
+                        )
                     } else if (status is MainViewModel.AppUpdateStatus.Downloading) {
                         CircularProgressIndicator(
                             progress = { status.progress },
@@ -231,10 +241,19 @@ internal fun AboutScreen(
                             color = MaterialTheme.colorScheme.error,
                             contentColor = MaterialTheme.colorScheme.onError
                         ) {
-                            Text("UPDATE", modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                            Text(
+                                "UPDATE",
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold
+                            )
                         }
                     } else {
-                        Icon(Icons.Default.ChevronRight, null, tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f))
+                        Icon(
+                            Icons.Default.ChevronRight,
+                            null,
+                            tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
+                        )
                     }
                 }
             )
@@ -315,16 +334,32 @@ internal fun AboutScreen(
                     horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text(credit.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        Text(
+                            credit.name,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
                         if (credit.role.isNotBlank()) {
-                            Text(credit.role, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f))
+                            Text(
+                                credit.role,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                            )
                         }
                         if (credit.githubUsername != null) {
-                            Text("@${credit.githubUsername}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+                            Text(
+                                "@${credit.githubUsername}",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.primary
+                            )
                         }
                     }
                     if (credit.githubUsername != null) {
-                        Icon(Icons.Default.ChevronRight, null, tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f))
+                        Icon(
+                            Icons.Default.ChevronRight,
+                            null,
+                            tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f)
+                        )
                     }
                 }
             }
@@ -335,7 +370,7 @@ internal fun AboutScreen(
 
 @Composable
 private fun StatRow(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    icon: ImageVector,
     label: String,
     value: String
 ) {
@@ -365,8 +400,8 @@ private fun StatRow(
 }
 
 private fun formatTime(ms: Long): String {
-    val hours = java.util.concurrent.TimeUnit.MILLISECONDS.toHours(ms)
-    val minutes = java.util.concurrent.TimeUnit.MILLISECONDS.toMinutes(ms) % 60
+    val hours = TimeUnit.MILLISECONDS.toHours(ms)
+    val minutes = TimeUnit.MILLISECONDS.toMinutes(ms) % 60
     return if (hours > 0) "${hours}h ${minutes}m" else "${minutes}m"
 }
 
@@ -378,7 +413,7 @@ private data class CreditEntry(
 
 @Composable
 private fun InfoRow(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    icon: ImageVector,
     title: String,
     subtitle: String,
     onClick: (() -> Unit)? = null,

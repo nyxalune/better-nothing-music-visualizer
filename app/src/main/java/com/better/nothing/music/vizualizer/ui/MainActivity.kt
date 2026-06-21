@@ -39,14 +39,11 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
@@ -66,6 +63,11 @@ import kotlinx.coroutines.launch
 import rikka.shizuku.Shizuku
 import kotlin.math.absoluteValue
 import androidx.core.content.edit
+import com.better.nothing.music.vizualizer.ui.PrimaryScreens.AudioScreen
+import com.better.nothing.music.vizualizer.ui.PrimaryScreens.FlashlightScreen
+import com.better.nothing.music.vizualizer.ui.PrimaryScreens.GlyphsScreen
+import com.better.nothing.music.vizualizer.ui.PrimaryScreens.HapticsScreen
+import com.better.nothing.music.vizualizer.ui.PrimaryScreens.SettingsScreen
 
 class MainActivity : ComponentActivity() {
     private val viewModel: MainViewModel by viewModels()
@@ -719,7 +721,8 @@ internal fun BetterVizApp(
                                     onLatencyPresetsChanged = { viewModel.updateLatencyPresets(it) },
                                     autoDeviceEnabled = autoDeviceEnabled,
                                     onAutoDeviceToggle = { viewModel.setAutoDeviceMemorize(it) },
-                                    connectedDeviceName = MainActivity.serviceStatic?.getActiveAudioRouteKey() ?: "Unknown",
+                                    connectedDeviceName = MainActivity.serviceStatic?.getActiveAudioRouteKey()
+                                        ?: "Unknown",
                                     fftData = fftData,
                                     captureSource = captureSource,
                                     onCaptureSourceChanged = { viewModel.setCaptureSource(it) },
@@ -737,7 +740,11 @@ internal fun BetterVizApp(
 
                                 GlyphsScreen(
                                     gammaValue = gammaValue,
-                                    onGammaChanged = { viewModel.setGammaValue(it); viewModel.persistGamma(it) },
+                                    onGammaChanged = {
+                                        viewModel.setGammaValue(it); viewModel.persistGamma(
+                                        it
+                                    )
+                                    },
                                     maxBrightness = maxBrightness,
                                     onMaxBrightnessChanged = { viewModel.setMaxBrightness(it) },
                                     presets = presets,
@@ -762,12 +769,21 @@ internal fun BetterVizApp(
 
                                 HapticsScreen(
                                     hapticMotorEnabled = hapticMotorEnabled,
-                                    onHapticMotorEnabledChanged = { viewModel.setHapticMotorEnabled(it) },
+                                    onHapticMotorEnabledChanged = {
+                                        viewModel.setHapticMotorEnabled(
+                                            it
+                                        )
+                                    },
                                     hapticMode = hapticMode,
                                     onHapticModeChanged = { viewModel.setHapticMode(it) },
                                     hapticFreqMin = hapticFreqMin,
                                     hapticFreqMax = hapticFreqMax,
-                                    onHapticFreqRangeChanged = { min, max -> viewModel.setHapticFreqRange(min, max) },
+                                    onHapticFreqRangeChanged = { min, max ->
+                                        viewModel.setHapticFreqRange(
+                                            min,
+                                            max
+                                        )
+                                    },
                                     hapticMultiplier = hapticMultiplier,
                                     onHapticMultiplierChanged = { viewModel.setHapticMultiplier(it) },
                                     hapticAudioGain = hapticAudioGain,
@@ -775,7 +791,11 @@ internal fun BetterVizApp(
                                     hapticGamma = hapticGamma,
                                     onHapticGammaChanged = { viewModel.setHapticGamma(it) },
                                     hapticBeatSensitivity = hapticBeatSensitivity,
-                                    onHapticBeatSensitivityChanged = { viewModel.setHapticBeatSensitivity(it) },
+                                    onHapticBeatSensitivityChanged = {
+                                        viewModel.setHapticBeatSensitivity(
+                                            it
+                                        )
+                                    },
                                     hapticBeatGamma = hapticBeatGamma,
                                     onHapticBeatGammaChanged = { viewModel.setHapticBeatGamma(it) },
                                     hapticAmplitudeProvider = { viewModel.hapticAmplitude.value },
@@ -800,13 +820,26 @@ internal fun BetterVizApp(
                                     onFlashlightModeChanged = { viewModel.setFlashlightMode(it) },
                                     flashlightFreqMin = flashlightFreqMin,
                                     flashlightFreqMax = flashlightFreqMax,
-                                    onFlashlightFreqRangeChanged = { min, max -> viewModel.setFlashlightFreqRange(min, max) },
+                                    onFlashlightFreqRangeChanged = { min, max ->
+                                        viewModel.setFlashlightFreqRange(
+                                            min,
+                                            max
+                                        )
+                                    },
                                     flashlightThreshold = flashlightThreshold,
-                                    onFlashlightThresholdChanged = { viewModel.setFlashlightThreshold(it) },
+                                    onFlashlightThresholdChanged = {
+                                        viewModel.setFlashlightThreshold(
+                                            it
+                                        )
+                                    },
                                     flashlightSpeedMs = flashlightSpeedMs,
                                     onFlashlightSpeedMsChanged = { viewModel.setFlashlightSpeedMs(it) },
                                     flashlightBeatSensitivity = flashlightBeatSensitivity,
-                                    onFlashlightBeatSensitivityChanged = { viewModel.setFlashlightBeatSensitivity(it) },
+                                    onFlashlightBeatSensitivityChanged = {
+                                        viewModel.setFlashlightBeatSensitivity(
+                                            it
+                                        )
+                                    },
                                     flashlightIntensityLevels = flashlightIntensityLevels,
                                     flashlightAmplitudeProvider = { viewModel.flashlightAmplitude.value },
                                     isBeatDetectedProvider = { isFlashlightBeatDetected }
@@ -823,15 +856,27 @@ internal fun BetterVizApp(
                                 SettingsScreen(
                                     viewModel = viewModel,
                                     idleBreathingEnabled = idleBreathingEnabled,
-                                    onIdleBreathingEnabledChanged = { viewModel.setIdleBreathingEnabled(it) },
+                                    onIdleBreathingEnabledChanged = {
+                                        viewModel.setIdleBreathingEnabled(
+                                            it
+                                        )
+                                    },
                                     idlePattern = idlePattern,
                                     onIdlePatternChanged = { viewModel.setIdlePattern(it) },
                                     notificationFlashEnabled = notificationFlashEnabled,
-                                    onNotificationFlashEnabledChanged = { viewModel.setNotificationFlashEnabled(it) },
+                                    onNotificationFlashEnabledChanged = {
+                                        viewModel.setNotificationFlashEnabled(
+                                            it
+                                        )
+                                    },
                                     strobeEnabled = strobeEnabled,
                                     onStrobeEnabledChanged = { viewModel.setStrobeEnabled(it) },
                                     disableGlyphsWhenSilent = disableGlyphsWhenSilent,
-                                    onDisableGlyphsWhenSilentChanged = { viewModel.setDisableGlyphsWhenSilent(it) },
+                                    onDisableGlyphsWhenSilentChanged = {
+                                        viewModel.setDisableGlyphsWhenSilent(
+                                            it
+                                        )
+                                    },
                                     overlayEnabled = overlayEnabled,
                                     onOverlayEnabledChanged = { enabled ->
                                         if (enabled && !Settings.canDrawOverlays(context)) {

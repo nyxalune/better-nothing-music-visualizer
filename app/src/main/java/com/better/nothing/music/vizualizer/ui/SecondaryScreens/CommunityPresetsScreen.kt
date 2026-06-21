@@ -1,4 +1,4 @@
-package com.better.nothing.music.vizualizer.ui
+package com.better.nothing.music.vizualizer.ui.SecondaryScreens
 
 import com.better.nothing.music.vizualizer.R
 import com.better.nothing.music.vizualizer.model.CommunityPreset

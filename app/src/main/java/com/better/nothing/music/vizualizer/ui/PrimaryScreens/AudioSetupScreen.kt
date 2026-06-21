@@ -1,4 +1,4 @@
-package com.better.nothing.music.vizualizer.ui.screens
+package com.better.nothing.music.vizualizer.ui.PrimaryScreens
 
 import android.Manifest
 import android.content.pm.PackageManager
@@ -35,17 +35,21 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.GraphicEq
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.PhoneAndroid
 import androidx.compose.material.icons.filled.Terminal
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -99,8 +103,6 @@ fun AudioScreen(
     captureSource: AudioCaptureService.CaptureSource = AudioCaptureService.CaptureSource.INTERNAL,
     onCaptureSourceChanged: (AudioCaptureService.CaptureSource) -> Unit = {},
     shizukuUnlocked: Boolean = false,
-    dynamicGainEnabled: Boolean = false,
-    onDynamicGainToggle: (Boolean) -> Unit = {}
 ) {
     val context = LocalContext.current
     val scrollState = rememberScrollState()
@@ -738,4 +740,26 @@ fun RowScope.FineTuneButton(
             )
         }
     }
+}
+
+@Composable
+fun MediaProjectionInfoDialog(onConfirm: () -> Unit, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Audio Capture") },
+        text = { Text("To capture internal audio, this app uses MediaProjection. You will see a system prompt asking for permission.") },
+        confirmButton = {
+            Button(onClick = onConfirm) {
+                Text("GOT IT")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("CANCEL")
+            }
+        },
+        shape = RoundedCornerShape(28.dp),
+        containerColor = MaterialTheme.colorScheme.surface,
+        textContentColor = MaterialTheme.colorScheme.onSurface
+    )
 }

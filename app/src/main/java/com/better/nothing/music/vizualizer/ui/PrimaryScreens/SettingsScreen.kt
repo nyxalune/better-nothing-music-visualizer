@@ -1,4 +1,4 @@
-package com.better.nothing.music.vizualizer.ui.screens
+package com.better.nothing.music.vizualizer.ui.PrimaryScreens
 
 import android.content.Intent
 import com.better.nothing.music.vizualizer.R

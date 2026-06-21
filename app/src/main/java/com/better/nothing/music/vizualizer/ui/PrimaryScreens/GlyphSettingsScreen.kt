@@ -1,4 +1,4 @@
-package com.better.nothing.music.vizualizer.ui
+package com.better.nothing.music.vizualizer.ui.PrimaryScreens
 
 import android.annotation.SuppressLint
 import android.widget.Toast
@@ -69,7 +69,7 @@ internal fun GlyphsScreen(
     onPresetSelected: (String) -> Unit,
     isRunning: Boolean,
     selectedDevice: Int,
-    viewModel: MainViewModel,
+    viewModel: com.better.nothing.music.vizualizer.ui.MainViewModel,
 ) {
     val mainScrollState = rememberScrollState()
 
@@ -106,7 +106,11 @@ internal fun GlyphsScreen(
             .verticalScroll(mainScrollState),
         verticalArrangement = Arrangement.spacedBy(20.dp),
     ) {
-        ScreenTitle(text = stringResource(R.string.glyph_controls))
+        _root_ide_package_.com.better.nothing.music.vizualizer.ui.ScreenTitle(
+            text = stringResource(
+                R.string.glyph_controls
+            )
+        )
 
         // Header with external toggle for glyph visualization
         val hapticsLocal = androidx.compose.ui.platform.LocalHapticFeedback.current
@@ -117,7 +121,7 @@ internal fun GlyphsScreen(
         }
 
         val glyphEnabled = maxBrightness > 0
-        AnimatedToggleCard(
+        _root_ide_package_.com.better.nothing.music.vizualizer.ui.AnimatedToggleCard(
             title = "Glyph visualisation",
             checked = glyphEnabled,
             onCheckedChange = { switchEnabled ->
@@ -157,27 +161,31 @@ internal fun GlyphsScreen(
                     onMaxBrightnessChanged = onMaxBrightnessChanged
                 )
 
-                ExpressiveCard(
+                _root_ide_package_.com.better.nothing.music.vizualizer.ui.ExpressiveCard(
                     modifier = Modifier.fillMaxWidth(),
                 ) {
-                    CardHeader(title = stringResource(R.string.gamma_control))
-                    
+                    _root_ide_package_.com.better.nothing.music.vizualizer.ui.CardHeader(
+                        title = stringResource(
+                            R.string.gamma_control
+                        )
+                    )
+
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(14.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         GammaPreviewCard(gammaValue = gammaValue)
-                        BodyText(
+                        _root_ide_package_.com.better.nothing.music.vizualizer.ui.BodyText(
                             text = stringResource(R.string.gamma_description),
                             modifier = Modifier.weight(1f),
                             size = 14.sp,
                             lineHeight = 22.sp,
                         )
                     }
-                    
+
                     Spacer(modifier = Modifier.height(16.dp))
-                    
+
                     GammaCard(gammaValue = gammaValue, onGammaChanged = onGammaChanged)
                 }
 
@@ -220,7 +228,7 @@ internal fun GlyphsScreen(
                     sortedPresets.forEach { preset ->
                         key(preset.key) {
                             val isFavorite = favorites.contains(preset.key)
-                            NativeFilterChip(
+                            _root_ide_package_.com.better.nothing.music.vizualizer.ui.NativeFilterChip(
                                 label = preset.key,
                                 selected = preset.key == selectedPreset,
                                 onClick = { onPresetSelected(preset.key) },
@@ -239,14 +247,14 @@ internal fun GlyphsScreen(
                         }
                     }
 
-                    NativeFilterChip(
+                    _root_ide_package_.com.better.nothing.music.vizualizer.ui.NativeFilterChip(
                         label = "+ Create New",
                         selected = false,
                         onClick = { viewModel.showEditor() },
                     )
                 }
 
-                ExpressiveCard(
+                _root_ide_package_.com.better.nothing.music.vizualizer.ui.ExpressiveCard(
                     containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.6f),
                     modifier = Modifier
                         .fillMaxWidth()
@@ -300,7 +308,7 @@ internal fun GlyphsScreen(
                         com.better.nothing.music.vizualizer.model.DeviceProfile.DEVICE_NP4APRO -> 560.dp
                         else -> 400.dp
                     }
-                    GlyphPreview(
+                    _root_ide_package_.com.better.nothing.music.vizualizer.ui.GlyphPreview(
                         vizStateProvider = { vizStateState.value },
                         device = selectedDevice,
                         modifier = Modifier
@@ -322,11 +330,11 @@ internal fun GlyphsScreen(
 
                 LaunchedEffect(configStatus) {
                     when (val status = configStatus) {
-                        is MainViewModel.ConfigUpdateStatus.Success -> {
+                        is com.better.nothing.music.vizualizer.ui.MainViewModel.ConfigUpdateStatus.Success -> {
                             Toast.makeText(context, status.message, Toast.LENGTH_SHORT).show()
                             viewModel.resetConfigUpdateStatus()
                         }
-                        is MainViewModel.ConfigUpdateStatus.Error -> {
+                        is com.better.nothing.music.vizualizer.ui.MainViewModel.ConfigUpdateStatus.Error -> {
                             Toast.makeText(context, status.message, Toast.LENGTH_LONG).show()
                             viewModel.resetConfigUpdateStatus()
                         }
@@ -334,10 +342,10 @@ internal fun GlyphsScreen(
                     }
                 }
 
-                ExpressiveCard {
-                    CardHeader(title = "Visualizer Configuration")
+                _root_ide_package_.com.better.nothing.music.vizualizer.ui.ExpressiveCard {
+                    _root_ide_package_.com.better.nothing.music.vizualizer.ui.CardHeader(title = "Visualizer Configuration")
 
-                    BodyText(
+                    _root_ide_package_.com.better.nothing.music.vizualizer.ui.BodyText(
                         text = "The zones.config file defines how frequencies map to Glyph LEDs. Updating from GitHub ensures support for new devices and presets.",
                         size = 13.sp
                     )
@@ -378,7 +386,10 @@ internal fun GlyphsScreen(
                                 ) {
                                     Text(
                                         text = "UPDATE AVAILABLE",
-                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                        modifier = Modifier.padding(
+                                            horizontal = 8.dp,
+                                            vertical = 4.dp
+                                        ),
                                         style = MaterialTheme.typography.labelSmall,
                                         color = MaterialTheme.colorScheme.error,
                                         fontWeight = FontWeight.ExtraBold
@@ -396,16 +407,17 @@ internal fun GlyphsScreen(
                         uri?.let { viewModel.importZonesConfig(uri) }
                     }
 
-                    val isUpdateAvailable = remoteVersion != null && remoteVersion != "Unknown" && remoteVersion != configVersion
+                    val isUpdateAvailable =
+                        remoteVersion != null && remoteVersion != "Unknown" && remoteVersion != configVersion
 
-                    ExpressiveSplitButton(
+                    _root_ide_package_.com.better.nothing.music.vizualizer.ui.ExpressiveSplitButton(
                         primaryText = if (isUpdateAvailable) "Update Now" else "Check GitHub",
-                        primaryIcon = if (configStatus is MainViewModel.ConfigUpdateStatus.Updating) Icons.Default.Sync else Icons.Default.CloudDownload,
+                        primaryIcon = if (configStatus is com.better.nothing.music.vizualizer.ui.MainViewModel.ConfigUpdateStatus.Updating) Icons.Default.Sync else Icons.Default.CloudDownload,
                         onPrimaryClick = { viewModel.updateZonesConfig() },
                         secondaryText = "Local",
                         secondaryIcon = Icons.Default.FolderOpen,
                         onSecondaryClick = { filePickerLauncher.launch("*/*") },
-                        enabled = configStatus is MainViewModel.ConfigUpdateStatus.Idle,
+                        enabled = configStatus is com.better.nothing.music.vizualizer.ui.MainViewModel.ConfigUpdateStatus.Idle,
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
@@ -445,18 +457,20 @@ fun BrightnessCard(
 
     val posValue = remember(maxBrightness, lastNonZero) { linearToPos(if (maxBrightness > 0) maxBrightness else lastNonZero) }
 
-    ExpressiveCard(
+    _root_ide_package_.com.better.nothing.music.vizualizer.ui.ExpressiveCard(
         modifier = Modifier.fillMaxWidth(),
     ) {
-        CardHeader(title = "Brightness:", trailingContent = {
-            Text(
-                text = "${if (maxBrightness > 0) maxBrightness else lastNonZero}/${MAX_BRIGHTNESS}" + (if (maxBrightness == 4095) " (default)" else ""),
-                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
-                style = MaterialTheme.typography.bodyMedium,
-            )
-        })
+        _root_ide_package_.com.better.nothing.music.vizualizer.ui.CardHeader(
+            title = "Brightness:",
+            trailingContent = {
+                Text(
+                    text = "${if (maxBrightness > 0) maxBrightness else lastNonZero}/${MAX_BRIGHTNESS}" + (if (maxBrightness == 4095) " (default)" else ""),
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+            })
 
-        ExpressiveSlider(
+        _root_ide_package_.com.better.nothing.music.vizualizer.ui.ExpressiveSlider(
             value = posValue,
             onValueChange = { newPos ->
                 val newLinearValue = posToLinear(newPos)
@@ -475,18 +489,21 @@ fun GammaCard(
     gammaValue: Float,
     onGammaChanged: (Float) -> Unit,
 ) {
-    ExpressiveCard(
+    _root_ide_package_.com.better.nothing.music.vizualizer.ui.ExpressiveCard(
         modifier = Modifier.fillMaxWidth(),
     ) {
-        CardHeader(title = stringResource(R.string.light_gamma), trailingContent = {
-            Text(
-                text = String.format("%.1f", gammaValue),
-                color = MaterialTheme.colorScheme.primary,
-                style = MaterialTheme.typography.titleMedium
-            )
-        })
+        _root_ide_package_.com.better.nothing.music.vizualizer.ui.CardHeader(
+            title = stringResource(
+                R.string.light_gamma
+            ), trailingContent = {
+                Text(
+                    text = String.format("%.1f", gammaValue),
+                    color = MaterialTheme.colorScheme.primary,
+                    style = MaterialTheme.typography.titleMedium
+                )
+            })
 
-        ExpressiveSlider(
+        _root_ide_package_.com.better.nothing.music.vizualizer.ui.ExpressiveSlider(
             value = gammaValue,
             onValueChange = onGammaChanged,
             valueRange = 0.4f..3.5f,

@@ -1,4 +1,4 @@
-package com.better.nothing.music.vizualizer.ui
+package com.better.nothing.music.vizualizer.ui.SecondaryScreens
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -13,6 +13,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.better.nothing.music.vizualizer.R
+import com.better.nothing.music.vizualizer.ui.BodyText
+import com.better.nothing.music.vizualizer.ui.ExpressiveCard
+import com.better.nothing.music.vizualizer.ui.ScreenTitle
 
 @Composable
 internal fun LicenseScreen(
@@ -33,7 +36,7 @@ internal fun LicenseScreen(
                 contentDescription = stringResource(R.string.back)
             )
         }
-        
+
         ScreenTitle(text = stringResource(R.string.license_title).uppercase())
 
         ExpressiveCard {
