@@ -548,7 +548,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         return flat?.contains(ctx.packageName) == true
     }
 
-    var lastStatsSyncMs = 0L
 
     val _devPassword = MutableStateFlow<String?>(null)
 

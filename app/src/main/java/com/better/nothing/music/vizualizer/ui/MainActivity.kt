@@ -486,25 +486,28 @@ internal fun BetterVizApp(
                     userScrollEnabled = true
                 ) { page ->
                     val tab = Tab.entries[page]
-                    val pageOffset =
-                        ((pagerState.currentPage - page) + pagerState.currentPageOffsetFraction).absoluteValue
-
+                    val pageOffset = (pagerState.currentPage - page) + pagerState.currentPageOffsetFraction
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
                             .graphicsLayer {
-                                val fraction = 1f - pageOffset.coerceIn(0f, 1f)
+                                // 1. Get the absolute offset so scrolling left or right yields the same fraction amount
+                                val absOffset = pageOffset.coerceIn(-1f, 1f).let { kotlin.math.abs(it) }
+
+                                // 2. Calculate the fraction using the absolute offset (0f to 1f)
+                                val fraction = 1f - absOffset
+
                                 val scale = 0.8f + (1f - 0.8f) * fraction
                                 scaleX = scale
                                 scaleY = scale
                                 alpha = fraction * fraction
 
-                                // Calculate rotation: 0 deg when fully visible, 20 deg when hidden
+                                // 3. Calculate rotation: 0 deg when fully visible, 20 deg when hidden
                                 val maxRotation = 10f
                                 val rotationAmount = maxRotation * (1f - fraction)
 
-                                // Use the sign of pageOffset to determine +20 or -20
-                                rotationZ = if (pageOffset > 0) rotationAmount else -rotationAmount
+                                // 4. Use the original pageOffset sign to choose +20 or -20
+                                rotationZ = if (pageOffset > 0) -rotationAmount else rotationAmount
                             }
                     ) {
                         when (tab) {
