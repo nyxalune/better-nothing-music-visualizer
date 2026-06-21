@@ -821,11 +821,14 @@ internal fun SettingsScreen(
                                         verticalArrangement = Arrangement.spacedBy(8.dp)
                                     ) {
                                         devices.forEach { dev ->
-                                            NativeFilterChip(
-                                                label = DeviceProfile.deviceName(dev)
-                                                    .replace("Nothing Phone ", ""),
-                                                selected = spoofedDevice == dev,
-                                                onClick = { viewModel.setSpoofedDevice(dev) }
+                                            ExpressiveSegmentedButtonRow(
+                                                items = devices,
+                                                selectedItem = spoofedDevice,
+                                                onItemSelection = { dev -> viewModel.setSpoofedDevice(dev) },
+                                                labelProvider = { dev ->
+                                                    DeviceProfile.deviceName(dev).replace("Nothing Phone ", "")
+                                                },
+                                                modifier = Modifier.fillMaxWidth()
                                             )
                                         }
                                     }
