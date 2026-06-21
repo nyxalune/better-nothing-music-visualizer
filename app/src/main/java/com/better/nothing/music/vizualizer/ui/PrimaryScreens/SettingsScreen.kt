@@ -882,7 +882,7 @@ internal fun SettingsScreen(
                                 "hi" to "HI",
                                 "cy" to "CY"
                             )
-                            
+
                             ExpressiveSegmentedButtonRow(
                                 items = locales.map { it.first },
                                 selectedItem = currentSpoofLocale,

@@ -189,7 +189,7 @@ internal fun GlyphsScreen(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    GammaCard(gammaValue = gammaValue, onGammaChanged = onGammaChanged)
+                    GammaSlider(gammaValue = gammaValue, onGammaChanged = onGammaChanged)
                 }
 
                 ExpressiveCard(
@@ -233,21 +233,13 @@ internal fun GlyphsScreen(
                             modifier = Modifier.fillMaxWidth(),
                         )
 
-                        ExpressiveCard(
-                            containerColor = MaterialTheme.colorScheme.surface,
+
+                        Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .animateContentSize(
-                                    animationSpec = spring(
-                                        dampingRatio = Spring.DampingRatioMediumBouncy,
-                                        stiffness = Spring.StiffnessLow
-                                    )
-                                ),
-                        ) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
+                                .padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ){
                                 Crossfade(
                                     targetState = selectedInfo?.description,
                                     label = "desc_fade",
@@ -275,8 +267,6 @@ internal fun GlyphsScreen(
                                     }
                                 }
                             }
-                        }
-
                         ExpressiveSplitButton(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -478,13 +468,10 @@ fun BrightnessCard(
 
 @SuppressLint("DefaultLocale")
 @Composable
-fun GammaCard(
+fun GammaSlider(
     gammaValue: Float,
     onGammaChanged: (Float) -> Unit,
 ) {
-    ExpressiveCard(
-        modifier = Modifier.fillMaxWidth(),
-    ) {
         _root_ide_package_.com.better.nothing.music.vizualizer.ui.CardHeader(
             title = stringResource(
                 R.string.light_gamma
@@ -502,7 +489,6 @@ fun GammaCard(
             valueRange = 0.4f..3.5f,
             modifier = Modifier.fillMaxWidth(),
         )
-    }
 }
 
 @Composable
