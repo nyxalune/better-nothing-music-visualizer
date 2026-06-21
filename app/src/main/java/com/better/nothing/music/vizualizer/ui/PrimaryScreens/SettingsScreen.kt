@@ -882,20 +882,17 @@ internal fun SettingsScreen(
                                 "hi" to "HI",
                                 "cy" to "CY"
                             )
-
-                            FlowRow(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                ExpressiveSegmentedButtonRow(
-                                    items = locales.keys.toList(),
-                                    selectedItem = currentSpoofLocale,
-                                    onItemSelection = { tag -> viewModel.setSpoofLocale(tag) },
-                                    labelProvider = { tag -> locales[tag].orEmpty() },
-                                    modifier = Modifier.fillMaxWidth()
-                                )
-                            }
+                            
+                            ExpressiveSegmentedButtonRow(
+                                items = locales.map { it.first },
+                                selectedItem = currentSpoofLocale,
+                                onItemSelection = { tag -> viewModel.setSpoofLocale(tag) },
+                                labelProvider = { tag ->
+                                    // Find the matching visual label from our list of pairs
+                                    locales.firstOrNull { it.first == tag }?.second.orEmpty()
+                                },
+                                modifier = Modifier.fillMaxWidth()
+                            )
                             BodyText(
                                 text = stringResource(R.string.spoof_locale_description),
                                 size = 11.sp

@@ -59,10 +59,6 @@ import com.better.nothing.music.vizualizer.ui.ExpressiveSegmentedButtonRow
 import com.better.nothing.music.vizualizer.ui.ExpressiveSplitButton
 import kotlin.math.pow
 
-sealed interface SecondaryAction {
-    object CreateNew : SecondaryAction
-    object ExploreCommunity : SecondaryAction
-}
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -168,7 +164,7 @@ internal fun GlyphsScreen(
                     onMaxBrightnessChanged = onMaxBrightnessChanged
                 )
 
-                _root_ide_package_.com.better.nothing.music.vizualizer.ui.ExpressiveCard(
+                ExpressiveCard(
                     modifier = Modifier.fillMaxWidth(),
                 ) {
                     _root_ide_package_.com.better.nothing.music.vizualizer.ui.CardHeader(
@@ -237,6 +233,50 @@ internal fun GlyphsScreen(
                             modifier = Modifier.fillMaxWidth(),
                         )
 
+                        ExpressiveCard(
+                            containerColor = MaterialTheme.colorScheme.surface,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .animateContentSize(
+                                    animationSpec = spring(
+                                        dampingRatio = Spring.DampingRatioMediumBouncy,
+                                        stiffness = Spring.StiffnessLow
+                                    )
+                                ),
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Crossfade(
+                                    targetState = selectedInfo?.description,
+                                    label = "desc_fade",
+                                    animationSpec = spring(stiffness = Spring.StiffnessMedium),
+                                    modifier = Modifier.weight(1f)
+                                ) { description ->
+                                    Text(
+                                        text = description ?: stringResource(R.string.glyph_no_config),
+                                        style = MaterialTheme.typography.bodyLarge.copy(lineHeight = 22.sp),
+                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.9f),
+                                        modifier = Modifier.fillMaxWidth(),
+                                    )
+                                }
+
+                                if (selectedInfo?.description?.startsWith("Custom:") == true) {
+                                    IconButton(
+                                        onClick = { showDeleteConfirm = selectedInfo.key },
+                                        modifier = Modifier.padding(start = 8.dp)
+                                    ) {
+                                        Icon(
+                                            Icons.Default.Delete,
+                                            contentDescription = "Delete Local Preset",
+                                            tint = MaterialTheme.colorScheme.error.copy(alpha = 0.7f)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
                         ExpressiveSplitButton(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -248,50 +288,6 @@ internal fun GlyphsScreen(
                             secondaryIcon = Icons.Default.Add,
                             onSecondaryClick = { viewModel.showEditor() }
                         )
-                    }
-                }
-
-                ExpressiveCard(
-                    containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.6f),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .animateContentSize(
-                            animationSpec = spring(
-                                dampingRatio = Spring.DampingRatioMediumBouncy,
-                                stiffness = Spring.StiffnessLow
-                            )
-                        ),
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Crossfade(
-                            targetState = selectedInfo?.description,
-                            label = "desc_fade",
-                            animationSpec = spring(stiffness = Spring.StiffnessMedium),
-                            modifier = Modifier.weight(1f)
-                        ) { description ->
-                            Text(
-                                text = description ?: stringResource(R.string.glyph_no_config),
-                                style = MaterialTheme.typography.bodyLarge.copy(lineHeight = 22.sp),
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.9f),
-                                modifier = Modifier.fillMaxWidth(),
-                            )
-                        }
-
-                        if (selectedInfo?.description?.startsWith("Custom:") == true) {
-                            IconButton(
-                                onClick = { showDeleteConfirm = selectedInfo.key },
-                                modifier = Modifier.padding(start = 8.dp)
-                            ) {
-                                Icon(
-                                    Icons.Default.Delete,
-                                    contentDescription = "Delete Local Preset",
-                                    tint = MaterialTheme.colorScheme.error.copy(alpha = 0.7f)
-                                )
-                            }
-                        }
                     }
                 }
 
@@ -339,7 +335,7 @@ internal fun GlyphsScreen(
                     }
                 }
 
-                _root_ide_package_.com.better.nothing.music.vizualizer.ui.ExpressiveCard {
+                ExpressiveCard {
                     _root_ide_package_.com.better.nothing.music.vizualizer.ui.CardHeader(title = "Visualizer Configuration")
 
                     _root_ide_package_.com.better.nothing.music.vizualizer.ui.BodyText(
@@ -407,7 +403,7 @@ internal fun GlyphsScreen(
                     val isUpdateAvailable =
                         remoteVersion != null && remoteVersion != "Unknown" && remoteVersion != configVersion
 
-                    _root_ide_package_.com.better.nothing.music.vizualizer.ui.ExpressiveSplitButton(
+                    ExpressiveSplitButton(
                         primaryText = if (isUpdateAvailable) "Update Now" else "Check GitHub",
                         primaryIcon = if (configStatus is com.better.nothing.music.vizualizer.ui.MainViewModel.ConfigUpdateStatus.Updating) Icons.Default.Sync else Icons.Default.CloudDownload,
                         onPrimaryClick = { viewModel.updateZonesConfig() },
@@ -454,7 +450,7 @@ fun BrightnessCard(
 
     val posValue = remember(maxBrightness, lastNonZero) { linearToPos(if (maxBrightness > 0) maxBrightness else lastNonZero) }
 
-    _root_ide_package_.com.better.nothing.music.vizualizer.ui.ExpressiveCard(
+    ExpressiveCard(
         modifier = Modifier.fillMaxWidth(),
     ) {
         _root_ide_package_.com.better.nothing.music.vizualizer.ui.CardHeader(
@@ -486,7 +482,7 @@ fun GammaCard(
     gammaValue: Float,
     onGammaChanged: (Float) -> Unit,
 ) {
-    _root_ide_package_.com.better.nothing.music.vizualizer.ui.ExpressiveCard(
+    ExpressiveCard(
         modifier = Modifier.fillMaxWidth(),
     ) {
         _root_ide_package_.com.better.nothing.music.vizualizer.ui.CardHeader(
