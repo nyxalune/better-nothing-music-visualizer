@@ -307,107 +307,107 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun onLatencyChanged(value: Int) {
+    fun onLatencyChanged(value: Int) {
         viewModel.setLatencyMs(value)
     }
 
-    private fun onAutoDeviceToggle(enabled: Boolean) {
+    fun onAutoDeviceToggle(enabled: Boolean) {
         if (enabled && checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
             // request BT permission...
         }
         viewModel.setAutoDeviceMemorize(enabled)
     }
 
-    private fun onGammaChanged(value: Float) {
+    fun onGammaChanged(value: Float) {
         viewModel.setGammaValue(value)
         viewModel.persistGamma(value)
     }
 
-    private fun onSpectrumGainChanged(value: Float) {
+    fun onSpectrumGainChanged(value: Float) {
         viewModel.setSpectrumGain(value)
     }
 
-    private fun onMaxBrightnessChanged(value: Int) {
+    fun onMaxBrightnessChanged(value: Int) {
         viewModel.setMaxBrightness(value)
     }
 
-    private fun onHapticMotorEnabledChanged(enabled: Boolean) {
+    fun onHapticMotorEnabledChanged(enabled: Boolean) {
         viewModel.setHapticMotorEnabled(enabled)
     }
 
-    private fun onHapticModeChanged(mode: HapticMode) {
+    fun onHapticModeChanged(mode: HapticMode) {
         viewModel.setHapticMode(mode)
     }
 
-    private fun onHapticFreqRangeChanged(min: Float, max: Float) {
+    fun onHapticFreqRangeChanged(min: Float, max: Float) {
         viewModel.setHapticFreqRange(min, max)
     }
 
-    private fun onHapticMultiplierChanged(value: Float) {
+    fun onHapticMultiplierChanged(value: Float) {
         viewModel.setHapticMultiplier(value)
     }
 
-    private fun onHapticAudioGainChanged(value: Float) {
+    fun onHapticAudioGainChanged(value: Float) {
         viewModel.setHapticAudioGain(value)
     }
 
-    private fun onHapticGammaChanged(value: Float) {
+    fun onHapticGammaChanged(value: Float) {
         viewModel.setHapticGamma(value)
     }
 
-    private fun onHapticBeatSensitivityChanged(value: Float) {
+    fun onHapticBeatSensitivityChanged(value: Float) {
         viewModel.setHapticBeatSensitivity(value)
     }
 
-    private fun onHapticBeatGammaChanged(value: Float) {
+    fun onHapticBeatGammaChanged(value: Float) {
         viewModel.setHapticBeatGamma(value)
     }
 
-    private fun onFlashlightEnabledChanged(enabled: Boolean) {
+    fun onFlashlightEnabledChanged(enabled: Boolean) {
         viewModel.setFlashlightEnabled(enabled)
     }
 
-    private fun onFlashlightModeChanged(mode: TorchMode) {
+    fun onFlashlightModeChanged(mode: TorchMode) {
         viewModel.setFlashlightMode(mode)
     }
 
-    private fun onFlashlightFreqRangeChanged(min: Float, max: Float) {
+    fun onFlashlightFreqRangeChanged(min: Float, max: Float) {
         viewModel.setFlashlightFreqRange(min, max)
     }
 
-    private fun onFlashlightThresholdChanged(value: Float) {
+    fun onFlashlightThresholdChanged(value: Float) {
         viewModel.setFlashlightThreshold(value)
     }
 
-    private fun onFlashlightSpeedMsChanged(value: Float) {
+    fun onFlashlightSpeedMsChanged(value: Float) {
         viewModel.setFlashlightSpeedMs(value)
     }
 
-    private fun onFlashlightBeatSensitivityChanged(value: Float) {
+    fun onFlashlightBeatSensitivityChanged(value: Float) {
         viewModel.setFlashlightBeatSensitivity(value)
     }
 
-    private fun onIdleBreathingEnabledChanged(enabled: Boolean) {
+    fun onIdleBreathingEnabledChanged(enabled: Boolean) {
         viewModel.setIdleBreathingEnabled(enabled)
     }
 
-    private fun onIdlePatternChanged(pattern: String) {
+    fun onIdlePatternChanged(pattern: String) {
         viewModel.setIdlePattern(pattern)
     }
 
-    private fun onNotificationFlashEnabledChanged(enabled: Boolean) {
+    fun onNotificationFlashEnabledChanged(enabled: Boolean) {
         viewModel.setNotificationFlashEnabled(enabled)
     }
 
-    private fun onStrobeEnabledChanged(enabled: Boolean) {
+    fun onStrobeEnabledChanged(enabled: Boolean) {
         viewModel.setStrobeEnabled(enabled)
     }
 
-    private fun onDisableGlyphsWhenSilentChanged(enabled: Boolean) {
+    fun onDisableGlyphsWhenSilentChanged(enabled: Boolean) {
         viewModel.setDisableGlyphsWhenSilent(enabled)
     }
 
-    private fun onOverlayEnabledChanged(enabled: Boolean) {
+    fun onOverlayEnabledChanged(enabled: Boolean) {
         if (enabled && !Settings.canDrawOverlays(this)) {
             val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName"))
             overlayPermissionLauncher.launch(intent)
@@ -429,7 +429,7 @@ class MainActivity : ComponentActivity() {
         return false
     }
 
-    private fun onPresetSelected(preset: String) {
+  fun onPresetSelected(preset: String) {
         viewModel.setSelectedPreset(preset)
     }
 
