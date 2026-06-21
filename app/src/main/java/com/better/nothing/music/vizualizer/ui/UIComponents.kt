@@ -71,9 +71,6 @@ import androidx.compose.material3.NavigationBarDefaults
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.RangeSlider
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Surface
@@ -108,13 +105,21 @@ import androidx.compose.ui.unit.sp
 import androidx.graphics.shapes.CornerRounding
 import androidx.graphics.shapes.Morph
 import androidx.graphics.shapes.RoundedPolygon
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.graphics.Shape
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import androidx.graphics.shapes.star
 import androidx.graphics.shapes.toPath
 import com.better.nothing.music.vizualizer.R
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlin.math.exp
 import kotlin.math.ln
+import kotlin.time.Duration.Companion.milliseconds
 import android.graphics.Path as AndroidPath
 
 // Linear position (0..1) to Logarithmic Frequency (20..2000)
@@ -219,14 +224,14 @@ fun MorphingPolygon(
 
 @Composable
 fun ExpressiveSplitButton(
+    modifier: Modifier = Modifier,
     primaryText: String,
-    primaryIcon: androidx.compose.ui.graphics.vector.ImageVector,
+    primaryIcon: ImageVector,
     onPrimaryClick: () -> Unit,
     secondaryText: String,
-    secondaryIcon: androidx.compose.ui.graphics.vector.ImageVector,
+    secondaryIcon: ImageVector,
     onSecondaryClick: () -> Unit,
-    enabled: Boolean = true,
-    modifier: Modifier = Modifier
+    enabled: Boolean = true
 ) {
     val haptics = LocalHapticFeedback.current
     Row(
@@ -323,7 +328,7 @@ fun FlowRowScope.OptionTile(
 
                     // If the finger was released before 120ms, hold it open
                     if (remainingFloorDelay > 0) {
-                        delay(remainingFloorDelay)
+                        delay(remainingFloorDelay.milliseconds)
                     }
                     isWeightExpanded = false
                 }
@@ -467,7 +472,7 @@ fun ExpressiveCard(
 }
 
 @Composable
-fun ColumnScope.CardHeader(
+fun CardHeader(
     title: String,
     modifier: Modifier = Modifier,
     trailingContent: @Composable (RowScope.() -> Unit)? = null
@@ -754,39 +759,149 @@ fun <T> ExpressiveSegmentedButtonRow(
     selectedItem: T,
     onItemSelection: (T) -> Unit,
     labelProvider: @Composable (T) -> String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    iconProvider: @Composable ((T) -> Unit)? = null // Optional custom icon overrides
 ) {
     val haptics = LocalHapticFeedback.current
-    SingleChoiceSegmentedButtonRow(
-        modifier = modifier
+    val scope = rememberCoroutineScope()
+
+    Row(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
         items.forEachIndexed { index, item ->
-            SegmentedButton(
-                selected = item == selectedItem,
-                onClick = {
-                    haptics.performHapticFeedback(HapticFeedbackType.SegmentTick)
-                    onItemSelection(item)
-                },
-                shape = SegmentedButtonDefaults.itemShape(index = index, count = items.size),
-                label = {
-                    Text(
-                        text = labelProvider(item),
-                        style = MaterialTheme.typography.labelLarge
-                    )
-                }
+            val isSelected = item == selectedItem
+            val buttonShape = rememberExpressiveShape(index = index, count = items.size)
+
+            // Visual tap bounce tracker
+            var isPressed by remember { mutableStateOf(false) }
+
+            // Spring specs for standard Material 3 expressive/bouncy physics
+            val bouncySpec = spring<Float>(
+                dampingRatio = Spring.DampingRatioHighBouncy,
+                stiffness = Spring.StiffnessMediumLow
             )
+
+            // Animate layout expansion weight (1.2f if selected, 1.0f otherwise)
+            val animatedWeight by animateFloatAsState(
+                targetValue = if (isSelected) 1.2f else 1.0f,
+                animationSpec = bouncySpec,
+                label = "ExpressiveWeightAnimation"
+            )
+
+            // Animate scale factor on click
+            val animatedScale by animateFloatAsState(
+                targetValue = if (isPressed) 0.92f else 1.0f,
+                animationSpec = bouncySpec,
+                label = "BouncyScaleAnimation"
+            )
+
+            FilledTonalButton(
+                onClick = {}, // Handled manually via gesture listener
+                shape = buttonShape,
+                colors = ButtonDefaults.filledTonalButtonColors(
+                    containerColor = if (isSelected) {
+                        MaterialTheme.colorScheme.primaryContainer
+                    } else {
+                        MaterialTheme.colorScheme.surfaceContainerHighest
+                    },
+                    contentColor = if (isSelected) {
+                        MaterialTheme.colorScheme.onPrimaryContainer
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    }
+                ),
+                modifier = Modifier
+                    .weight(animatedWeight) // Apportion width adaptively based on selection state
+                    .graphicsLayer {
+                        scaleX = animatedScale
+                        scaleY = animatedScale
+                    }
+                    .pointerInput(item) {
+                        detectTapGestures(
+                            onPress = {
+                                val startTime = System.currentTimeMillis()
+                                isPressed = true
+                                haptics.performHapticFeedback(HapticFeedbackType.SegmentTick)
+
+                                try {
+                                    awaitRelease()
+                                } finally {
+                                    val elapsedTime = System.currentTimeMillis() - startTime
+                                    val remainingTime = 150L - elapsedTime
+
+                                    scope.launch {
+                                        if (remainingTime > 0) {
+                                            delay(remainingTime.milliseconds)
+                                        }
+                                        isPressed = false
+                                        onItemSelection(item)
+                                    }
+                                }
+                            }
+                        )
+                    }
+            ) {
+                // Show icon exclusively when the item is active/selected
+                if (isSelected) {
+                    if (iconProvider != null) {
+                        iconProvider(item)
+                    } else {
+                        Icon(
+                            imageVector = Icons.Rounded.Check,
+                            contentDescription = "Selected",
+                            modifier = Modifier.graphicsLayer {
+                                // Subtle entry spring synchronization
+                                scaleX = animatedScale
+                                scaleY = animatedScale
+                            }
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(6.dp))
+                }
+
+                Text(
+                    text = labelProvider(item),
+                    style = MaterialTheme.typography.labelLarge,
+                    maxLines = 1
+                )
+            }
         }
+    }
+}
+
+@Composable
+private fun rememberExpressiveShape(index: Int, count: Int): Shape {
+    val fullyRounded = 100.dp
+    val slightlyRounded = 8.dp
+
+    return when {
+        count == 1 -> RoundedCornerShape(fullyRounded)
+        index == 0 -> RoundedCornerShape(
+            topStart = fullyRounded,
+            bottomStart = fullyRounded,
+            topEnd = slightlyRounded,
+            bottomEnd = slightlyRounded
+        )
+        index == count - 1 -> RoundedCornerShape(
+            topStart = slightlyRounded,
+            bottomStart = slightlyRounded,
+            topEnd = fullyRounded,
+            bottomEnd = fullyRounded
+        )
+        else -> RoundedCornerShape(slightlyRounded)
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ExpressiveSlider(
+    modifier: Modifier = Modifier,
     value: Float,
     onValueChange: (Float) -> Unit,
     valueRange: ClosedFloatingPointRange<Float>,
-    steps: Int = 0,
-    modifier: Modifier = Modifier
+    steps: Int = 0
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val haptics = LocalHapticFeedback.current
