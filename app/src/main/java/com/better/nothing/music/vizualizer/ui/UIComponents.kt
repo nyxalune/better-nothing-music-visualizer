@@ -1006,13 +1006,15 @@ val NDot55FontFamily = FontFamily(
     Font(resId = R.font.ndot55, weight = FontWeight.Normal)
 )
 
-@Immutable
-data class AppSpacing(
-    val edge: Dp = 6.dp,       // Global screen side padding
-    val between: Dp = 12.dp,    // Vertical space between cards
-    val inner: Dp = 20.dp,      // Padding inside cards (Expressive style)
-    val buttonGap: Dp = 4.dp    // Gap between connected buttons
-)
+@Immutable class AppSpacing(
+    edge: Dp = 6.dp,
+    val between: Dp = 12.dp,
+    val inner: Dp = 20.dp,
+    val buttonGap: Dp = 4.dp
+) {
+    var edge by mutableStateOf(edge)
+        internal set
+}
 
 val LocalAppSpacing = staticCompositionLocalOf { AppSpacing() }
 val LocalM3EEnabled = compositionLocalOf { true }
@@ -1049,7 +1051,7 @@ fun BetterVizTheme(
                         onError = Color.White,
                         surfaceVariant = Color(0xFF1A1A1A),
                         onSurfaceVariant = Color(0xFFB3B3B3),
-                        outline = Color(0xFF333333)
+                        outline = Color(0x00333333)
                     )
                 } else {
                     androidx.compose.material3.lightColorScheme(
@@ -1065,7 +1067,7 @@ fun BetterVizTheme(
                         onError = Color.White,
                         surfaceVariant = Color(0xFFE0E0E0),
                         onSurfaceVariant = Color(0xFF757575),
-                        outline = Color(0xFFBDBDBD)
+                        outline = Color(0x00BDBDBD)
                     )
                 }
             }
@@ -1096,7 +1098,7 @@ fun BetterVizTheme(
                         onError = Color.White,
                         surfaceVariant = Color(0xFF1A1A1A),
                         onSurfaceVariant = Color(0xFFB3B3B3),
-                        outline = Color(0xFF333333)
+                        outline = Color(0x00333333)
                     )
                 } else {
                     // Nothing Light (Branded Light)
@@ -1113,7 +1115,7 @@ fun BetterVizTheme(
                         onError = Color.White,
                         surfaceVariant = Color(0xFFE0E0E0),
                         onSurfaceVariant = Color(0xFF757575),
-                        outline = Color(0xFFBDBDBD)
+                        outline = Color(0x00DBDBD)
                     )
                 }
             }
@@ -1132,7 +1134,7 @@ fun BetterVizTheme(
                     onError = Color.White,
                     surfaceVariant = Color(0xFF1A1A1A),
                     onSurfaceVariant = Color(0xFFB3B3B3),
-                    outline = Color(0xFF333333)
+                    outline = Color(0x00333333)
                 )
             }
             "Liquorice Black" -> {
@@ -1149,7 +1151,7 @@ fun BetterVizTheme(
                     onError = Color.White,
                     surfaceVariant = Color(0xFF242424),
                     onSurfaceVariant = Color(0xFF676767),
-                    outline = Color(0xFF2C2C2C)
+                    outline = Color(0x002C2C2C)
                 )
             }
             else -> { // Default / OLED Black
@@ -1166,7 +1168,7 @@ fun BetterVizTheme(
                     onError = Color.White,
                     surfaceVariant = Color(0xFF242424),
                     onSurfaceVariant = Color(0xFF676767),
-                    outline = Color(0xFF2C2C2C)
+                    outline = Color(0x002C2C2C)
                 )
             }
         }
@@ -1242,12 +1244,14 @@ fun BetterVizTheme(
 
     val animatedEdge by animateDpAsState(
         targetValue = if (themeName == "Default" || themeName == "OLED Black") 6.dp else 16.dp,
-        animationSpec = tween(700),
+        animationSpec = tween(500),
         label = "edgeSpacing"
     )
 
-    val appSpacing = remember(animatedEdge) { 
-        AppSpacing(edge = animatedEdge) 
+    val appSpacing = remember { AppSpacing() }
+    
+    LaunchedEffect(animatedEdge) {
+        appSpacing.edge = animatedEdge
     }
 
     MaterialTheme(

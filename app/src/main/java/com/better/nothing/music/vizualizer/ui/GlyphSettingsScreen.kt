@@ -106,8 +106,7 @@ internal fun GlyphsScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .verticalScroll(mainScrollState)
-            .padding(horizontal = 8.dp),
+            .verticalScroll(mainScrollState),
         verticalArrangement = Arrangement.spacedBy(20.dp),
     ) {
         ScreenTitle(text = stringResource(R.string.glyph_controls))
