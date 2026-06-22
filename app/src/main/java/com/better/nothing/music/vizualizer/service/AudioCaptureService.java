@@ -1855,7 +1855,7 @@ public class AudioCaptureService extends Service {
         }
         if (mGMM != null) {
             int matrixSize = DeviceProfile.getMatrixWidth(mSelectedDevice) * DeviceProfile.getMatrixHeight(mSelectedDevice);
-            if (matrixSize > 0) try { mGMM.setMatrixFrame(new int[matrixSize]); } catch (Exception ignored) {}
+            if (matrixSize > 0) try { mGMM.setAppMatrixFrame(new int[matrixSize]); } catch (Exception ignored) {}
         }
     }
 
@@ -1868,6 +1868,7 @@ public class AudioCaptureService extends Service {
         turnOffGlyphs();
         if (mGM != null && mSessionOpen) {
             try { mGM.closeSession(); } catch (GlyphException ignored) {}
+            try { mGMM.closeAppMatrix(); } catch (GlyphException ignored) {}
             mSessionOpen = false;
         }
     }
