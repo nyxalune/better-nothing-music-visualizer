@@ -34,7 +34,9 @@
 
 * Add disclaimer that this app uses Google Analytics
 
-* Check if auto update works 
+* Check if auto update works
+
+---
 
 ## Oliver's todo
 * track audio source playing time, not audio_source_change
@@ -44,6 +46,8 @@
 * collapse app theme setting section just like the experimental features
 * put the typography selector under that app them section
 * make the collapsed sections a bit bigger
+
+---
 
 ## Aleks' fucking todo
 * Tapping back on the Viz preset editor should go to the prev screen., and tapping back should predictively go to the prev viewed screen tab before exiting the app.
@@ -78,6 +82,19 @@
 * update haptic monitor with shape = audio, and line next to it = motor amplitude
 * Do tablet UI
 
+---
+---
+---
+---
+---
+---
+---
+---
+---
+---
+---
+---
+---
 ---
 
 ## Done
