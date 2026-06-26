@@ -3,11 +3,12 @@
 ## To Do Fuckery
 
 * rework the qs tiles, make one for glyph viz, one for haptic viz, and one for flashlight viz. enable of disable the service automatically based on if we have anything running or not.
+  
 * and work on the translation tools so we can get hoomans to translate our app.
 
 * Remove notification detection
-  
-* Add an adjustment Hz range preset for Phone (4a)
+
+* MAKE THE DEBUG APK BE IN GITHUB ACTIONS ARTIFACTS
 
 * Remove brightness value text on the glyph brightness slider
 
@@ -23,7 +24,6 @@
 
 * make the default theme have the nothing light theme when the device theme is light
 
-
 * *(Low priority)* nothing styled widget with:
     * 3 buttons for source,
     * 3 for the Viz outputs,
@@ -31,6 +31,8 @@
     * 2 by 2 nothing style
 
 * Remove haptic tab AND DISABLE ALL CODE RELATED TO IT if device doesn't have a haptic motor
+
+* same for flashlight
 
 * Add disclaimer that this app uses Google Analytics
 
@@ -50,6 +52,7 @@
 ---
 
 ## Aleks' fucking todo
+* ***Improve notification (ALEKS DOES IT)***
 * Tapping back on the Viz preset editor should go to the prev screen., and tapping back should predictively go to the prev viewed screen tab before exiting the app.
 * Collapse the live audio spectrum, and when it's collapsed, don't process it.
 * Make the auto latency toggle be in the latency card
@@ -58,20 +61,15 @@
 * Auto update mechanism without scary permissions
 * Check if background is 0x000000 not if theme = default for the margin thing
 * **RE ENABLE EDGE TO EDGE and FIX THE CLIPPING IN THE SIDE PADDINGS!**
-  * tHEY SHOULD BE APPLIED ON THE TAB LEVEL, NOT ON THE HORIZONTALPAGER LAVEL!
+  * THEY SHOULD BE APPLIED ON THE TAB LEVEL, NOT ON THE HORIZONTALPAGER LAVEL!
 * In the Material 3 expressive split button selector, when there are multiple rows, make the corner rounding of the edges only at the corner of the actual box of buttons. Multiple rows still look like it's something unified. And multiply the weight of the selected button by the UI shift variable.
 * Modify the BNMV liscence so only the owner can release, and everything that other developers do should be reported to the owner. And state that debug builds should never be released to the public because they are not meant to be used by the users, but only by the developers for developing purposes.
 * when the frequency range is large; they are less reactive for some reason. You don't need to divide the sum of the bins by the frequency range, the size of the frequency range. One of the causes is that the wide frequency ranges are less reactive than the narrow ones, which are usually the bass ones, so we can't really see the trebles.
 * enhance the built-in switches by adding an X (cross) or a done (✅) in them, like the battery guru's settings switches, and also with bouncy animations and nice haptics
-* Add m3e split row selectors
-  * Typography menu
-  * Idle breathing
-  * Haptic mode
-  * M3E split and round config update buttons (with different weight)(ALEKS DOES IT)
+* M3E split and round config update buttons
 * Redesign about page for a proper hierarchical easy M3E design
 * Merge Git repo link card with app version card
 * Change audio page big texts (such as made by aleks rkysen and oliver thing)
-* Improve notification (ALEKS DOES IT)
 * Add rotary haptic motor mode
 * parametric spectrum range preset for all phones
 * Adapt ui depending on the audio source (Aleks)
@@ -98,6 +96,10 @@
 ---
 
 ## Done
+* Add m3e split row selectors
+  * Typography menu
+  * Idle breathing
+  * Haptic mode
 * Idle breathing setting isn't kept in memory
 * move code away from mainactivity. now mainactivity is a mess.
 * use the system navbar padding (fix it again)
