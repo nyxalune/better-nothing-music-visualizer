@@ -42,7 +42,6 @@
 
 ## Oliver's todo
 * track audio source playing time, not audio_source_change
-* track viz mode playing time (flashlight time, haptics time, glyphs time, these will be added up in the firebase charts ifpossible)
 * Adaptive Smoothing: Real-time decay adjustment based on music tempo
 * collapse app theme setting section just like the experimental features
 * put the typography selector under that app them section
@@ -51,6 +50,7 @@
 ---
 
 ## Aleks' fucking todo
+* track viz mode playing time (flashlight time, haptics time, glyphs time, these will be added up in the firebase charts ifpossible)
 * ***Improve notification (ALEKS DOES IT)***
 * Tapping back on the Viz preset editor should go to the prev screen., and tapping back should predictively go to the prev viewed screen tab before exiting the app.
 * Collapse the live audio spectrum, and when it's collapsed, don't process it.
