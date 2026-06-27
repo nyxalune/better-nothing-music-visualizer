@@ -51,7 +51,7 @@ import com.better.nothing.music.vizualizer.ui.AuthDialog
 import com.better.nothing.music.vizualizer.ui.BodyText
 import com.better.nothing.music.vizualizer.ui.CardHeader
 import com.better.nothing.music.vizualizer.ui.ExpressiveCard
-import com.better.nothing.music.vizualizer.ui.ExpressiveSegmentedButtonRow
+import com.better.nothing.music.vizualizer.ui.ExpressiveSplitButton
 import com.better.nothing.music.vizualizer.ui.ExpressiveSlider
 import com.better.nothing.music.vizualizer.ui.LocalAppSpacing
 import com.better.nothing.music.vizualizer.ui.MainViewModel
@@ -396,7 +396,7 @@ internal fun SettingsScreen(
                         color = MaterialTheme.colorScheme.primary
                     )
 
-                    ExpressiveSegmentedButtonRow(
+                    ExpressiveSplitButton(
                         items = listOf("NDot", "NType"),
                         selectedItem = selectedFont,
                         onItemSelection = { viewModel.setSelectedFont(it) },
@@ -539,7 +539,7 @@ internal fun SettingsScreen(
                             "zebra" to stringResource(R.string.idle_pattern_zebra)
                         )
 
-                        ExpressiveSegmentedButtonRow(
+                        ExpressiveSplitButton(
                             items = patternOptions.map { it.first },
                             selectedItem = idlePattern,
                             onItemSelection = onIdlePatternChanged,
@@ -826,7 +826,7 @@ internal fun SettingsScreen(
                                         verticalArrangement = Arrangement.spacedBy(8.dp)
                                     ) {
                                         devices.forEach { dev ->
-                                            ExpressiveSegmentedButtonRow(
+                                            ExpressiveSplitButton(
                                                 items = devices,
                                                 selectedItem = spoofedDevice,
                                                 onItemSelection = { dev -> viewModel.setSpoofedDevice(dev) },
@@ -889,7 +889,7 @@ internal fun SettingsScreen(
                                 "cy" to "CY"
                             )
 
-                            ExpressiveSegmentedButtonRow(
+                            ExpressiveSplitButton(
                                 items = locales.map { it.first },
                                 selectedItem = currentSpoofLocale,
                                 onItemSelection = { tag -> viewModel.setSpoofLocale(tag) },

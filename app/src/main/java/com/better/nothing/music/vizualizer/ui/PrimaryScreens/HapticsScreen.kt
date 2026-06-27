@@ -42,7 +42,7 @@ import com.better.nothing.music.vizualizer.ui.BodyText
 import com.better.nothing.music.vizualizer.ui.CardHeader
 import com.better.nothing.music.vizualizer.ui.ExpressiveCard
 import com.better.nothing.music.vizualizer.ui.ExpressiveRangeSlider
-import com.better.nothing.music.vizualizer.ui.ExpressiveSegmentedButtonRow
+import com.better.nothing.music.vizualizer.ui.ExpressiveSplitButton
 import com.better.nothing.music.vizualizer.ui.ExpressiveSlider
 import com.better.nothing.music.vizualizer.ui.LocalAppSpacing
 import com.better.nothing.music.vizualizer.ui.MorphingPolygon
@@ -170,7 +170,7 @@ fun HapticsScreen(
 
                 ExpressiveCard(modifier = Modifier.fillMaxWidth()) {
                     CardHeader(title = stringResource(R.string.haptics_mode_label))
-                    ExpressiveSegmentedButtonRow(
+                    ExpressiveSplitButton(
                         items = HapticMode.entries,
                         selectedItem = hapticMode,
                         onItemSelection = onHapticModeChanged,

@@ -64,7 +64,6 @@ import com.better.nothing.music.vizualizer.ui.BodyText
 import com.better.nothing.music.vizualizer.ui.ExpressiveSlider
 import com.better.nothing.music.vizualizer.ui.CardHeader
 import com.better.nothing.music.vizualizer.ui.ExpressiveCard
-import com.better.nothing.music.vizualizer.ui.ExpressiveSegmentedButtonRow
 import com.better.nothing.music.vizualizer.ui.ExpressiveSplitButton
 import com.better.nothing.music.vizualizer.ui.LocalAppSpacing
 import kotlin.math.pow
@@ -215,7 +214,7 @@ internal fun GlyphsScreen(
                         // 1. Grouped Expressive Row for your presets
                         // Wrapping it allows it to sit neatly alongside the "+ Create New" button inside the FlowRow
                         if (sortedPresets.isNotEmpty()) {
-                            ExpressiveSegmentedButtonRow(
+                            ExpressiveSplitButton(
                                 items = sortedPresets,
                                 // If no preset matches, safely fall back to the first item in the list
                                 selectedItem = sortedPresets.firstOrNull { it.key == selectedPreset }

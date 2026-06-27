@@ -700,15 +700,16 @@ fun NativeBottomBar(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun <T> ExpressiveSegmentedButtonRow(
+fun <T> ExpressiveSplitButton(
     items: List<T>,
     selectedItem: T,
     onItemSelection: (T) -> Unit,
-    labelProvider: @Composable (T) -> String, // Restored @Composable context
+    labelProvider: @Composable (T) -> String,
     modifier: Modifier = Modifier
 ) {
     val haptics = LocalHapticFeedback.current
     val scope = rememberCoroutineScope()
+    val uiAmpProvider = LocalUIAmplitude.current
 
     // 1. Resolve Composable labels into plain strings safely in the Composable pipeline
     val resolvedLabels = items.associateWith { labelProvider(it) }
@@ -744,13 +745,13 @@ fun <T> ExpressiveSegmentedButtonRow(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
-        chunkedRows.forEach { rowItems ->
+        chunkedRows.forEachIndexed { rowIndex, rowItems ->
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                rowItems.forEachIndexed { index, item ->
+                rowItems.forEachIndexed { itemIndex, item ->
                     val isSelected = item == selectedItem
                     var isPressed by remember { mutableStateOf(false) }
 
@@ -764,7 +765,9 @@ fun <T> ExpressiveSegmentedButtonRow(
                     )
 
                     val animatedWeight by animateFloatAsState(
-                        targetValue = if (isPressed) 0.89f else if (isSelected) 1.2f else 1.0f,
+                        targetValue = if (isPressed) 0.89f 
+                                      else if (isSelected) 1.2f * (1f + uiAmpProvider()) 
+                                      else 1.0f,
                         animationSpec = bouncySpec,
                         label = "ExpressiveWeightAnimation"
                     )
@@ -796,16 +799,17 @@ fun <T> ExpressiveSegmentedButtonRow(
 
                     // Edge rounding physics logic
                     val fullyRounded = 40.dp
-                    val slightlyRounded = 8.dp
+                    val innerRounded = 8.dp // Unified - truly sharp inner edges for the box look
 
-                    val isFirstInRow = index == 0
-                    val isLastInRow = index == rowItems.size - 1
-                    val isOnlyInRow = rowItems.size == 1
+                    val isFirstRow = rowIndex == 0
+                    val isLastRow = rowIndex == chunkedRows.size - 1
+                    val isFirstInRow = itemIndex == 0
+                    val isLastInRow = itemIndex == rowItems.size - 1
 
-                    val targetTopStart = if (isSelected || isFirstInRow || isOnlyInRow) fullyRounded else slightlyRounded
-                    val targetBottomStart = if (isSelected || isFirstInRow || isOnlyInRow) fullyRounded else slightlyRounded
-                    val targetTopEnd = if (isSelected || isLastInRow || isOnlyInRow) fullyRounded else slightlyRounded
-                    val targetBottomEnd = if (isSelected || isLastInRow || isOnlyInRow) fullyRounded else slightlyRounded
+                    val targetTopStart = if (isSelected || (isFirstRow && isFirstInRow)) fullyRounded else innerRounded
+                    val targetTopEnd = if (isSelected || (isFirstRow && isLastInRow)) fullyRounded else innerRounded
+                    val targetBottomStart = if (isSelected || (isLastRow && isFirstInRow)) fullyRounded else innerRounded
+                    val targetBottomEnd = if (isSelected || (isLastRow && isLastInRow)) fullyRounded else innerRounded
 
                     val topStart by animateDpAsState(targetValue = targetTopStart, animationSpec = dpBouncySpec, label = "TopStart")
                     val bottomStart by animateDpAsState(targetValue = targetBottomStart, animationSpec = dpBouncySpec, label = "BottomStart")
