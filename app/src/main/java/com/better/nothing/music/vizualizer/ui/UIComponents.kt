@@ -798,7 +798,7 @@ fun <T> ExpressiveSplitButton(
                     )
 
                     // Edge rounding physics logic
-                    val fullyRounded = 40.dp
+                    val fullyRounded = 20.dp
                     val innerRounded = 8.dp // Unified - truly sharp inner edges for the box look
 
                     val isFirstRow = rowIndex == 0
