@@ -40,10 +40,13 @@ import androidx.compose.foundation.layout.windowInsetsTopHeight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.GraphicEq
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.PhoneAndroid
 import androidx.compose.material.icons.filled.Terminal
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
@@ -229,34 +232,7 @@ fun AudioScreen(
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
 
                 ExpressiveCard {
-                    CardHeader(title = "Auto-Memorize Device")
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = if (autoDeviceEnabled)
-                                    stringResource(
-                                        R.string.saving_latency_for,
-                                        connectedDeviceName
-                                            ?: stringResource(R.string.internal_speaker)
-                                    )
-                                else stringResource(R.string.manual_mode_global_latency),
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                                style = MaterialTheme.typography.bodySmall
-                            )
-                        }
-                        Switch(
-                            checked = autoDeviceEnabled,
-                            onCheckedChange = handleAutoToggle,
-                            colors = SwitchDefaults.colors(
-                                checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
-                                checkedTrackColor = MaterialTheme.colorScheme.primary
-                            )
-                        )
-                    }
+
                 }
 
                 if (captureSource != AudioCaptureService.CaptureSource.MIC) {
@@ -274,7 +250,10 @@ fun AudioScreen(
                                 wizardPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
                             }
                         },
-                        onResetWizard = onResetLatencyWizard
+                        onResetWizard = onResetLatencyWizard,
+                        autoDeviceEnabled = autoDeviceEnabled,
+                        onAutoDeviceToggle = handleAutoToggle,
+                        connectedDeviceName = connectedDeviceName
                     )
                 }
 
@@ -373,7 +352,10 @@ fun LatencyCard(
     onLatencyPresetsChanged: (List<Int>) -> Unit,
     wizardState: LatencyWizard.State,
     onRunWizard: () -> Unit,
-    onResetWizard: () -> Unit
+    onResetWizard: () -> Unit,
+    autoDeviceEnabled: Boolean,
+    onAutoDeviceToggle: (Boolean) -> Unit,
+    connectedDeviceName: String?
 ) {
     val haptics = LocalHapticFeedback.current
     var draggingIndex by remember { mutableIntStateOf(-1) }
@@ -424,7 +406,6 @@ fun LatencyCard(
                     fontWeight = FontWeight.Bold
                 )
             })
-
         BoxWithConstraints(
             modifier = Modifier
                 .fillMaxWidth()
@@ -567,231 +548,294 @@ fun LatencyCard(
                     )
                 }
             }
+            CardHeader(title = "Auto-Memorize Device")
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = if (autoDeviceEnabled)
+                            stringResource(
+                                R.string.saving_latency_for,
+                                connectedDeviceName
+                                    ?: stringResource(R.string.internal_speaker)
+                            )
+                        else stringResource(R.string.manual_mode_global_latency),
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+                Switch(
+                    checked = autoDeviceEnabled,
+                    onCheckedChange = onAutoDeviceToggle,
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
+                        checkedTrackColor = MaterialTheme.colorScheme.primary
+                    )
+                )
+            }
         }
     }
 }
 
 @Composable
 fun FFTSpectrumCard(fftData: FloatArray) {
+    val haptics = LocalHapticFeedback.current
+    var isExpanded by remember { mutableStateOf(false) }
     var touchX by remember { mutableStateOf<Float?>(null) }
 
     ExpressiveCard(modifier = Modifier.fillMaxWidth()) {
-        CardHeader(
-            title = stringResource(
-                R.string.live_spectrum
-            )
-        )
-
-        BoxWithConstraints(
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(180.dp)
-                .clip(MaterialTheme.shapes.medium)
-                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f))
-                .pointerInput(Unit) {
-                    detectDragGestures(
-                        onDragStart = { touchX = it.x },
-                        onDrag = { change, _ ->
-                            change.consume()
-                            touchX = change.position.x
-                        },
-                        onDragEnd = { touchX = null },
-                        onDragCancel = { touchX = null }
-                    )
-                }
-                .pointerInput(Unit) {
-                    detectTapGestures(
-                        onPress = {
-                            touchX = it.x
-                            tryAwaitRelease()
-                            touchX = null
-                        }
-                    )
-                }
-        ) {
-            val primaryColor = MaterialTheme.colorScheme.primary
-            val width = maxWidth
-            val density = LocalDensity.current
-
-            val decayedData = remember { mutableStateOf(floatArrayOf()) }
-            LaunchedEffect(fftData) {
-                if (fftData.isEmpty()) return@LaunchedEffect
-
-                val current = decayedData.value
-                if (current.size != fftData.size) {
-                    decayedData.value = fftData.copyOf()
-                    return@LaunchedEffect
-                }
-
-                val decay = 0.75f
-                val next = FloatArray(fftData.size)
-                for (i in fftData.indices) {
-                    val newVal = fftData[i]
-                    val prevVal = current[i]
-                    if (newVal > prevVal) {
-                        next[i] = newVal
-                    } else {
-                        next[i] = (decay * prevVal) + ((1f - decay) * newVal)
-                    }
-                }
-                decayedData.value = next
-            }
-
-            Canvas(modifier = Modifier.fillMaxSize()) {
-                val data = decayedData.value
-                if (data.isEmpty()) return@Canvas
-
-                val w = size.width
-                val h = size.height
-
-                // Draw Grid
-                val gridColor = Color.White.copy(alpha = 0.03f)
-                drawLine(gridColor, Offset(0f, h * 0.25f), Offset(w, h * 0.25f), 1f)
-                drawLine(gridColor, Offset(0f, h * 0.5f), Offset(w, h * 0.5f), 1f)
-                drawLine(gridColor, Offset(0f, h * 0.75f), Offset(w, h * 0.75f), 1f)
-
-                val minFreq = 20f
-                val maxFreq = 20000f
-                val sampleRate = 44100f
-                val numBins = data.size
-                val hzPerBin = sampleRate / (2 * (numBins - 1))
-
-                val logMin = log10(minFreq)
-                val logMax = log10(maxFreq)
-
-                val barPath = Path()
-                var first = true
-
-                // Dynamic gradient based on amplitude
-                val gradient = Brush.verticalGradient(
-                    colors = listOf(
-                        primaryColor.copy(alpha = 0.4f),
-                        primaryColor.copy(alpha = 0.02f)
-                    ),
-                    startY = 0f,
-                    endY = h
-                )
-
-                val points = 200 // Reduced for better performance and smoother look
-                for (i in 0..points) {
-                    val fraction = i.toFloat() / points
-                    val logFreq = logMin + fraction * (logMax - logMin)
-                    val freq = 10f.pow(logFreq)
-
-                    val binIndex = freq / hzPerBin
-                    val lowerBin = binIndex.toInt()
-                    val upperBin = (lowerBin + 1).coerceAtMost(numBins - 1)
-                    val t = binIndex - lowerBin
-
-                    val mag = if (lowerBin < numBins) {
-                        (1f - t) * data[lowerBin] + t * data[upperBin]
-                    } else 0f
-
-                    // Nonlinear scaling for better visuals
-                    val scaledMag = (mag * 70f).coerceIn(0f, 1.2f)
-                    val y = h - (scaledMag * (h - 40f)) - 20f
-                    val x = fraction * w
-
-                    if (first) {
-                        barPath.moveTo(x, y)
-                        first = false
-                    } else {
-                        barPath.lineTo(x, y)
-                    }
-                }
-
-                val fillPath = Path().apply {
-                    addPath(barPath)
-                    lineTo(w, h)
-                    lineTo(0f, h)
-                    close()
-                }
-
-                drawPath(path = fillPath, brush = gradient)
-
-                // Outer glow
-                drawPath(
-                    path = barPath,
-                    color = primaryColor.copy(alpha = 0.3f),
-                    style = Stroke(
-                        width = 6.dp.toPx(),
-                        cap = StrokeCap.Round,
-                        join = StrokeJoin.Round
-                    )
-                )
-
-                // Main line
-                drawPath(
-                    path = barPath,
-                    color = primaryColor,
-                    style = Stroke(
-                        width = 2.dp.toPx(),
-                        cap = StrokeCap.Round,
-                        join = StrokeJoin.Round
-                    )
-                )
-
-                touchX?.let { tx ->
-                    val x = tx.coerceIn(0f, w)
-                    drawLine(
-                        color = primaryColor.copy(alpha = 0.5f),
-                        start = Offset(x, 0f),
-                        end = Offset(x, h),
-                        strokeWidth = 1.dp.toPx(),
-                        pathEffect = PathEffect.dashPathEffect(floatArrayOf(20f, 10f))
-                    )
-                }
-            }
-
-            touchX?.let { tx ->
-                val fraction = (tx / constraints.maxWidth.toFloat()).coerceIn(0f, 1f)
-                val logMin = log10(20f)
-                val logMax = log10(20000f)
-                val logFreq = logMin + fraction * (logMax - logMin)
-                val freq = 10f.pow(logFreq)
-
-                val text = if (freq >= 1000) String.format(
-                    Locale.US,
-                    "%.1fkHz",
-                    freq / 1000f
-                ) else String.format(Locale.US, "%dHz", freq.toInt())
-                val txDp = with(density) { tx.toDp() }
-
-                Surface(
-                    modifier = Modifier
-                        .offset(
-                            x = (txDp - 30.dp).coerceIn(4.dp, width - 64.dp),
-                            y = 12.dp
-                        ),
-                    color = MaterialTheme.colorScheme.primary,
-                    shape = MaterialTheme.shapes.small,
-                    tonalElevation = 4.dp
-                ) {
-                    Text(
-                        text = text,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                        color = MaterialTheme.colorScheme.onPrimary,
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        // Frequency labels
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
+                .clickable {
+                    haptics.performHapticFeedback(HapticFeedbackType.SegmentTick)
+                    isExpanded = !isExpanded
+                },
+            verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            val freqLabels = listOf("20Hz", "100Hz", "1kHz", "10kHz", "20kHz")
-            freqLabels.forEach { label ->
-                Text(
-                    text = label,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Icon(
+                    Icons.Default.GraphicEq,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary
                 )
+                Text(
+                    text = stringResource(R.string.live_spectrum),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+            Icon(
+                imageVector = if (isExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+            )
+        }
+
+        AnimatedVisibility(visible = isExpanded) {
+            Column(
+                modifier = Modifier.padding(top = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                BoxWithConstraints(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(180.dp)
+                        .clip(MaterialTheme.shapes.medium)
+                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f))
+                        .pointerInput(Unit) {
+                            detectDragGestures(
+                                onDragStart = { touchX = it.x },
+                                onDrag = { change, _ ->
+                                    change.consume()
+                                    touchX = change.position.x
+                                },
+                                onDragEnd = { touchX = null },
+                                onDragCancel = { touchX = null }
+                            )
+                        }
+                        .pointerInput(Unit) {
+                            detectTapGestures(
+                                onPress = {
+                                    touchX = it.x
+                                    tryAwaitRelease()
+                                    touchX = null
+                                }
+                            )
+                        }
+                ) {
+                    val primaryColor = MaterialTheme.colorScheme.primary
+                    val width = maxWidth
+                    val density = LocalDensity.current
+
+                    val decayedData = remember { mutableStateOf(floatArrayOf()) }
+                    LaunchedEffect(fftData) {
+                        if (fftData.isEmpty()) return@LaunchedEffect
+
+                        val current = decayedData.value
+                        if (current.size != fftData.size) {
+                            decayedData.value = fftData.copyOf()
+                            return@LaunchedEffect
+                        }
+
+                        val decay = 0.75f
+                        val next = FloatArray(fftData.size)
+                        for (i in fftData.indices) {
+                            val newVal = fftData[i]
+                            val prevVal = current[i]
+                            if (newVal > prevVal) {
+                                next[i] = newVal
+                            } else {
+                                next[i] = (decay * prevVal) + ((1f - decay) * newVal)
+                            }
+                        }
+                        decayedData.value = next
+                    }
+
+                    Canvas(modifier = Modifier.fillMaxSize()) {
+                        val data = decayedData.value
+                        if (data.isEmpty()) return@Canvas
+
+                        val w = size.width
+                        val h = size.height
+
+                        // Draw Grid
+                        val gridColor = Color.White.copy(alpha = 0.03f)
+                        drawLine(gridColor, Offset(0f, h * 0.25f), Offset(w, h * 0.25f), 1f)
+                        drawLine(gridColor, Offset(0f, h * 0.5f), Offset(w, h * 0.5f), 1f)
+                        drawLine(gridColor, Offset(0f, h * 0.75f), Offset(w, h * 0.75f), 1f)
+
+                        val minFreq = 20f
+                        val maxFreq = 20000f
+                        val sampleRate = 44100f
+                        val numBins = data.size
+                        val hzPerBin = sampleRate / (2 * (numBins - 1))
+
+                        val logMin = log10(minFreq)
+                        val logMax = log10(maxFreq)
+
+                        val barPath = Path()
+                        var first = true
+
+                        // Dynamic gradient based on amplitude
+                        val gradient = Brush.verticalGradient(
+                            colors = listOf(
+                                primaryColor.copy(alpha = 0.4f),
+                                primaryColor.copy(alpha = 0.02f)
+                            ),
+                            startY = 0f,
+                            endY = h
+                        )
+
+                        val points = 200 // Reduced for better performance and smoother look
+                        for (i in 0..points) {
+                            val fraction = i.toFloat() / points
+                            val logFreq = logMin + fraction * (logMax - logMin)
+                            val freq = 10f.pow(logFreq)
+
+                            val binIndex = freq / hzPerBin
+                            val lowerBin = binIndex.toInt()
+                            val upperBin = (lowerBin + 1).coerceAtMost(numBins - 1)
+                            val t = binIndex - lowerBin
+
+                            val mag = if (lowerBin < numBins) {
+                                (1f - t) * data[lowerBin] + t * data[upperBin]
+                            } else 0f
+
+                            // Nonlinear scaling for better visuals
+                            val scaledMag = (mag * 70f).coerceIn(0f, 1.2f)
+                            val y = h - (scaledMag * (h - 40f)) - 20f
+                            val x = fraction * w
+
+                            if (first) {
+                                barPath.moveTo(x, y)
+                                first = false
+                            } else {
+                                barPath.lineTo(x, y)
+                            }
+                        }
+
+                        val fillPath = Path().apply {
+                            addPath(barPath)
+                            lineTo(w, h)
+                            lineTo(0f, h)
+                            close()
+                        }
+
+                        drawPath(path = fillPath, brush = gradient)
+
+                        // Outer glow
+                        drawPath(
+                            path = barPath,
+                            color = primaryColor.copy(alpha = 0.3f),
+                            style = Stroke(
+                                width = 6.dp.toPx(),
+                                cap = StrokeCap.Round,
+                                join = StrokeJoin.Round
+                            )
+                        )
+
+                        // Main line
+                        drawPath(
+                            path = barPath,
+                            color = primaryColor,
+                            style = Stroke(
+                                width = 2.dp.toPx(),
+                                cap = StrokeCap.Round,
+                                join = StrokeJoin.Round
+                            )
+                        )
+
+                        touchX?.let { tx ->
+                            val x = tx.coerceIn(0f, w)
+                            drawLine(
+                                color = primaryColor.copy(alpha = 0.5f),
+                                start = Offset(x, 0f),
+                                end = Offset(x, h),
+                                strokeWidth = 1.dp.toPx(),
+                                pathEffect = PathEffect.dashPathEffect(floatArrayOf(20f, 10f))
+                            )
+                        }
+                    }
+
+                    touchX?.let { tx ->
+                        val fraction = (tx / constraints.maxWidth.toFloat()).coerceIn(0f, 1f)
+                        val logMin = log10(20f)
+                        val logMax = log10(20000f)
+                        val logFreq = logMin + fraction * (logMax - logMin)
+                        val freq = 10f.pow(logFreq)
+
+                        val text = if (freq >= 1000) String.format(
+                            Locale.US,
+                            "%.1fkHz",
+                            freq / 1000f
+                        ) else String.format(Locale.US, "%dHz", freq.toInt())
+                        val txDp = with(density) { tx.toDp() }
+
+                        Surface(
+                            modifier = Modifier
+                                .offset(
+                                    x = (txDp - 30.dp).coerceIn(4.dp, width - 64.dp),
+                                    y = 12.dp
+                                ),
+                            color = MaterialTheme.colorScheme.primary,
+                            shape = MaterialTheme.shapes.small,
+                            tonalElevation = 4.dp
+                        ) {
+                            Text(
+                                text = text,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                color = MaterialTheme.colorScheme.onPrimary,
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                }
+
+                // Frequency labels
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 4.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    val freqLabels = listOf("20Hz", "100Hz", "1kHz", "10kHz", "20kHz")
+                    freqLabels.forEach { label ->
+                        Text(
+                            text = label,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                        )
+                    }
+                }
             }
         }
     }

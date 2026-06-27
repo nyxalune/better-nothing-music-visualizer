@@ -477,17 +477,22 @@ internal fun BetterVizApp(
     LaunchedEffect(selectedTab) {
         val target = visibleTabs.indexOf(selectedTab).coerceAtLeast(0)
         if (pagerState.currentPage != target) {
-            val steps = (target - pagerState.currentPage).absoluteValue
-            // Duration scales with distance but stays within a snappy range
-            val duration = (350 + (steps - 1) * 80).coerceAtMost(700)
-            
-            pagerState.animateScrollToPage(
-                page = target,
-                animationSpec = tween(
-                    durationMillis = duration,
-                    easing = EaseOutCubic
+            isProgrammaticScroll = true
+            try {
+                val steps = (target - pagerState.currentPage).absoluteValue
+                // Duration scales with distance but stays within a snappy range
+                val duration = (350 + (steps - 1) * 80).coerceAtMost(700)
+                
+                pagerState.animateScrollToPage(
+                    page = target,
+                    animationSpec = tween(
+                        durationMillis = duration,
+                        easing = EaseOutCubic
+                    )
                 )
-            )
+            } finally {
+                isProgrammaticScroll = false
+            }
         }
     }
 
