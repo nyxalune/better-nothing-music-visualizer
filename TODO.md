@@ -66,8 +66,6 @@
 
 * Auto update mechanism without scary permissions
 
-* Check if background is 0x000000 not if theme = default for the margin thing
-
 * In the Material 3 expressive split button selector, when there are multiple rows, make the corner rounding of the edges only at the corner of the actual box of buttons. Multiple rows still look like it's something unified. And multiply the weight of the selected button by the UI shift variable.
 
 * Modify the BNMV liscence so only the owner can release, and everything that other developers do should be reported to the owner. And state that debug builds should never be released to the public because they are not meant to be used by the users, but only by the developers for developing purposes.
@@ -117,6 +115,7 @@
 ---
 
 ## Done
+* Check if background is 0x000000 not if theme = default for the margin thing
 * **RE ENABLE EDGE TO EDGE and FIX THE CLIPPING IN THE SIDE PADDINGS!**
   * THEY SHOULD BE APPLIED ON THE TAB LEVEL, NOT ON THE HORIZONTALPAGER LAVEL!
 * Add m3e split row selectors

@@ -33,7 +33,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.core.graphics.ColorUtils
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.TextStyle
+import androidx.core.view.WindowCompat
+import android.app.Activity
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -197,21 +200,40 @@ fun BetterVizTheme(
                 )
             }
             else -> { // Default / OLED Black
-                androidx.compose.material3.darkColorScheme(
-                    background = Color.Black,
-                    surface = Color(0xFF1A1A1A),
-                    primary = Color(0xFFD8D3DA),
-                    secondary = Color(0xFFA0FFA3),
-                    error = Color(0xFFC83B3B),
-                    onBackground = Color.White,
-                    onSurface = Color.White,
-                    onPrimary = Color(0xFF1C1A1D),
-                    onSecondary = Color(0xFF1C5A21),
-                    onError = Color.White,
-                    surfaceVariant = Color(0xFF242424),
-                    onSurfaceVariant = Color(0xFF676767),
-                    outline = Color(0xFF2C2C2C)
-                )
+                if (themeName == "Default" && !isDark) {
+                    // Use Nothing Light for Default in Light Mode
+                    androidx.compose.material3.lightColorScheme(
+                        background = Color.White,
+                        surface = Color(0xFFF5F5F5),
+                        primary = Color(0xFF000000),
+                        secondary = Color(0xFF626262),
+                        error = Color(0xFFD71921),
+                        onBackground = Color.Black,
+                        onSurface = Color.Black,
+                        onPrimary = Color.White,
+                        onSecondary = Color.White,
+                        onError = Color.White,
+                        surfaceVariant = Color(0xFFE0E0E0),
+                        onSurfaceVariant = Color(0xFF757575),
+                        outline = Color(0xFFBDBDBD)
+                    )
+                } else {
+                    androidx.compose.material3.darkColorScheme(
+                        background = Color.Black,
+                        surface = Color(0xFF1A1A1A),
+                        primary = Color(0xFFD8D3DA),
+                        secondary = Color(0xFFA0FFA3),
+                        error = Color(0xFFC83B3B),
+                        onBackground = Color.White,
+                        onSurface = Color.White,
+                        onPrimary = Color(0xFF1C1A1D),
+                        onSecondary = Color(0xFF1C5A21),
+                        onError = Color.White,
+                        surfaceVariant = Color(0xFF242424),
+                        onSurfaceVariant = Color(0xFF676767),
+                        outline = Color(0xFF2C2C2C)
+                    )
+                }
             }
         }
     }
@@ -285,10 +307,20 @@ fun BetterVizTheme(
     }
 
     val animatedEdge by animateDpAsState(
-        targetValue = if (themeName == "Default" || themeName == "OLED Black") 6.dp else 16.dp,
+        targetValue = if (targetColorScheme.background == Color.Black) 6.dp else 16.dp,
         animationSpec = tween(500),
         label = "edgeSpacing"
     )
+
+    val view = LocalView.current
+    if (!view.isInEditMode) {
+        LaunchedEffect(colorScheme.background) {
+            val window = (view.context as Activity).window
+            val isLight = ColorUtils.calculateLuminance(colorScheme.background.toArgb().toLong().toInt()) > 0.5
+            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = isLight
+            WindowCompat.getInsetsController(window, view).isAppearanceLightNavigationBars = isLight
+        }
+    }
 
     val appSpacing = remember { AppSpacing() }
 

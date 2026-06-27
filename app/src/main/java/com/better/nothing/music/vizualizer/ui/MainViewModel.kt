@@ -129,6 +129,16 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    private val _m3eEnabled = MutableStateFlow(true)
+    val m3eEnabled = _m3eEnabled.asStateFlow()
+    fun setM3EEnabled(enabled: Boolean) {
+        _m3eEnabled.value = enabled
+        viewModelScope.launch(Dispatchers.IO) {
+            ctx.getSharedPreferences("viz_prefs", Context.MODE_PRIVATE)
+                .edit { putBoolean("m3e_enabled", enabled) }
+        }
+    }
+
     private val _overlayWidth = MutableStateFlow(120)
     val overlayWidth = _overlayWidth.asStateFlow()
     fun setOverlayWidth(width: Int) {
@@ -781,59 +791,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         prefs.edit().putInt("app_open_count", openCount).apply()
         analytics.logAppOpen(openCount)
 
-        viewModelScope.launch {
-            if (BuildConfig.DEBUG) {
-                if (openCount == 1) {
-                    showThanks("thanks for downloading")
-                    showThanks("thanks for installing")
-                } else if (openCount >= 2) {
-                    withContext(Dispatchers.Main) {
-                        Toast.makeText(ctx, ctx.getString(R.string.thanks_using), Toast.LENGTH_SHORT).show()
-                    }
-                }
-            } else {
-                if (openCount == 1) {
-                    showThanks(ctx.getString(R.string.thanks_downloading))
-                    showThanks(ctx.getString(R.string.thanks_installing))
-                } else if (openCount > 1) {
-                    withContext(Dispatchers.Main) {
-                        Toast.makeText(ctx, ctx.getString(R.string.thanks_using), Toast.LENGTH_SHORT).show()
-                    }
-                }
-            }
-        }
-    }
-
-    fun toggleFavorite(presetKey: String) {
-        val current = _favoritePresets.value.toMutableSet()
-        val isFavorited = if (current.contains(presetKey)) {
-            current.remove(presetKey)
-            false
-        } else {
-            current.add(presetKey)
-            true
-        }
-        _favoritePresets.value = current
-        
-        val isCustom = _presetInfos.value.find { it.key == presetKey }?.description?.startsWith("Custom:") == true
-        analytics.logPresetFavorited(presetKey, isFavorited, isCustom)
-        
-        viewModelScope.launch(Dispatchers.IO) {
-            ctx.getSharedPreferences("viz_prefs", Context.MODE_PRIVATE)
-                .edit().putStringSet("favorite_presets", current).apply()
-        }
-    }
-
-    val _m3eEnabled = MutableStateFlow(true)
-    val m3eEnabled = _m3eEnabled.asStateFlow()
-
-    fun setM3EEnabled(enabled: Boolean) {
-        _m3eEnabled.value = enabled
-        analytics.logSettingChanged("m3e_enabled", enabled)
-        viewModelScope.launch(Dispatchers.IO) {
-            ctx.getSharedPreferences("viz_prefs", Context.MODE_PRIVATE)
-                .edit { putBoolean("m3e_enabled", enabled) }
-        }
     }
 
     // ── Tab ───────────────────────────────────────────────────────────────────

@@ -24,20 +24,24 @@ import android.provider.Settings
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.compose.animation.core.EaseOutCubic
 import androidx.compose.animation.core.FastOutLinearInEasing
-import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -210,7 +214,10 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        enableEdgeToEdge(
+            statusBarStyle = androidx.activity.SystemBarStyle.auto(android.graphics.Color.TRANSPARENT, android.graphics.Color.TRANSPARENT),
+            navigationBarStyle = androidx.activity.SystemBarStyle.auto(android.graphics.Color.TRANSPARENT, android.graphics.Color.TRANSPARENT)
+        )
 
         FirebaseFuckery.init()
 
@@ -469,43 +476,18 @@ internal fun BetterVizApp(
 
     LaunchedEffect(selectedTab) {
         val target = visibleTabs.indexOf(selectedTab).coerceAtLeast(0)
-        val current = pagerState.currentPage
-        if (current != target) {
-            val direction = if (target > current) 1 else -1
-            val steps = (target - current).absoluteValue
-
-            if (steps > 2) {
-                isProgrammaticScroll = true
-                try {
-                    for (i in 1 until steps) {
-                        val isFirstStep = i == 1
-                        val duration = if (isFirstStep) 200 else 100
-                        val easing = if (isFirstStep) FastOutLinearInEasing else LinearEasing
-                        
-                        pagerState.animateScrollToPage(
-                            page = current + (i * direction),
-                            animationSpec = tween(durationMillis = duration, easing = easing)
-                        )
-                    }
-                    pagerState.animateScrollToPage(
-                        page = target,
-                        animationSpec = spring(
-                            dampingRatio = Spring.DampingRatioLowBouncy,
-                            stiffness = Spring.StiffnessMediumLow
-                        )
-                    )
-                } finally {
-                    isProgrammaticScroll = false
-                }
-            } else {
-                pagerState.animateScrollToPage(
-                    page = target,
-                    animationSpec = spring(
-                        dampingRatio = Spring.DampingRatioLowBouncy,
-                        stiffness = Spring.StiffnessMediumLow
-                    )
+        if (pagerState.currentPage != target) {
+            val steps = (target - pagerState.currentPage).absoluteValue
+            // Duration scales with distance but stays within a snappy range
+            val duration = (350 + (steps - 1) * 80).coerceAtMost(700)
+            
+            pagerState.animateScrollToPage(
+                page = target,
+                animationSpec = tween(
+                    durationMillis = duration,
+                    easing = EaseOutCubic
                 )
-            }
+            )
         }
     }
 
@@ -539,6 +521,7 @@ internal fun BetterVizApp(
             StartStopButton(running = isRunning, onClick = onToggleVisualizer)
         },
         containerColor = MaterialTheme.colorScheme.background,
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         modifier = Modifier.fillMaxSize()
     ) { padding ->
         HorizontalPager(

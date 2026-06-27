@@ -109,6 +109,8 @@ internal fun SettingsScreen(
             .verticalScroll(scrollState),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
+        Spacer(Modifier.windowInsetsTopHeight(WindowInsets.statusBars))
+
         ScreenTitle(
             text = stringResource(R.string.settings_title),
             onLongPress = {
