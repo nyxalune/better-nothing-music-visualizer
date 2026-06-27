@@ -1286,13 +1286,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 val binLo = (_hapticFreqMin.value / hzPerBin).toInt().coerceIn(0, magnitude.lastIndex)
                 val binHi = (_hapticFreqMax.value / hzPerBin).toInt().coerceIn(binLo, magnitude.lastIndex)
 
-                var sumSquares = 0f
+                var maxMag = 0f
                 for (i in binLo..binHi) {
-                    sumSquares += magnitude[i] * magnitude[i]
+                    if (magnitude[i] > maxMag) maxMag = magnitude[i];
                 }
-                val count = binHi - binLo + 1
-                val rms = if (count > 0) kotlin.math.sqrt(sumSquares / count) else 0f
-                val targetHaptic = (rms * _hapticAudioGain.value * 12f).coerceIn(0f, 1.0f).toDouble().pow(_hapticGamma.value.toDouble()).toFloat()
+                val targetHaptic = (maxMag * _hapticAudioGain.value * 12f).coerceIn(0f, 1.0f).toDouble().pow(_hapticGamma.value.toDouble()).toFloat()
 
                 // Asymmetric smoothing for haptics
                 if (targetHaptic > smoothedHapticAmplitude) {
@@ -1307,26 +1305,20 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 // Flashlight Amplitude Calculation
                 val fBinLo = (_flashlightFreqMin.value / hzPerBin).toInt().coerceIn(0, magnitude.lastIndex)
                 val fBinHi = (_flashlightFreqMax.value / hzPerBin).toInt().coerceIn(fBinLo, magnitude.lastIndex)
-                var fSumSquares = 0f
-                var fSum = 0f
+                var fMaxMag = 0f
                 for (i in fBinLo..fBinHi) {
-                    fSumSquares += magnitude[i] * magnitude[i]
-                    fSum += magnitude[i]
+                    if (magnitude[i] > fMaxMag) fMaxMag = magnitude[i];
                 }
-                val fCount = fBinHi - fBinLo + 1
-                val fRms = if (fCount > 0) kotlin.math.sqrt(fSumSquares / fCount) else 0f
-                _flashlightAmplitude.value = (fRms * 8f).coerceIn(0f, 1.2f)
+                _flashlightAmplitude.value = (fMaxMag * 8f).coerceIn(0f, 1.2f)
 
                 // UI Amplitude (70-130 Hz) for global reactive UI elements
                 val uiBinLo = (70f / hzPerBin).toInt().coerceIn(0, magnitude.lastIndex)
                 val uiBinHi = (130f / hzPerBin).toInt().coerceIn(uiBinLo, magnitude.lastIndex)
-                var uiSumSquares = 0f
+                var uiMaxMag = 0f
                 for (i in uiBinLo..uiBinHi) {
-                    uiSumSquares += magnitude[i] * magnitude[i]
+                    if (magnitude[i] > uiMaxMag) uiMaxMag = magnitude[i];
                 }
-                val uiCount = uiBinHi - uiBinLo + 1
-                val uiRms = if (uiCount > 0) kotlin.math.sqrt(uiSumSquares / uiCount) else 0f
-                val rawTarget = (uiRms * 10f).coerceIn(0f, 1.0f).toDouble().pow(3.0).toFloat()
+                val rawTarget = (uiMaxMag * 10f).coerceIn(0f, 1.0f).toDouble().pow(3.0).toFloat()
                 val target = (rawTarget * 1.3f) - 0.3f
 
                 // Asymmetric smoothing: very fast attack, slower decay
