@@ -8,8 +8,6 @@
 
 * Remove notification detection
 
-* MAKE THE DEBUG APK BE IN GITHUB ACTIONS ARTIFACTS
-
 * Remove brightness value text on the glyph brightness slider
 
 * Make a workflow that copies the zones.config to the app assets
@@ -21,8 +19,6 @@
 * Make the audio spectrum have the dynamic gain applied to it
 
 * Last viewed screen should be kept in memory
-
-* make the default theme have the nothing light theme when the device theme is light
 
 * *(Low priority)* nothing styled widget with:
     * 3 buttons for source,
@@ -42,10 +38,7 @@
 
 ## Oliver's todo
 * track audio source playing time, not audio_source_change
-* Adaptive Smoothing: Real-time decay adjustment based on music tempo
-* collapse app theme setting section just like the experimental features
-* put the typography selector under that app them section
-* make the collapsed sections a bit bigger
+* Add multiples intensities to flashlight 
 
 ---
 
@@ -55,11 +48,6 @@
 * ***Improve notification (ALEKS DOES IT)***
 
 * Tapping back on the Viz preset editor should go to the prev screen., and tapping back should predictively go to the prev viewed screen tab before exiting the app.
-
-
-* Make the auto latency toggle be in the latency card
-
-* tweak tab switching speed arc
 
 * BNMV redisigned settings expandable cards, with M3E BOUNCY ARROW
 
@@ -84,8 +72,6 @@
 * Adapt ui depending on the audio source (Aleks)
 
 * Say that BNMV is DETERMINISTIC (add to readme)
-
-* Add multiples intensities to flashlight 
 
 * update flashlight monitor with shape = audio, and other thing next to it = flashlight intensity.
   * make the shape flash to the flashlight brightness
@@ -123,6 +109,13 @@
 ---
 
 ## Done
+* Make the auto latency toggle be in the latency card
+* tweak tab switching speed arc
+* collapse app theme setting section just like the experimental features
+* put the typography selector under that app them section
+* make the collapsed sections a bit bigger
+* make the default theme have the nothing light theme when the device theme is light
+* MAKE THE DEBUG APK BE IN GITHUB ACTIONS ARTIFACTS
 * In the Material 3 expressive split button selector, when there are multiple rows, make the corner rounding of the 
 edges only at the corner of the actual box of buttons. Multiple rows still look like it's something unified. And 
 multiply the weight of the selected button by the UI shift variable.
