@@ -11,6 +11,7 @@ import com.better.nothing.music.vizualizer.logic.ContinuousHapticEngine;
 import com.better.nothing.music.vizualizer.logic.BeatDetectionHapticEngine;
 import com.better.nothing.music.vizualizer.logic.FlashlightEngine;
 import com.better.nothing.music.vizualizer.ui.MainActivity;
+import com.better.nothing.music.vizualizer.util.PermissionTrampolineActivity;
 
 import android.Manifest;
 import android.app.Notification;
@@ -101,7 +102,11 @@ public class AudioCaptureService extends Service {
 
     public static final String ACTION_STOP = "com.better.nothing.music.vizualizer.action.STOP";
     public static final String ACTION_TOGGLE_HAPTICS = "com.better.nothing.music.vizualizer.action.TOGGLE_HAPTICS";
+    public static final String ACTION_TOGGLE_TORCH = "com.better.nothing.music.vizualizer.action.TOGGLE_TORCH";
+    public static final String ACTION_TOGGLE_GLYPHS = "com.better.nothing.music.vizualizer.action.TOGGLE_GLYPHS";
+    public static final String ACTION_SET_SOURCE = "com.better.nothing.music.vizualizer.action.SET_SOURCE";
 
+    public static final String EXTRA_SOURCE = "extra_source";
     public static final String EXTRA_PRESET_KEY = "preset_key";
     public static final String EXTRA_RESULT_CODE = "result_code";
     public static final String EXTRA_DATA = "data";
@@ -142,6 +147,9 @@ public class AudioCaptureService extends Service {
     private static void setRunning(boolean running) {
         sIsRunning = running;
         sIsRunningFlow.setValue(running);
+        if (sInstance != null) {
+            sInstance.requestWidgetRefresh();
+        }
     }
     public static AudioCaptureService sInstance = null;
 
@@ -522,6 +530,45 @@ public class AudioCaptureService extends Service {
                 getSharedPreferences(APP_PREFS_NAME, MODE_PRIVATE)
                         .edit().putBoolean("haptic_motor_enabled", newState).apply();
                 requestTileRefresh();
+                return START_NOT_STICKY;
+            } else if (ACTION_TOGGLE_TORCH.equals(intent.getAction())) {
+                boolean newState = !mFlashlightEnabled;
+                setFlashlightEnabled(newState);
+                getSharedPreferences(APP_PREFS_NAME, MODE_PRIVATE)
+                        .edit().putBoolean("flashlight_enabled", newState).apply();
+                requestTileRefresh();
+                return START_NOT_STICKY;
+            } else if (ACTION_TOGGLE_GLYPHS.equals(intent.getAction())) {
+                boolean newState = mMaxBrightness <= 0;
+                setMaxBrightness(newState ? 4095 : 0);
+                getSharedPreferences(APP_PREFS_NAME, MODE_PRIVATE)
+                        .edit().putInt("max_brightness", mMaxBrightness).apply();
+                requestTileRefresh();
+                return START_NOT_STICKY;
+            } else if (ACTION_SET_SOURCE.equals(intent.getAction())) {
+                String sourceName = intent.getStringExtra(EXTRA_SOURCE);
+                if (sourceName != null) {
+                    try {
+                        CaptureSource source = CaptureSource.valueOf(sourceName);
+                        getSharedPreferences(APP_PREFS_NAME, MODE_PRIVATE)
+                                .edit().putString("capture_source", source.name()).apply();
+                        if (sIsRunning) {
+                            // Restart with new source if already running
+                            stopCapture();
+                            if (source == CaptureSource.INTERNAL) {
+                                // We can't easily start INTERNAL from service without new permission data
+                                // so we might need to trigger the trampoline if it's INTERNAL
+                                Intent trampoline = new Intent(this, PermissionTrampolineActivity.class);
+                                trampoline.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                                startActivity(trampoline);
+                            } else if (source == CaptureSource.MIC) {
+                                startMicCapture();
+                            } else if (source == CaptureSource.VIZUALIZER) {
+                                startVizualizerCapture();
+                            }
+                        }
+                    } catch (Exception ignored) {}
+                }
                 return START_NOT_STICKY;
             }
         }
@@ -1002,6 +1049,7 @@ public class AudioCaptureService extends Service {
                 ensureGlyphSession();
             }
         });
+        requestWidgetRefresh();
     }
 
     public void setIdleBreathingEnabled(boolean enabled) {
@@ -1150,6 +1198,7 @@ public class AudioCaptureService extends Service {
             mBeatDetectionEngine.stopHaptics();
         }
         requestTileRefresh();
+        requestWidgetRefresh();
     }
 
     public void setMusicArtwork(android.graphics.Bitmap bitmap) {
@@ -1218,6 +1267,7 @@ public class AudioCaptureService extends Service {
         if (!enabled && mFlashlightEngine != null) {
             mFlashlightEngine.stopFlashlight();
         }
+        requestWidgetRefresh();
     }
 
     public void setFlashlightFreqRange(float minHz, float maxHz) {
@@ -1940,6 +1990,12 @@ public class AudioCaptureService extends Service {
     private void requestTileRefresh() {
         TileService.requestListeningState(this, new ComponentName(this, VisualizerTileService.class));
         TileService.requestListeningState(this, new ComponentName(this, HapticsTileService.class));
+    }
+
+    private void requestWidgetRefresh() {
+        Intent intent = new Intent("com.better.nothing.music.vizualizer.REFRESH_WIDGET");
+        intent.setPackage(getPackageName());
+        sendBroadcast(intent);
     }
 
     private void refreshPresetCatalog() throws IOException, JSONException {
