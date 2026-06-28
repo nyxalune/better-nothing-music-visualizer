@@ -24,6 +24,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import com.better.nothing.music.vizualizer.logic.AudioProcessor
 import com.better.nothing.music.vizualizer.model.DeviceProfile
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -35,6 +36,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Public
 import androidx.compose.material.icons.filled.Save
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Clear
@@ -125,6 +127,37 @@ fun CustomPresetEditorScreen(
     var selectedIndex by remember { mutableIntStateOf(0) }
     val selectedIndices = remember { mutableStateListOf<Int>(0) }
     var isMultiSelect by remember { mutableStateOf(false) }
+    var isLivePreviewEnabled by remember { mutableStateOf(true) }
+
+    val zoneIntensities = remember(fftState, zones) {
+        val intensities = FloatArray(ledCount)
+        if (fftState.isEmpty() || !isLivePreviewEnabled) return@remember intensities
+        val hzPerBin = 44100f / 2048f
+        zones.forEachIndexed { i, zone ->
+            val binLo = (zone.lowHz / hzPerBin).toInt().coerceIn(0, fftState.lastIndex)
+            val binHi = (zone.highHz / hzPerBin).toInt().coerceIn(binLo, fftState.lastIndex)
+            var maxMag = 0f
+            for (bin in binLo..binHi) {
+                if (fftState[bin] > maxMag) maxMag = fftState[bin]
+            }
+            // Simple normalization for UI preview
+            var intensity = (maxMag * 15f).coerceIn(0f, 1f)
+            intensity = intensity * intensity // Shaping
+            
+            // Apply percent slice
+            if (!zone.lowPercent.isNaN() && !zone.highPercent.isNaN()) {
+                val low = zone.lowPercent / 100f
+                val high = zone.highPercent / 100f
+                intensity = when {
+                    intensity <= low -> 0f
+                    intensity >= high || high == low -> 1f
+                    else -> (intensity - low) / (high - low)
+                }
+            }
+            intensities[i] = intensity
+        }
+        intensities
+    }
 
     fun distributeLogarithmically() {
         if (selectedIndices.isEmpty()) return
@@ -363,6 +396,7 @@ fun CustomPresetEditorScreen(
                 EditableGlyphPreview(
                     device = selectedDevice,
                     selectedIndices = selectedIndices.toList(),
+                    intensities = zoneIntensities,
                     onIndexSelected = { idx, multi ->
                         if (multi || isMultiSelect) {
                             if (selectedIndices.contains(idx)) selectedIndices.remove(idx)
@@ -376,6 +410,18 @@ fun CustomPresetEditorScreen(
                     },
                     modifier = Modifier.fillMaxSize()
                 )
+                
+                // Live Preview Toggle
+                FilterChip(
+                    selected = isLivePreviewEnabled,
+                    onClick = { isLivePreviewEnabled = !isLivePreviewEnabled },
+                    label = { Text("LIVE", fontSize = 10.sp, fontWeight = FontWeight.Bold) },
+                    modifier = Modifier.align(Alignment.TopEnd).padding(8.dp),
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = Color.Red.copy(alpha = 0.7f),
+                        selectedLabelColor = Color.White
+                    )
+                )
             }
 
             Row(
@@ -385,6 +431,25 @@ fun CustomPresetEditorScreen(
             ) {
                 Text(stringResource(AppR.string.segments_selected, selectedIndices.size), color = Color.White, style = MaterialTheme.typography.titleMedium)
                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
+                    val w = DeviceProfile.getMatrixWidth(selectedDevice)
+                    if (w > 0) {
+                        TextButton(onClick = {
+                            val row = selectedIndices.firstOrNull()?.let { it / w } ?: 0
+                            for (c in 0 until w) {
+                                val idx = row * w + c
+                                if (!selectedIndices.contains(idx)) selectedIndices.add(idx)
+                            }
+                        }) { Text("Row", fontSize = 12.sp) }
+                        TextButton(onClick = {
+                            val col = selectedIndices.firstOrNull()?.let { it % w } ?: 0
+                            val h = DeviceProfile.getMatrixHeight(selectedDevice)
+                            for (r in 0 until h) {
+                                val idx = r * w + col
+                                if (!selectedIndices.contains(idx)) selectedIndices.add(idx)
+                            }
+                        }) { Text("Col", fontSize = 12.sp) }
+                    }
+
                     TextButton(onClick = ::selectAll) { Text("All", fontSize = 12.sp) }
                     TextButton(onClick = ::invertSelection) { Text("Inv", fontSize = 12.sp) }
                     FilterChip(
@@ -525,18 +590,27 @@ fun CustomPresetEditorScreen(
                             verticalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
                             listOf(
-                                "Sub" to (20f..60f),
-                                "Bass" to (60f..250f),
-                                "Mids" to (250f..2000f),
-                                "Vocal" to (500f..3500f),
-                                "Highs" to (4000f..12000f),
-                                "Air" to (12000f..20000f)
-                            ).forEach { (label, range) ->
+                                "Sub" to (20f..60f) to Color(0xFF9C27B0),
+                                "Bass" to (60f..250f) to Color(0xFF2196F3),
+                                "Mids" to (250f..2000f) to Color(0xFF4CAF50),
+                                "Vocal" to (500f..3500f) to Color(0xFFFFEB3B),
+                                "Highs" to (4000f..12000f) to Color(0xFFFF9800),
+                                "Air" to (12000f..20000f) to Color(0xFFF44336)
+                            ).forEach { (data, bandColor) ->
+                                val (label, range) = data
                                 InputChip(
                                     selected = false,
                                     onClick = { applyFrequencyPreset(range.start, range.endInclusive) },
-                                    label = { Text(label, fontSize = 11.sp) },
-                                    colors = InputChipDefaults.inputChipColors(labelColor = Color.LightGray)
+                                    label = { Text(label, fontSize = 11.sp, color = if (label == "Vocal") Color.Black else Color.Unspecified) },
+                                    colors = InputChipDefaults.inputChipColors(
+                                        containerColor = bandColor.copy(alpha = 0.2f),
+                                        labelColor = Color.LightGray
+                                    ),
+                                    border = InputChipDefaults.inputChipBorder(
+                                        borderColor = bandColor.copy(alpha = 0.5f),
+                                        enabled = true,
+                                        selected = false
+                                    )
                                 )
                             }
                         }
@@ -591,6 +665,29 @@ fun CustomPresetEditorScreen(
 
                         val lowPerc = if (zone.lowPercent.isNaN()) 0f else zone.lowPercent / 100f
                         val highPerc = if (zone.highPercent.isNaN()) 1f else zone.highPercent / 100f
+
+                        FlowRow(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            listOf(
+                                "Full" to (0f..1f),
+                                "Gate" to (0.15f..1f),
+                                "Peak" to (0f..0.5f),
+                                "Mid-Only" to (0.3f..0.7f)
+                            ).forEach { (label, range) ->
+                                AssistChip(
+                                    onClick = {
+                                        pushUndo()
+                                        selectedIndices.forEach { idx ->
+                                            zones[idx] = AudioProcessor.ZoneSpec(zones[idx].lowHz, zones[idx].highHz, range.start * 100f, range.endInclusive * 100f)
+                                        }
+                                    },
+                                    label = { Text(label, fontSize = 10.sp) }
+                                )
+                            }
+                        }
 
                         ExpressiveRangeSlider(
                             value = lowPerc..highPerc,
@@ -692,6 +789,7 @@ fun SpectrumCanvas(
 fun EditableGlyphPreview(
     device: Int,
     selectedIndices: List<Int>,
+    intensities: FloatArray,
     onIndexSelected: (Int, Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -711,122 +809,231 @@ fun EditableGlyphPreview(
         }
     }
     
-    Canvas(modifier = modifier.pointerInput(device) {
-        detectTapGestures { offset ->
-            val viewBoxW = 182f
-            val viewBoxH = if (device == DeviceProfile.DEVICE_NP1 || device == DeviceProfile.DEVICE_NP2) 382f else 182f
-            val scale = min(size.width / viewBoxW, size.height / viewBoxH)
-            val dx = (size.width - viewBoxW * scale) / 2
-            val dy = (size.height - viewBoxH * scale) / 2
-            
-            val localX = (offset.x - dx) / scale
-            val localY = (offset.y - dy) / scale
-
-            if (device == DeviceProfile.DEVICE_NP4APRO || device == DeviceProfile.DEVICE_NP3) {
-                val isPro = device == DeviceProfile.DEVICE_NP4APRO
-                val matrixW = if (isPro) 13 else 25
-                val matrixH = if (isPro) 13 else 25
-                val pixelSize = if (isPro) 8f else 4.5f
-                val pixelGap = if (isPro) 1.5f else 1f
-                val gridWidth = matrixW * pixelSize + (matrixW - 1) * pixelGap
-                val gridHeight = matrixH * pixelSize + (matrixH - 1) * pixelGap
-                val startX = (182f - gridWidth) / 2
-                val startY = (382f - gridHeight) / 2
+    Canvas(modifier = modifier
+        .pointerInput(device) {
+            detectTapGestures { offset ->
+                val viewBoxW = 182f
+                val viewBoxH = if (device == DeviceProfile.DEVICE_NP1 || device == DeviceProfile.DEVICE_NP2) 382f else 182f
+                val scale = min(size.width / viewBoxW, size.height / viewBoxH)
+                val dx = (size.width - viewBoxW * scale) / 2
+                val dy = (size.height - viewBoxH * scale) / 2
                 
-                val col = ((localX - startX) / (pixelSize + pixelGap)).toInt()
-                val row = ((localY - startY) / (pixelSize + pixelGap)).toInt()
-                
-                if (col in 0 until matrixW && row in 0 until matrixH) {
-                    onIndexSelected(row * matrixW + col, false)
-                }
-            } else {
-                val hit = paths.entries.firstOrNull { entry ->
-                    regions[entry.key]?.contains(localX.toInt(), localY.toInt()) == true
-                }
+                val localX = (offset.x - dx) / scale
+                val localY = (offset.y - dy) / scale
 
-                if (hit != null) {
-                    val idx = when(device) {
-                        DeviceProfile.DEVICE_NP1 -> when(hit.key) {
-                            "p1_cam" -> 0
-                            "p1_slash" -> 1
-                            "p1_ring_bl" -> 2
-                            "p1_ring_br" -> 3
-                            "p1_ring_tr" -> 4
-                            "p1_ring_tl" -> 5
-                            "p1_dot" -> 6
-                            "p1_battery" -> {
-                                val b = hit.value.getBounds()
-                                val row = ((localY - b.top) / (b.height / 8)).toInt().coerceIn(0, 7)
-                                7 + row
-                            }
-                            else -> -1
-                        }
-                        DeviceProfile.DEVICE_NP2 -> when(hit.key) {
-                            "p2_0" -> 0
-                            "p2_1" -> 1
-                            "p2_2" -> 2
-                            "p2_ring" -> {
-                                val b = hit.value.getBounds()
-                                val row = ((localY - b.top) / (b.height / 16)).toInt().coerceIn(0, 15)
-                                3 + row
-                            }
-                            "p2_19" -> 19
-                            "p2_20" -> 20
-                            "p2_21" -> 21
-                            "p2_22" -> 22
-                            "p2_23" -> 23
-                            "p2_24" -> 24
-                            "p2_battery" -> {
-                                val b = hit.value.getBounds()
-                                val row = ((localY - b.top) / (b.height / 8)).toInt().coerceIn(0, 7)
-                                25 + row
-                            }
-                            else -> -1
-                        }
-                        DeviceProfile.DEVICE_NP2A -> when(hit.key) {
-                            "p2a_large" -> {
-                                val b = hit.value.getBounds()
-                                val row = ((localY - b.top) / (b.height / 24)).toInt().coerceIn(0, 23)
-                                row
-                            }
-                            "p2a_medium" -> 24
-                            "p2a_small" -> 25
-                            else -> -1
-                        }
-                        DeviceProfile.DEVICE_NP3A -> when(hit.key) {
-                            "p3a_large" -> {
-                                val b = hit.value.getBounds()
-                                val row = ((localY - b.top) / (b.height / 20)).toInt().coerceIn(0, 19)
-                                row
-                            }
-                            "p3a_medium" -> {
-                                val b = hit.value.getBounds()
-                                val row = ((localY - b.top) / (b.height / 11)).toInt().coerceIn(0, 10)
-                                20 + row
-                            }
-                            "p3a_small" -> {
-                                val b = hit.value.getBounds()
-                                val col = ((localX - b.left) / (b.width / 5)).toInt().coerceIn(0, 4)
-                                31 + col
-                            }
-                            else -> -1
-                        }
-                        DeviceProfile.DEVICE_NP4A -> when(hit.key) {
-                            "p4a_bar" -> {
-                                val b = hit.value.getBounds()
-                                val col = ((localX - b.left) / (b.width / 6)).toInt().coerceIn(0, 5)
-                                col
-                            }
-                            "p4a_dot" -> 6
-                            else -> -1
-                        }
-                        else -> -1
+                if (device == DeviceProfile.DEVICE_NP4APRO || device == DeviceProfile.DEVICE_NP3) {
+                    val isPro = device == DeviceProfile.DEVICE_NP4APRO
+                    val matrixW = if (isPro) 13 else 25
+                    val matrixH = if (isPro) 13 else 25
+                    val pixelSize = if (isPro) 8f else 4.5f
+                    val pixelGap = if (isPro) 1.5f else 1f
+                    val gridWidth = matrixW * pixelSize + (matrixW - 1) * pixelGap
+                    val gridHeight = matrixH * pixelSize + (matrixH - 1) * pixelGap
+                    val startX = (182f - gridWidth) / 2
+                    val startY = (382f - gridHeight) / 2
+                    
+                    val col = ((localX - startX) / (pixelSize + pixelGap)).toInt()
+                    val row = ((localY - startY) / (pixelSize + pixelGap)).toInt()
+                    
+                    if (col in 0 until matrixW && row in 0 until matrixH) {
+                        onIndexSelected(row * matrixW + col, false)
                     }
-                    if (idx != -1) onIndexSelected(idx, false)
+                } else {
+                    val hit = paths.entries.firstOrNull { entry ->
+                        regions[entry.key]?.contains(localX.toInt(), localY.toInt()) == true
+                    }
+
+                    if (hit != null) {
+                        val idx = when(device) {
+                            DeviceProfile.DEVICE_NP1 -> when(hit.key) {
+                                "p1_cam" -> 0
+                                "p1_slash" -> 1
+                                "p1_ring_bl" -> 2
+                                "p1_ring_br" -> 3
+                                "p1_ring_tr" -> 4
+                                "p1_ring_tl" -> 5
+                                "p1_dot" -> 6
+                                "p1_battery" -> {
+                                    val b = hit.value.getBounds()
+                                    val row = ((localY - b.top) / (b.height / 8)).toInt().coerceIn(0, 7)
+                                    7 + row
+                                }
+                                else -> -1
+                            }
+                            DeviceProfile.DEVICE_NP2 -> when(hit.key) {
+                                "p2_0" -> 0
+                                "p2_1" -> 1
+                                "p2_2" -> 2
+                                "p2_ring" -> {
+                                    val b = hit.value.getBounds()
+                                    val row = ((localY - b.top) / (b.height / 16)).toInt().coerceIn(0, 15)
+                                    3 + row
+                                }
+                                "p2_19" -> 19
+                                "p2_20" -> 20
+                                "p2_21" -> 21
+                                "p2_22" -> 22
+                                "p2_23" -> 23
+                                "p2_24" -> 24
+                                "p2_battery" -> {
+                                    val b = hit.value.getBounds()
+                                    val row = ((localY - b.top) / (b.height / 8)).toInt().coerceIn(0, 7)
+                                    25 + row
+                                }
+                                else -> -1
+                            }
+                            DeviceProfile.DEVICE_NP2A -> when(hit.key) {
+                                "p2a_large" -> {
+                                    val b = hit.value.getBounds()
+                                    val row = ((localY - b.top) / (b.height / 24)).toInt().coerceIn(0, 23)
+                                    row
+                                }
+                                "p2a_medium" -> 24
+                                "p2a_small" -> 25
+                                else -> -1
+                            }
+                            DeviceProfile.DEVICE_NP3A -> when(hit.key) {
+                                "p3a_large" -> {
+                                    val b = hit.value.getBounds()
+                                    val row = ((localY - b.top) / (b.height / 20)).toInt().coerceIn(0, 19)
+                                    row
+                                }
+                                "p3a_medium" -> {
+                                    val b = hit.value.getBounds()
+                                    val row = ((localY - b.top) / (b.height / 11)).toInt().coerceIn(0, 10)
+                                    20 + row
+                                }
+                                "p3a_small" -> {
+                                    val b = hit.value.getBounds()
+                                    val col = ((localX - b.left) / (b.width / 5)).toInt().coerceIn(0, 4)
+                                    31 + col
+                                }
+                                else -> -1
+                            }
+                            DeviceProfile.DEVICE_NP4A -> when(hit.key) {
+                                "p4a_bar" -> {
+                                    val b = hit.value.getBounds()
+                                    val col = ((localX - b.left) / (b.width / 6)).toInt().coerceIn(0, 5)
+                                    col
+                                }
+                                "p4a_dot" -> 6
+                                else -> -1
+                            }
+                            else -> -1
+                        }
+                        if (idx != -1) onIndexSelected(idx, false)
+                    }
                 }
             }
         }
-    }) {
+        .pointerInput(device) {
+            detectDragGestures { change, _ ->
+                change.consume()
+                val viewBoxW = 182f
+                val viewBoxH = if (device == DeviceProfile.DEVICE_NP1 || device == DeviceProfile.DEVICE_NP2) 382f else 182f
+                val scale = min(size.width / viewBoxW, size.height / viewBoxH)
+                val dx = (size.width - viewBoxW * scale) / 2
+                val dy = (size.height - viewBoxH * scale) / 2
+                
+                val localX = (change.position.x - dx) / scale
+                val localY = (change.position.y - dy) / scale
+
+                if (device == DeviceProfile.DEVICE_NP4APRO || device == DeviceProfile.DEVICE_NP3) {
+                    val isPro = device == DeviceProfile.DEVICE_NP4APRO
+                    val matrixW = if (isPro) 13 else 25
+                    val matrixH = if (isPro) 13 else 25
+                    val pixelSize = if (isPro) 8f else 4.5f
+                    val pixelGap = if (isPro) 1.5f else 1f
+                    val gridWidth = matrixW * pixelSize + (matrixW - 1) * pixelGap
+                    val gridHeight = matrixH * pixelSize + (matrixH - 1) * pixelGap
+                    val startX = (182f - gridWidth) / 2
+                    val startY = (382f - gridHeight) / 2
+                    
+                    val col = ((localX - startX) / (pixelSize + pixelGap)).toInt()
+                    val row = ((localY - startY) / (pixelSize + pixelGap)).toInt()
+                    
+                    if (col in 0 until matrixW && row in 0 until matrixH) {
+                        onIndexSelected(row * matrixW + col, true)
+                    }
+                } else {
+                    val hit = paths.entries.firstOrNull { entry ->
+                        regions[entry.key]?.contains(localX.toInt(), localY.toInt()) == true
+                    }
+                    if (hit != null) {
+                        val idx = when(device) {
+                            DeviceProfile.DEVICE_NP1 -> when(hit.key) {
+                                "p1_cam" -> 0
+                                "p1_slash" -> 1
+                                "p1_ring_bl" -> 2
+                                "p1_ring_br" -> 3
+                                "p1_ring_tr" -> 4
+                                "p1_ring_tl" -> 5
+                                "p1_dot" -> 6
+                                "p1_battery" -> {
+                                    val b = hit.value.getBounds()
+                                    val row = ((localY - b.top) / (b.height / 8)).toInt().coerceIn(0, 7)
+                                    7 + row
+                                }
+                                else -> -1
+                            }
+                            DeviceProfile.DEVICE_NP2 -> when(hit.key) {
+                                "p2_0" -> 0
+                                "p2_1" -> 1
+                                "p2_2" -> 2
+                                "p2_ring" -> {
+                                    val b = hit.value.getBounds()
+                                    val row = ((localY - b.top) / (b.height / 16)).toInt().coerceIn(0, 15)
+                                    3 + row
+                                }
+                                "p2_19" -> 19
+                                "p2_20" -> 20
+                                "p2_21" -> 21
+                                "p2_22" -> 22
+                                "p2_23" -> 23
+                                "p2_24" -> 24
+                                "p2_battery" -> {
+                                    val b = hit.value.getBounds()
+                                    val row = ((localY - b.top) / (b.height / 8)).toInt().coerceIn(0, 7)
+                                    25 + row
+                                }
+                                else -> -1
+                            }
+                            DeviceProfile.DEVICE_NP2A -> when(hit.key) {
+                                "p2a_large" -> {
+                                    val b = hit.value.getBounds()
+                                    val row = ((localY - b.top) / (b.height / 24)).toInt().coerceIn(0, 23)
+                                    row
+                                }
+                                "p2a_medium" -> 24
+                                "p2a_small" -> 25
+                                else -> -1
+                            }
+                            DeviceProfile.DEVICE_NP3A -> when(hit.key) {
+                                "p3a_large" -> {
+                                    val b = hit.value.getBounds()
+                                    val row = ((localY - b.top) / (b.height / 20)).toInt().coerceIn(0, 19)
+                                    row
+                                }
+                                "p3a_medium" -> {
+                                    val b = hit.value.getBounds()
+                                    val row = ((localY - b.top) / (b.height / 11)).toInt().coerceIn(0, 10)
+                                    20 + row
+                                }
+                                "p3a_small" -> {
+                                    val b = hit.value.getBounds()
+                                    val col = ((localX - b.left) / (b.width / 5)).toInt().coerceIn(0, 4)
+                                    31 + col
+                                }
+                                else -> -1
+                            }
+                            else -> -1
+                        }
+                        if (idx != -1) onIndexSelected(idx, true)
+                    }
+                }
+            }
+        }
+    ) {
         val viewBoxW = 182f
         val viewBoxH = if (device == DeviceProfile.DEVICE_NP1 || device == DeviceProfile.DEVICE_NP2) 382f else 182f
         val scale = min(size.width / viewBoxW, size.height / viewBoxH)
@@ -837,18 +1044,39 @@ fun EditableGlyphPreview(
             translate(dx, dy)
             scale(scale, scale, pivot = Offset.Zero)
         }) {
-            drawEditorGlyphs(this, device, selectedIndices, paths)
+            drawEditorGlyphs(this, device, selectedIndices, intensities, paths)
         }
     }
 }
 
-private fun drawEditorGlyphs(scope: DrawScope, device: Int, selectedIndices: List<Int>, paths: Map<String, Path>) {
+private fun drawEditorGlyphs(scope: DrawScope, device: Int, selectedIndices: List<Int>, intensities: FloatArray, paths: Map<String, Path>) {
     val selectedColor = Color.Red
     val normalColor = Color.White
     val baseAlpha = 0.2f
 
-    fun getColor(idx: Int) = if (selectedIndices.contains(idx)) selectedColor else normalColor
-    fun getAlpha(idx: Int) = if (selectedIndices.contains(idx)) 1.0f else baseAlpha
+    fun getColor(idx: Int): Color {
+        val isSelected = selectedIndices.contains(idx)
+        val intensity = if (idx < intensities.size) intensities[idx] else 0f
+        
+        return if (intensity > 0.01f) {
+            // Visualizing mode: Blend between base color and bright white based on intensity
+            // But if selected, keep a red tint
+            if (isSelected) lerp(selectedColor, Color.White, intensity)
+            else lerp(normalColor.copy(alpha = baseAlpha), Color.White, intensity)
+        } else {
+            if (isSelected) selectedColor else normalColor
+        }
+    }
+    
+    fun getAlpha(idx: Int): Float {
+        val isSelected = selectedIndices.contains(idx)
+        val intensity = if (idx < intensities.size) intensities[idx] else 0f
+        return if (intensity > 0.01f) {
+            (baseAlpha + (1f - baseAlpha) * intensity).coerceIn(0f, 1f)
+        } else {
+            if (isSelected) 1.0f else baseAlpha
+        }
+    }
 
     when (device) {
         DeviceProfile.DEVICE_NP1 -> {
@@ -865,7 +1093,7 @@ private fun drawEditorGlyphs(scope: DrawScope, device: Int, selectedIndices: Lis
             paths["p1_ring_tr"]?.let { scope.drawPath(it, getColor(4), alpha = getAlpha(4)) }
             paths["p1_ring_tl"]?.let { scope.drawPath(it, getColor(5), alpha = getAlpha(5)) }
             paths["p1_dot"]?.let { scope.drawPath(it, getColor(6), alpha = getAlpha(6)) }
-            paths["p1_battery"]?.let { drawPathSegmentedVertical(scope, it, (7..14).toList(), selectedIndices, selectedColor, normalColor, baseAlpha) }
+            paths["p1_battery"]?.let { drawPathSegmentedVertical(scope, it, (7..14).toList(), selectedIndices, intensities, selectedColor, normalColor, baseAlpha) }
         }
         DeviceProfile.DEVICE_NP2 -> {
             scope.withTransform({
@@ -879,19 +1107,19 @@ private fun drawEditorGlyphs(scope: DrawScope, device: Int, selectedIndices: Lis
             }
 
             // NP2 Progress glyph (3-18) is a single sequence of 16 segments in its arc
-            paths["p2_ring"]?.let { drawPathSegmentedVertical(scope, it, (3..18).toList(), selectedIndices, selectedColor, normalColor, baseAlpha) }
+            paths["p2_ring"]?.let { drawPathSegmentedVertical(scope, it, (3..18).toList(), selectedIndices, intensities, selectedColor, normalColor, baseAlpha) }
 
             for (i in 19..24) {
                 paths["p2_$i"]?.let { scope.drawPath(it, getColor(i), alpha = getAlpha(i)) }
             }
-            paths["p2_battery"]?.let { drawPathSegmentedVertical(scope, it, (25..32).toList(), selectedIndices, selectedColor, normalColor, baseAlpha) }
+            paths["p2_battery"]?.let { drawPathSegmentedVertical(scope, it, (25..32).toList(), selectedIndices, intensities, selectedColor, normalColor, baseAlpha) }
         }
         DeviceProfile.DEVICE_NP2A -> {
             scope.withTransform({
                 translate(-13.02971f, -40f)
                 scale(1.128745f, 1.128745f, pivot = Offset.Zero)
             }) {
-                paths["p2a_large"]?.let { drawPathSegmentedVertical(this, it, (0..23).toList(), selectedIndices, selectedColor, normalColor, baseAlpha) }
+                paths["p2a_large"]?.let { drawPathSegmentedVertical(this, it, (0..23).toList(), selectedIndices, intensities, selectedColor, normalColor, baseAlpha) }
                 paths["p2a_medium"]?.let { drawPath(it, getColor(24), alpha = getAlpha(24)) }
                 paths["p2a_small"]?.let { drawPath(it, getColor(25), alpha = getAlpha(25)) }
             }
@@ -906,13 +1134,13 @@ private fun drawEditorGlyphs(scope: DrawScope, device: Int, selectedIndices: Lis
                     drawPath(it, Color.White.copy(alpha = 0.06f))
                 }
 
-                paths["p3a_large"]?.let { drawPathSegmentedVertical(this, it, (0..19).toList(), selectedIndices, selectedColor, normalColor, baseAlpha) }
-                paths["p3a_medium"]?.let { drawPathSegmentedVertical(this, it, (20..30).toList(), selectedIndices, selectedColor, normalColor, baseAlpha) }
-                paths["p3a_small"]?.let { drawPathSegmentedVertical(this, it, (31..35).toList(), selectedIndices, selectedColor, normalColor, baseAlpha, vertical = false) }
+                paths["p3a_large"]?.let { drawPathSegmentedVertical(this, it, (0..19).toList(), selectedIndices, intensities, selectedColor, normalColor, baseAlpha) }
+                paths["p3a_medium"]?.let { drawPathSegmentedVertical(this, it, (20..30).toList(), selectedIndices, intensities, selectedColor, normalColor, baseAlpha) }
+                paths["p3a_small"]?.let { drawPathSegmentedVertical(this, it, (31..35).toList(), selectedIndices, intensities, selectedColor, normalColor, baseAlpha, vertical = false) }
             }
         }
         DeviceProfile.DEVICE_NP4A -> {
-            paths["p4a_bar"]?.let { drawPathSegmentedVertical(scope, it, (0..5).toList(), selectedIndices, selectedColor, normalColor, baseAlpha, vertical = false) }
+            paths["p4a_bar"]?.let { drawPathSegmentedVertical(scope, it, (0..5).toList(), selectedIndices, intensities, selectedColor, normalColor, baseAlpha, vertical = false) }
             paths["p4a_dot"]?.let { scope.drawPath(it, getColor(6), alpha = getAlpha(6)) }
         }
         DeviceProfile.DEVICE_NP4APRO, DeviceProfile.DEVICE_NP3 -> {
@@ -962,6 +1190,7 @@ private fun drawPathSegmentedVertical(
     path: Path,
     indices: List<Int>,
     selectedIndices: List<Int>,
+    intensities: FloatArray,
     selectedColor: Color,
     normalColor: Color,
     baseAlpha: Float,
@@ -974,8 +1203,20 @@ private fun drawPathSegmentedVertical(
 
     indices.forEachIndexed { i, idx ->
         val isSelected = selectedIndices.contains(idx)
-        val color = if (isSelected) selectedColor else normalColor
-        val alpha = if (isSelected) 1.0f else baseAlpha
+        val intensity = if (idx < intensities.size) intensities[idx] else 0f
+        
+        val color = if (intensity > 0.01f) {
+            if (isSelected) lerp(selectedColor, Color.White, intensity)
+            else lerp(normalColor.copy(alpha = baseAlpha), Color.White, intensity)
+        } else {
+            if (isSelected) selectedColor else normalColor
+        }
+        
+        val alpha = if (intensity > 0.01f) {
+            (baseAlpha + (1f - baseAlpha) * intensity).coerceIn(0f, 1f)
+        } else {
+            if (isSelected) 1.0f else baseAlpha
+        }
 
         scope.clipRect(
             left = if (vertical) b.left else b.left + i * step,
