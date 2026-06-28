@@ -370,7 +370,6 @@ class MainActivity : ComponentActivity() {
             viewModel.setFlashlightIntensityLevels(it.flashlightIntensityLevels)
             it.setIdleBreathingEnabled(viewModel.idleBreathingEnabled.value)
             it.setIdlePattern(viewModel.idlePattern.value)
-            it.setNotificationFlashEnabled(viewModel.notificationFlashEnabled.value)
             it.setStrobeEnabled(viewModel.strobeEnabled.value)
             it.setDisableGlyphsWhenSilent(viewModel.disableGlyphsWhenSilent.value)
         }
@@ -711,7 +710,6 @@ internal fun BetterVizApp(
                     Tab.Settings -> {
                         val idleBreathingEnabled by viewModel.idleBreathingEnabled.collectAsStateWithLifecycle()
                         val idlePattern by viewModel.idlePattern.collectAsStateWithLifecycle()
-                        val notificationFlashEnabled by viewModel.notificationFlashEnabled.collectAsStateWithLifecycle()
                         val strobeEnabled by viewModel.strobeEnabled.collectAsStateWithLifecycle()
                         val disableGlyphsWhenSilent by viewModel.disableGlyphsWhenSilent.collectAsStateWithLifecycle()
                         val overlayEnabled by viewModel.overlayEnabled.collectAsStateWithLifecycle()
@@ -726,12 +724,6 @@ internal fun BetterVizApp(
                             },
                             idlePattern = idlePattern,
                             onIdlePatternChanged = { viewModel.setIdlePattern(it) },
-                            notificationFlashEnabled = notificationFlashEnabled,
-                            onNotificationFlashEnabledChanged = {
-                                viewModel.setNotificationFlashEnabled(
-                                    it
-                                )
-                            },
                             strobeEnabled = strobeEnabled,
                             onStrobeEnabledChanged = { viewModel.setStrobeEnabled(it) },
                             disableGlyphsWhenSilent = disableGlyphsWhenSilent,

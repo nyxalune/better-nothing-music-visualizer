@@ -51,6 +51,7 @@ Even if it technically isn’t, the visual response to music just isn’t very o
 
 
 ### <img src="https://fonts.gstatic.com/s/e/notoemoji/latest/2699_fe0f/512.gif" alt="⚙" width="25" height="25"> How it works (technically)
+- **Deterministic**: BNMV is fully **deterministic**. Unlike some stock implementations that can feel semi-random, our visualizer uses direct mathematical analysis of the audio stream to ensure every light corresponds exactly to a frequency range.
 - A high quality audio stream is captured through the source you select
 - **FFT (Fast Fourier Transform)** is used to analyze frequencies in a **20 ms window** for each **16.666 ms frame** (60 FPS), making the visualization more accurate
 - For the Glyph Visualization:
@@ -96,7 +97,10 @@ You can:
 * Create new presets
 * Disscuss with the developpers
 
-##  <img src="https://fonts.gstatic.com/s/e/notoemoji/latest/1f512/512.gif" alt="🔒" width="25" height="25"> Security
+##  <img src="https://fonts.gstatic.com/s/e/notoemoji/latest/1f512/512.gif" alt="🔒" width="25" height="25"> Privacy & Security
+- **Privacy**: The app only captures the audio stream to power the visualizer. No audio content or personal media is ever stored or transmitted.
+- **Analytics**: This app uses Google Analytics (Firebase) to collect anonymous usage statistics and crash reports. This data helps us understand how the app is used and fix any issues that occur, ultimately improving the experience for everyone.
+
 **The link to the VirusTotal scan can be found here:**  
 https://www.virustotal.com/gui/url/c92c1ff82b56eb60bfd1e159592d09f949f0ea2d195e01f7f5adbef0e0b0385b?nocache=1
 

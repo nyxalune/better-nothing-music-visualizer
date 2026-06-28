@@ -257,7 +257,6 @@ public class AudioCaptureService extends Service {
     private volatile int mMaxBrightness = 4095;
 
     private boolean mIdleBreathingEnabled = false;
-    private boolean mNotificationFlashEnabled = false;
     private boolean mDisableGlyphsWhenSilent = false;
 
     private boolean mOverlayEnabled = false;
@@ -267,9 +266,6 @@ public class AudioCaptureService extends Service {
     private int mOverlayColor = android.graphics.Color.WHITE;
     private WindowManager mWindowManager;
     private VisualizerOverlayView mOverlayView;
-
-    private long mLastNotificationFlashMs = 0;
-    private static final long FLASH_DURATION_MS = 200L;
 
     private volatile boolean mHapticEnabled = false;
     private volatile HapticMode mHapticMode = HapticMode.BASS_TO_AMPLITUDE;
@@ -425,7 +421,6 @@ public class AudioCaptureService extends Service {
         SharedPreferences appPrefs = getSharedPreferences(APP_PREFS_NAME, MODE_PRIVATE);
         mMaxBrightness = clampGlyphBrightness(appPrefs.getInt("max_brightness", MAX_GLYPH_BRIGHTNESS));
         mIdleBreathingEnabled = appPrefs.getBoolean("idle_breathing_enabled", false);
-        mNotificationFlashEnabled = appPrefs.getBoolean("notification_flash_enabled", false);
         mDisableGlyphsWhenSilent = appPrefs.getBoolean("disable_glyphs_when_silent", false);
         mOverlayEnabled = appPrefs.getBoolean("overlay_enabled", false);
         mOverlayWidth = appPrefs.getInt("overlay_width", 120);
@@ -437,7 +432,7 @@ public class AudioCaptureService extends Service {
             mAudioProcessor.setAutoGainEnabled(dynamicGainEnabled);
         }
 
-        mGlyphRenderer = new GlyphRenderer(mGamma, mIdleBreathingEnabled, mNotificationFlashEnabled, mSelectedDevice);
+        mGlyphRenderer = new GlyphRenderer(mGamma, mIdleBreathingEnabled, mSelectedDevice);
         mGlyphRenderer.setStrobeEnabled(appPrefs.getBoolean("strobe_enabled", false));
         mGlyphRenderer.setMaxBrightness(mMaxBrightness);
         float spectrumGain = appPrefs.getFloat("spectrum_gain", 4.0f);
@@ -1063,13 +1058,6 @@ public class AudioCaptureService extends Service {
         }
     }
 
-    public void setNotificationFlashEnabled(boolean enabled) {
-        mNotificationFlashEnabled = enabled;
-        if (mGlyphRenderer != null) {
-            mGlyphRenderer.setNotificationFlashEnabled(enabled);
-        }
-    }
-
     public void setStrobeEnabled(boolean enabled) {
         if (mGlyphRenderer != null) {
             mGlyphRenderer.setStrobeEnabled(enabled);
@@ -1182,12 +1170,6 @@ public class AudioCaptureService extends Service {
                 mWindowManager.removeView(mOverlayView);
             } catch (Exception ignored) {}
             mOverlayView = null;
-        }
-    }
-
-    public void triggerNotificationFlash() {
-        if (mSelectedDevice != DeviceProfile.DEVICE_UNKNOWN && mNotificationFlashEnabled) {
-            mLastNotificationFlashMs = SystemClock.elapsedRealtime();
         }
     }
 
@@ -1686,10 +1668,6 @@ public class AudioCaptureService extends Service {
         }
 
         if (now - mLastSendMs < MIN_SEND_INTERVAL_MS) return;
-
-        if (now - mLastNotificationFlashMs < FLASH_DURATION_MS) {
-            mGlyphRenderer.triggerNotificationFlash(now);
-        }
 
         // Apply local gain directly to uniqueMagnitudes before renderer
         float[] boostedMagnitudes = new float[uniqueMagnitudes.length];

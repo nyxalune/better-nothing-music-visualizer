@@ -6,13 +6,7 @@
   
 * and work on the translation tools so we can get hoomans to translate our app.
 
-* Remove notification detection
-
 * Remove brightness value text on the glyph brightness slider
-
-* Make a workflow that copies the zones.config to the app assets
-  * And don't force download anything on startup!!!!
-  * And don't care about zones.config if the phone doesn't have a glyph interface
 
 * Make some gifs for the demos, not videos!
 
@@ -20,17 +14,9 @@
 
 * Last viewed screen should be kept in memory
 
-* *(Low priority)* nothing styled widget with:
-    * 3 buttons for source,
-    * 3 for the Viz outputs,
-    * 1 for start stop
-    * 2 by 2 nothing style
-
 * Remove haptic tab AND DISABLE ALL CODE RELATED TO IT if device doesn't have a haptic motor
 
 * same for flashlight
-
-* Add disclaimer that this app uses Google Analytics
 
 * Check if auto update works
 
@@ -71,8 +57,6 @@
 
 * Adapt ui depending on the audio source (Aleks)
 
-* Say that BNMV is DETERMINISTIC (add to readme)
-
 * update flashlight monitor with shape = audio, and other thing next to it = flashlight intensity.
   * make the shape flash to the flashlight brightness
 
@@ -109,6 +93,14 @@
 ---
 
 ## Done
+* Remove notification detection
+* Add disclaimer that this app uses Google Analytics
+* Say that BNMV is DETERMINISTIC (add to readme)
+* *(Low priority)* nothing styled widget with:
+  * 3 buttons for source,
+  * 3 for the Viz outputs,
+  * 1 for start stop
+  * 2 by 2 nothing style
 * Make the auto latency toggle be in the latency card
 * tweak tab switching speed arc
 * collapse app theme setting section just like the experimental features

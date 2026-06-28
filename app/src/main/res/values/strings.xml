@@ -84,8 +84,6 @@
     <string name="spoof_locale_description">Force the app to use a specific language for testing.</string>
     <string name="idle_breathing_title">Idle Breathing</string>
     <string name="idle_breathing_desc">Glyphs pulse subtly when the visualizer is active but no audio is playing.</string>
-    <string name="notification_flash_title">Notification Flash</string>
-    <string name="notification_flash_desc">Flashes all Glyphs briefly when a new notification arrives while the visualizer is running.</string>
     <string name="disable_glyphs_when_silent_title">Disable Glyphs when silent</string>
     <string name="disable_glyphs_when_silent_desc">Completely turn off Glyphs and release the session when no audio is detected.</string>
     <string name="start_visualizer">Start</string>
@@ -101,6 +99,8 @@
     <string name="about_title">App info and updates</string>
     <string name="about_intro">Better Nothing Music Visualizer unlocks the full potential of the Glyph Interface with high-fidelity, real-time frequency analysis.</string>
     <string name="about_section_why">Why are we better than Nothing\'s implementation:</string>
+    <string name="analytics_disclaimer_title">Analytics</string>
+    <string name="analytics_disclaimer_text">This app uses Google Analytics (Firebase) to collect anonymous usage statistics and crash reports to help improve the app experience. No personal data or audio content is collected.</string>
     <string name="about_why_1">• 12-bit brightness (4096 levels) vs ~2-bit stock (3 levels)</string>
     <string name="about_why_2">• 60 FPS fluid animations vs ~25 FPS stock</string>
     <string name="about_why_3">• Precise FFT sync vs semi-random response</string>

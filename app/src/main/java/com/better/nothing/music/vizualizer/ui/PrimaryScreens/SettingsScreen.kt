@@ -66,8 +66,6 @@ internal fun SettingsScreen(
     onIdleBreathingEnabledChanged: (Boolean) -> Unit,
     idlePattern: String,
     onIdlePatternChanged: (String) -> Unit,
-    notificationFlashEnabled: Boolean,
-    onNotificationFlashEnabledChanged: (Boolean) -> Unit,
     strobeEnabled: Boolean,
     onStrobeEnabledChanged: (Boolean) -> Unit,
     disableGlyphsWhenSilent: Boolean,
@@ -963,14 +961,6 @@ internal fun SettingsScreen(
                             isSelected = m3eEnabled,
                             onClick = { viewModel.setM3EEnabled(!m3eEnabled) }
                         )
-                        if (selectedDevice != DeviceProfile.DEVICE_UNKNOWN) {
-                            OptionTile(
-                                label = stringResource(R.string.notification_flash_title),
-                                icon = Icons.Default.FlashOn,
-                                isSelected = notificationFlashEnabled,
-                                onClick = { onNotificationFlashEnabledChanged(!notificationFlashEnabled) }
-                            )
-                        }
                         OptionTile(
                             label = stringResource(R.string.nav_overlay),
                             icon = Icons.Default.Layers,

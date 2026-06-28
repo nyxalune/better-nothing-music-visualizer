@@ -546,18 +546,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    val _notificationFlashEnabled = MutableStateFlow(false)
-    val notificationFlashEnabled = _notificationFlashEnabled.asStateFlow()
-
-    fun setNotificationFlashEnabled(enabled: Boolean) {
-        _notificationFlashEnabled.value = enabled
-        MainActivity.serviceStatic?.setNotificationFlashEnabled(enabled)
-        viewModelScope.launch(Dispatchers.IO) {
-            ctx.getSharedPreferences("viz_prefs", Context.MODE_PRIVATE)
-                .edit { putBoolean("notification_flash_enabled", enabled) }
-        }
-    }
-
     val _strobeEnabled = MutableStateFlow(false)
     val strobeEnabled = _strobeEnabled.asStateFlow()
 
@@ -1423,7 +1411,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
         _idleBreathingEnabled.value = prefs.getBoolean("idle_breathing_enabled", false)
         _idlePattern.value = prefs.getString("idle_pattern", "pulse") ?: "pulse"
-        _notificationFlashEnabled.value = prefs.getBoolean("notification_flash_enabled", false)
         _strobeEnabled.value = prefs.getBoolean("strobe_enabled", false)
         _disableGlyphsWhenSilent.value = prefs.getBoolean("disable_glyphs_when_silent", false)
         _overlayEnabled.value = prefs.getBoolean("overlay_enabled", false)

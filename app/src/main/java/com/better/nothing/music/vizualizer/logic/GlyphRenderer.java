@@ -14,13 +14,11 @@ public class GlyphRenderer {
     private static final float EPSILON = 0.000001f;
     private static final float SILENCE_THRESHOLD = 0.002f;
     private static final long BREATH_DELAY_MS = 3000L;
-    private static final long FLASH_DURATION_MS = 200L;
 
     private float mGamma;
     private float mSpectrumGain = 4f;
     private int mMaxBrightness = MAX_BRIGHTNESS;
     private boolean mIdleBreathingEnabled;
-    private boolean mNotificationFlashEnabled;
     private boolean mStrobeEnabled = false;
     private int mDeviceType;
     private String mIdlePattern = "pulse";
@@ -30,14 +28,12 @@ public class GlyphRenderer {
     private float[] mDecayedFrequencyState = new float[0];
     private int mLastHash = Integer.MIN_VALUE;
     private long mSilenceStartTimeMs = 0;
-    private long mLastNotificationFlashMs = 0;
     private long mLastFrameMs = 0;
     private float mBreathingEnvelope = 0f;
 
-    public GlyphRenderer(float gamma, boolean idleBreathingEnabled, boolean notificationFlashEnabled, int deviceType) {
+    public GlyphRenderer(float gamma, boolean idleBreathingEnabled, int deviceType) {
         this.mGamma = gamma;
         this.mIdleBreathingEnabled = idleBreathingEnabled;
-        this.mNotificationFlashEnabled = notificationFlashEnabled;
         this.mDeviceType = deviceType;
     }
 
@@ -50,10 +46,6 @@ public class GlyphRenderer {
 
     public void setIdlePattern(String pattern) {
         this.mIdlePattern = pattern;
-    }
-
-    public void setNotificationFlashEnabled(boolean enabled) {
-        mNotificationFlashEnabled = enabled;
     }
 
     public void setStrobeEnabled(boolean enabled) {
@@ -118,11 +110,7 @@ public class GlyphRenderer {
             nextLightState[i] = applyGamma(nextLightState[i]);
         }
 
-        if (nowMs - mLastNotificationFlashMs < FLASH_DURATION_MS) {
-            Arrays.fill(nextLightState, 1.0f);
-        } else {
-            applyIdleBreathing(nextLightState, uniqueMagnitudes, nowMs);
-        }
+        applyIdleBreathing(nextLightState, uniqueMagnitudes, nowMs);
 
         if (mStrobeEnabled) {
             boolean phase = (nowMs / 10) % 2 == 0;
@@ -143,12 +131,6 @@ public class GlyphRenderer {
 
         mLastHash = frameHash;
         return frameColors;
-    }
-
-    public void triggerNotificationFlash(long nowMs) {
-        if (mNotificationFlashEnabled) {
-            mLastNotificationFlashMs = nowMs;
-        }
     }
 
     public float[] getCurrentLightState() {

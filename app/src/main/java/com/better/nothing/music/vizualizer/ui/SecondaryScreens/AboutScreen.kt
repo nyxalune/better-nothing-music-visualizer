@@ -20,6 +20,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.EmojiEvents
@@ -199,6 +200,13 @@ internal fun AboutScreen(
                 title = stringResource(R.string.license_agreement),
                 subtitle = stringResource(R.string.read_license),
                 onClick = { viewModel.showLicense() }
+            )
+
+            // Analytics Disclaimer
+            InfoRow(
+                icon = Icons.Default.BarChart,
+                title = stringResource(R.string.analytics_disclaimer_title),
+                subtitle = stringResource(R.string.analytics_disclaimer_text)
             )
 
             // Update Action
