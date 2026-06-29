@@ -670,6 +670,18 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
 
+    private val _notificationButtonSet = MutableStateFlow("presets")
+    val notificationButtonSet = _notificationButtonSet.asStateFlow()
+
+    fun setNotificationButtonSet(set: String) {
+        _notificationButtonSet.value = set
+        viewModelScope.launch(Dispatchers.IO) {
+            ctx.getSharedPreferences("viz_prefs", Context.MODE_PRIVATE)
+                .edit { putString("notification_button_set", set) }
+        }
+        MainActivity.serviceStatic?.reloadConfig()
+    }
+
     val _devPassword = MutableStateFlow<String?>(null)
 
     fun verifyDeveloperPassword(input: String): Boolean {
@@ -1436,6 +1448,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _selectedFont.value = prefs.getString("selected_font", "Default") ?: "Default"
         _dynamicGainEnabled.value = prefs.getBoolean("dynamic_gain_enabled", true)
         _flashlightMultiIntensityForced.value = prefs.getBoolean("flashlight_multi_intensity_forced", false)
+        _notificationButtonSet.value = prefs.getString("notification_button_set", "presets") ?: "presets"
 
         _hapticMotorEnabled.value = prefs.getBoolean("haptic_motor_enabled", false)
         _hapticMode.value = HapticMode.valueOf(prefs.getString("haptic_mode", HapticMode.BASS_TO_AMPLITUDE.name)!!)

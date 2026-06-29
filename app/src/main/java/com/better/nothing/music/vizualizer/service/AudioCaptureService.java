@@ -106,6 +106,8 @@ public class AudioCaptureService extends Service {
     public static final String ACTION_TOGGLE_TORCH = "com.better.nothing.music.vizualizer.action.TOGGLE_TORCH";
     public static final String ACTION_TOGGLE_GLYPHS = "com.better.nothing.music.vizualizer.action.TOGGLE_GLYPHS";
     public static final String ACTION_SET_SOURCE = "com.better.nothing.music.vizualizer.action.SET_SOURCE";
+    public static final String ACTION_PREV_PRESET = "com.better.nothing.music.vizualizer.action.PREV_PRESET";
+    public static final String ACTION_NEXT_PRESET = "com.better.nothing.music.vizualizer.action.NEXT_PRESET";
 
     public static final String EXTRA_SOURCE = "extra_source";
     public static final String EXTRA_PRESET_KEY = "preset_key";
@@ -310,12 +312,18 @@ public class AudioCaptureService extends Service {
         return SystemClock.elapsedRealtime() - mCaptureStartTimeMs;
     }
     private long mLastAudioActivityMs = 0L;
+    private long mLastNotifUpdateMs = 0L;
     private final Handler mMainHandler = new Handler(android.os.Looper.getMainLooper());
     private final Runnable mIdlePulseRunnable = new Runnable() {
         @Override
         public void run() {
             if (sIsRunning) {
                 long now = SystemClock.elapsedRealtime();
+
+                if (now - mLastNotifUpdateMs >= 1000) {
+                    refreshNotification();
+                    mLastNotifUpdateMs = now;
+                }
 
                 if (mCaptureSource == CaptureSource.VIZUALIZER) {
                     synchronized (mVisualizerPendingFrames) {
@@ -545,6 +553,12 @@ public class AudioCaptureService extends Service {
                         .edit().putInt("max_brightness", mMaxBrightness).apply();
                 requestTileRefresh();
                 requestWidgetRefresh(this);
+                return START_NOT_STICKY;
+            } else if (ACTION_PREV_PRESET.equals(intent.getAction())) {
+                prevPreset();
+                return START_NOT_STICKY;
+            } else if (ACTION_NEXT_PRESET.equals(intent.getAction())) {
+                nextPreset();
                 return START_NOT_STICKY;
             } else if (ACTION_SET_SOURCE.equals(intent.getAction())) {
                 String sourceName = intent.getStringExtra(EXTRA_SOURCE);
@@ -1793,6 +1807,20 @@ public class AudioCaptureService extends Service {
         }
     }
 
+    private void nextPreset() {
+        if (mAvailablePresetKeys.isEmpty()) return;
+        int currentIndex = mAvailablePresetKeys.indexOf(mPresetKey);
+        int nextIndex = (currentIndex + 1) % mAvailablePresetKeys.size();
+        applyPresetSelection(mAvailablePresetKeys.get(nextIndex));
+    }
+
+    private void prevPreset() {
+        if (mAvailablePresetKeys.isEmpty()) return;
+        int currentIndex = mAvailablePresetKeys.indexOf(mPresetKey);
+        int prevIndex = (currentIndex - 1 + mAvailablePresetKeys.size()) % mAvailablePresetKeys.size();
+        applyPresetSelection(mAvailablePresetKeys.get(prevIndex));
+    }
+
     private String resolvePresetKey(String presetSelection, List<String> availablePresetKeys) {
         if (availablePresetKeys == null || availablePresetKeys.isEmpty()) return DEFAULT_PRESET_KEY;
         if (availablePresetKeys.contains(presetSelection)) return presetSelection;
@@ -2043,10 +2071,87 @@ public class AudioCaptureService extends Service {
 
     private Notification buildNotification() {
         ensureNotificationChannel();
-        PendingIntent contentIntent = PendingIntent.getActivity(this, 0, new Intent(this, MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP), PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
-        PendingIntent stopIntent = PendingIntent.getService(this, 1, createStopIntent(this), PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
-        String content = mVisualizerConfig == null ? "zones.config missing" : mDetectedPhoneModel + " • " + mVisualizerConfig.presetKey + " • " + mVisualizerConfig.description;
-        return new NotificationCompat.Builder(this, CHANNEL_ID).setContentTitle("Glyph Visualizer").setContentText(content).setSmallIcon(android.R.drawable.ic_media_play).setContentIntent(contentIntent).addAction(android.R.drawable.ic_media_pause, "Stop", stopIntent).setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE).setCategory(NotificationCompat.CATEGORY_SERVICE).setOnlyAlertOnce(true).setOngoing(true).setSilent(true).build();
+        SharedPreferences appPrefs = getSharedPreferences(APP_PREFS_NAME, MODE_PRIVATE);
+        String buttonSet = appPrefs.getString("notification_button_set", "presets");
+
+        PendingIntent contentIntent = PendingIntent.getActivity(this, 0,
+                new Intent(this, MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP),
+                PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
+
+        long duration = getCaptureDurationMs();
+        String timeStr = formatDuration(duration);
+
+        String presetInfo = "";
+        if (mMaxBrightness > 0 && mVisualizerConfig != null) {
+            presetInfo = mVisualizerConfig.description + " • ";
+        }
+
+        String content = presetInfo + timeStr;
+
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
+                .setContentTitle("Glyph Visualizer")
+                .setContentText(content)
+                .setSmallIcon(com.better.nothing.music.vizualizer.R.mipmap.ic_launcher)
+                .setContentIntent(contentIntent)
+                .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
+                .setCategory(NotificationCompat.CATEGORY_SERVICE)
+                .setOnlyAlertOnce(true)
+                .setOngoing(true)
+                .setSilent(true);
+
+        if ("controls".equals(buttonSet)) {
+            // Glyphs toggle
+            String glyphsLabel = mMaxBrightness > 0 ? "GLYPHS" : "glyphs";
+            PendingIntent glyphsIntent = PendingIntent.getService(this, 10,
+                    new Intent(this, AudioCaptureService.class).setAction(ACTION_TOGGLE_GLYPHS),
+                    PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
+            builder.addAction(0, glyphsLabel, glyphsIntent);
+
+            // Haptics toggle
+            String hapticsLabel = mHapticEnabled ? "HAPTICS" : "haptics";
+            PendingIntent hapticsIntent = PendingIntent.getService(this, 11,
+                    new Intent(this, AudioCaptureService.class).setAction(ACTION_TOGGLE_HAPTICS),
+                    PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
+            builder.addAction(0, hapticsLabel, hapticsIntent);
+
+            // Flash toggle
+            String flashLabel = mFlashlightEnabled ? "FLASH" : "flash";
+            PendingIntent flashIntent = PendingIntent.getService(this, 12,
+                    new Intent(this, AudioCaptureService.class).setAction(ACTION_TOGGLE_TORCH),
+                    PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
+            builder.addAction(0, flashLabel, flashIntent);
+        } else {
+            // Previous preset
+            PendingIntent prevIntent = PendingIntent.getService(this, 2,
+                    new Intent(this, AudioCaptureService.class).setAction(ACTION_PREV_PRESET),
+                    PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
+            builder.addAction(android.R.drawable.ic_media_previous, "Prev", prevIntent);
+
+            // Stop
+            PendingIntent stopIntent = PendingIntent.getService(this, 1,
+                    createStopIntent(this),
+                    PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
+            builder.addAction(android.R.drawable.ic_media_pause, "Stop", stopIntent);
+
+            // Next preset
+            PendingIntent nextIntent = PendingIntent.getService(this, 3,
+                    new Intent(this, AudioCaptureService.class).setAction(ACTION_NEXT_PRESET),
+                    PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
+            builder.addAction(android.R.drawable.ic_media_next, "Next", nextIntent);
+        }
+
+        return builder.build();
+    }
+
+    private String formatDuration(long ms) {
+        long seconds = (ms / 1000) % 60;
+        long minutes = (ms / (1000 * 60)) % 60;
+        long hours = (ms / (1000 * 60 * 60));
+        if (hours > 0) {
+            return String.format(Locale.US, "%d:%02d:%02d", hours, minutes, seconds);
+        } else {
+            return String.format(Locale.US, "%02d:%02d", minutes, seconds);
+        }
     }
 
     private void ensureNotificationChannel() {

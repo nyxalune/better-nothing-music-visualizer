@@ -185,6 +185,11 @@
     <string name="flashlight_multi_intensity_forced_title">Flashlight Multi-Intensity</string>
     <string name="flashlight_multi_intensity_forced_desc">Forces the flashlight to use multiple brightness levels even if not officially supported by the hardware. (Experimental)</string>
 
+    <string name="notification_controls_title">Notification Controls</string>
+    <string name="notification_controls_desc">Choose which buttons appear in the persistent notification.</string>
+    <string name="notification_button_set_presets">Presets</string>
+    <string name="notification_button_set_quick_controls">Quick Controls</string>
+
     <string name="profile">Profile</string>
     <string name="leaderboard_nickname">Leaderboard Nickname</string>
     <string name="profile_picture">Profile Picture</string>
