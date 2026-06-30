@@ -51,7 +51,7 @@ fun BetterVizTheme(
     themeName: String = "Default",
     fontName: String = "NDot",
     m3eEnabled: Boolean = true,
-    uiAmplitudeProvider: () -> Float = { 0f },
+    uiAmplitude: Float = 1.0f,
     musicPrimaryColor: Color? = null,
     content: @Composable () -> Unit
 ) {
@@ -344,7 +344,7 @@ fun BetterVizTheme(
         CompositionLocalProvider(
             LocalAppSpacing provides appSpacing,
             LocalM3EEnabled provides m3eEnabled,
-            LocalUIAmplitude provides uiAmplitudeProvider
+            LocalUIAmplitude provides uiAmplitude
         ) {
             content()
         }
@@ -459,4 +459,4 @@ class AppSpacing(
 
 val LocalAppSpacing = staticCompositionLocalOf { AppSpacing() }
 val LocalM3EEnabled = compositionLocalOf { true }
-val LocalUIAmplitude = compositionLocalOf<() -> Float> { { 0f } }
+val LocalUIAmplitude = compositionLocalOf { 1.0f }

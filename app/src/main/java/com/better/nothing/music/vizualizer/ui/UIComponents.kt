@@ -555,6 +555,7 @@ fun StartStopButton(
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed         by interactionSource.collectIsPressedAsState()
     val haptics           = LocalHapticFeedback.current
+    val uiAmp             = LocalUIAmplitude.current
 
     val scale by animateFloatAsState(
         targetValue   = if (isPressed) 0.92f else 1.0f,
@@ -583,7 +584,7 @@ fun StartStopButton(
                 scaleX = scale
                 scaleY = scale
             }
-            .padding(8.dp),
+            .padding((8 + (uiAmp - 1) * 15).dp),
         contentAlignment = Alignment.Center
     ) {
         FloatingActionButton(
@@ -594,8 +595,8 @@ fun StartStopButton(
             interactionSource = interactionSource,
             shape             = RoundedCornerShape(18.dp),
             modifier          = Modifier
-                .height(56.dp)
-                .widthIn(min = 160.dp),
+                .height(60.dp)
+                .widthIn(min = (130+ (uiAmp - 1) * 30).dp),
             containerColor = containerColor,
             contentColor   = contentColor,
             elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 6.dp)
@@ -642,7 +643,7 @@ fun NativeBottomBar(
         tonalElevation = 8.dp,
         windowInsets = NavigationBarDefaults.windowInsets
     ) {
-        val uiAmpProvider = LocalUIAmplitude.current
+        val uiAmp = LocalUIAmplitude.current
         visibleTabs.forEach { tab ->
             val isSelected = tab == selectedTab
             val selectionScale by animateFloatAsState(
@@ -672,7 +673,7 @@ fun NativeBottomBar(
                         val iconModifier = Modifier
                             .size(24.dp)
                             .graphicsLayer {
-                                val iconScale = selectionScale + (if (isSelected) uiAmpProvider() * 0.5f else 0f)
+                                val iconScale = selectionScale + (if (isSelected) (uiAmp - 1.0f) * 0.5f else 0f)
                                 scaleX = iconScale
                                 scaleY = iconScale
                             }
@@ -709,7 +710,7 @@ fun <T> ExpressiveSplitButton(
 ) {
     val haptics = LocalHapticFeedback.current
     val scope = rememberCoroutineScope()
-    val uiAmpProvider = LocalUIAmplitude.current
+    val uiAmp = LocalUIAmplitude.current
 
     // 1. Resolve Composable labels into plain strings safely in the Composable pipeline
     val resolvedLabels = items.associateWith { labelProvider(it) }
@@ -773,7 +774,7 @@ fun <T> ExpressiveSplitButton(
                     )
                     
                     val animatedWeight = if (isSelected) {
-                        baseWeight * uiAmpProvider()
+                        baseWeight * uiAmp
                     } else {
                         baseWeight
                     }
@@ -893,6 +894,7 @@ fun ExpressiveSlider(
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val haptics = LocalHapticFeedback.current
+    val uiAmp = LocalUIAmplitude.current
 
     val isPressed by interactionSource.collectIsPressedAsState()
     val isDragged by interactionSource.collectIsDraggedAsState()
@@ -966,7 +968,7 @@ fun ExpressiveSlider(
         track = { sliderState ->
             // TRACK: Gets THICKER
             // Radius: We want it to look like a pill when thin, but less rounded when thick
-            val trackHeight = 16.dp * animationFactor
+            val trackHeight = 16.dp * animationFactor * uiAmp
 
             SliderDefaults.Track(
                 sliderState = sliderState,
@@ -993,6 +995,7 @@ fun ExpressiveRangeSlider(
     val startInteractionSource = remember { MutableInteractionSource() }
     val endInteractionSource = remember { MutableInteractionSource() }
     val haptics = LocalHapticFeedback.current
+    val uiAmp = LocalUIAmplitude.current
 
     val startActive by startInteractionSource.collectIsPressedAsState()
     val startDragged by startInteractionSource.collectIsDraggedAsState()
@@ -1052,7 +1055,7 @@ fun ExpressiveRangeSlider(
         startThumb = { ExpressiveThumb(factor = startThumbFactor) },
         endThumb = { ExpressiveThumb(factor = endThumbFactor) },
         track = { rangeSliderState ->
-            val trackHeight = 12.dp * animationFactor
+            val trackHeight = 12.dp * animationFactor * uiAmp
             SliderDefaults.Track(
                 rangeSliderState = rangeSliderState,
                 modifier = Modifier.height(trackHeight),

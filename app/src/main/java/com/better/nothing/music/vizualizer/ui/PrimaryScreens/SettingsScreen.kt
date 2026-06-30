@@ -75,6 +75,7 @@ internal fun SettingsScreen(
     padding: PaddingValues = PaddingValues(),
 ) {
     val m3eEnabled by viewModel.m3eEnabled.collectAsStateWithLifecycle()
+    val uiAmplitudeSyncEnabled by viewModel.uiAmplitudeSyncEnabled.collectAsStateWithLifecycle()
     val dynamicGainEnabled by viewModel.dynamicGainEnabled.collectAsStateWithLifecycle()
     val flashlightMultiIntensityForced by viewModel.flashlightMultiIntensityForced.collectAsStateWithLifecycle()
     val overlayWidth by viewModel.overlayWidth.collectAsStateWithLifecycle()
@@ -958,10 +959,10 @@ internal fun SettingsScreen(
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         OptionTile(
-                            label = stringResource(R.string.expressive_ui),
-                            icon = Icons.Default.AutoAwesome,
-                            isSelected = m3eEnabled,
-                            onClick = { viewModel.setM3EEnabled(!m3eEnabled) }
+                            label = stringResource(R.string.sync_ui_to_beat),
+                            icon = Icons.Default.SyncAlt,
+                            isSelected = uiAmplitudeSyncEnabled,
+                            onClick = { viewModel.setUiAmplitudeSyncEnabled(!uiAmplitudeSyncEnabled) }
                         )
                         OptionTile(
                             label = stringResource(R.string.nav_overlay),

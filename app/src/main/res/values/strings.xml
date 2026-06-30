@@ -179,6 +179,7 @@
     <string name="unlock_shizuku_source">Unlock Shizuku Source</string>
     <string name="unlock_shizuku_source_desc">Experimental high-fidelity capture</string>
     <string name="expressive_ui">Expressive UI</string>
+    <string name="sync_ui_to_beat">Sync UI to the beat</string>
     <string name="nav_overlay">Nav Overlay</string>
     <string name="overlay_width">Overlay Width</string>
     <string name="overlay_height">Overlay Height</string>

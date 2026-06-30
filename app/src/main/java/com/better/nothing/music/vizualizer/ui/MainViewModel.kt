@@ -83,6 +83,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         ctx.packageManager.hasSystemFeature(PackageManager.FEATURE_CAMERA_FLASH)
     }
 
+    val _flashlightIntensityLevels = MutableStateFlow(1)
+    val flashlightIntensityLevels = _flashlightIntensityLevels.asStateFlow()
+
+    val _flashlightLevel = MutableStateFlow(0)
+    val flashlightLevel = _flashlightLevel.asStateFlow()
+
     val _userProfile = MutableStateFlow<UserProfile?>(null)
     val userProfile = _userProfile.asStateFlow()
 
@@ -170,6 +176,16 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch(Dispatchers.IO) {
             ctx.getSharedPreferences("viz_prefs", Context.MODE_PRIVATE)
                 .edit { putBoolean("m3e_enabled", enabled) }
+        }
+    }
+
+    private val _uiAmplitudeSyncEnabled = MutableStateFlow(true)
+    val uiAmplitudeSyncEnabled = _uiAmplitudeSyncEnabled.asStateFlow()
+    fun setUiAmplitudeSyncEnabled(enabled: Boolean) {
+        _uiAmplitudeSyncEnabled.value = enabled
+        viewModelScope.launch(Dispatchers.IO) {
+            ctx.getSharedPreferences("viz_prefs", Context.MODE_PRIVATE)
+                .edit { putBoolean("ui_amplitude_sync_enabled", enabled) }
         }
     }
 
@@ -837,6 +853,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _captureSource.value = AudioCaptureService.CaptureSource.valueOf(savedSource ?: AudioCaptureService.CaptureSource.INTERNAL.name)
 
         _shizukuSourceUnlocked.value = prefs.getBoolean("shizuku_source_unlocked", false)
+        _uiAmplitudeSyncEnabled.value = prefs.getBoolean("ui_amplitude_sync_enabled", true)
 
         _totalVisualizedTime.value = prefs.getLong("total_visualized_time", 0L)
         _totalGlyphTime.value = prefs.getLong("total_glyph_time", 0L)
@@ -1251,12 +1268,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val _flashlightBeatSensitivity = MutableStateFlow(1.5f)
     val flashlightBeatSensitivity = _flashlightBeatSensitivity.asStateFlow()
 
-    val _flashlightIntensityLevels = MutableStateFlow(1)
-    val flashlightIntensityLevels = _flashlightIntensityLevels.asStateFlow()
-
-    val _flashlightLevel = MutableStateFlow(0)
-    val flashlightLevel = _flashlightLevel.asStateFlow()
-
     fun setFlashlightEnabled(enabled: Boolean) {
         _flashlightEnabled.value = enabled
         analytics.logSettingChanged("flashlight_enabled", enabled)
@@ -1357,7 +1368,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val _hapticAmplitude = MutableStateFlow(0f)
     val hapticAmplitude = _hapticAmplitude.asStateFlow()
 
-    val _uiAmplitude = MutableStateFlow(0f)
+    val _uiAmplitude = MutableStateFlow(1f)
     val uiAmplitude = _uiAmplitude.asStateFlow()
 
     val _flashlightAmplitude = MutableStateFlow(0f)
@@ -1372,7 +1383,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val hapticBeatDetector = BeatDetector()
     val flashlightBeatDetector = BeatDetector()
 
-    var smoothedUiAmplitude = 0f
+    var smoothedUiAmplitude = 1f
     var smoothedHapticAmplitude = 0f
 
     val _fftState = MutableStateFlow(floatArrayOf())
@@ -1436,24 +1447,22 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     if (magnitude[i] > uiMaxMag) uiMaxMag = magnitude[i];
                 }
                 
-                // Map amplitude to a reactive boost factor (0.0 to 0.3)
-                // 10x gain, cubic curve for punchiness
-                val rawTarget = (uiMaxMag * 10f).coerceIn(0f, 1.0f).toDouble().pow(3.0).toFloat()
-                val boost = rawTarget * 0.3f
-                
-                // Final value is base (1.0) + boost (-0.3 to +0.3)
-                // We want 1.0 when silent, up to 1.3 when loud
-                // But the user asked for 0.7 to 1.3 range. 
-                // Let's center it at 1.0 and let it oscillate based on energy.
-                val target = 1.0f + (rawTarget * 0.6f - 0.3f)
+                // Sensitivity boost: map energy to a target factor
+                // Centered at 1.0, range [0.8, 1.2]
+                val target = (1.0f + (uiMaxMag * 12f - 0.2f)).coerceIn(0.8f, 1.2f)
 
                 // Asymmetric smoothing: very fast attack, slower decay
                 if (target > smoothedUiAmplitude) {
-                    smoothedUiAmplitude = smoothedUiAmplitude * 0.1f + target * 0.9f
+                    smoothedUiAmplitude = smoothedUiAmplitude * 0.15f + target * 0.85f
                 } else {
-                    smoothedUiAmplitude = smoothedUiAmplitude * 0.85f + target * 0.15f
+                    smoothedUiAmplitude = smoothedUiAmplitude * 0.8f + target * 0.20f
                 }
-                _uiAmplitude.value = smoothedUiAmplitude
+                
+                _uiAmplitude.value = if (_uiAmplitudeSyncEnabled.value) {
+                    smoothedUiAmplitude
+                } else {
+                    1.0f
+                }
 
                 // 2. Beat Detection (matching HapticEngine.kt logic)
                 if (_hapticMode.value == HapticMode.BEAT_DETECTION) {

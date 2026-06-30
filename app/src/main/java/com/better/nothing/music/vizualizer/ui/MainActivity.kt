@@ -194,6 +194,7 @@ class MainActivity : ComponentActivity() {
             val selectedFont by viewModel.selectedFont.collectAsStateWithLifecycle()
             val musicThemeColor by viewModel.musicThemeColor.collectAsStateWithLifecycle()
             val isRunning by viewModel.runningState.collectAsStateWithLifecycle()
+            val uiAmplitude by viewModel.uiAmplitude.collectAsStateWithLifecycle()
 
             LaunchedEffect(isRunning) {
                 if (isRunning) {
@@ -216,7 +217,7 @@ class MainActivity : ComponentActivity() {
                 themeName = selectedTheme,
                 fontName = selectedFont,
                 musicPrimaryColor = musicThemeColor,
-                uiAmplitudeProvider = { viewModel.uiAmplitude.value }
+                uiAmplitude = uiAmplitude
             ) {
                 BetterVizApp(
                     viewModel = viewModel,
