@@ -8,7 +8,7 @@ plugins {
 
 android {
     namespace 'com.better.nothing.music.vizualizer'
-    compileSdk 36
+    compileSdk 37
 
     defaultConfig {
         applicationId "com.better.nothing.music.vizualizer"
@@ -63,13 +63,13 @@ dependencies {
     implementation 'com.github.wendykierp:JTransforms:3.2'
 
     // 2. Compose BOM - Manages versions for all compose libs below
-    implementation platform('androidx.compose:compose-bom:2026.05.01')
+    implementation platform('androidx.compose:compose-bom:2026.06.00')
 
     // Firebase
-    implementation platform('com.google.firebase:firebase-bom:34.14.1')
+    implementation platform('com.google.firebase:firebase-bom:34.15.0')
     implementation 'com.google.firebase:firebase-analytics'
     implementation 'com.google.firebase:firebase-database'
-    implementation 'com.google.android.gms:play-services-auth:21.3.0'
+    implementation 'com.google.android.gms:play-services-auth:21.6.0'
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.11.0'
     implementation 'com.google.firebase:firebase-auth'
 
@@ -94,9 +94,9 @@ dependencies {
 
     // 5. Activity & Lifecycle
     implementation 'androidx.activity:activity-compose:1.13.0'
-    implementation 'androidx.lifecycle:lifecycle-service:2.10.0'
-    implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.10.0'
-    implementation 'androidx.lifecycle:lifecycle-viewmodel-ktx:2.10.0'
+    implementation 'androidx.lifecycle:lifecycle-service:2.11.0'
+    implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.11.0'
+    implementation 'androidx.lifecycle:lifecycle-viewmodel-ktx:2.11.0'
     implementation 'androidx.savedstate:savedstate-ktx:1.5.0'
 
     // 6. Standard Icons only
