@@ -764,13 +764,19 @@ fun <T> ExpressiveSplitButton(
                         stiffness = Spring.StiffnessMedium
                     )
 
-                    val animatedWeight by animateFloatAsState(
+                    val baseWeight by animateFloatAsState(
                         targetValue = if (isPressed) 0.89f 
-                                      else if (isSelected) 1.2f * (1f + uiAmpProvider()) 
+                                      else if (isSelected) 1.2f 
                                       else 1.0f,
                         animationSpec = bouncySpec,
-                        label = "ExpressiveWeightAnimation"
+                        label = "ExpressiveWeightAnimationBase"
                     )
+                    
+                    val animatedWeight = if (isSelected) {
+                        baseWeight * (1f + uiAmpProvider())
+                    } else {
+                        baseWeight
+                    }
 
                     // Color transitions
                     val targetContainerColor = if (isSelected) {
