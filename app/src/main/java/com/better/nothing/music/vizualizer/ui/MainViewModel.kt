@@ -1396,66 +1396,66 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     init {
         viewModelScope.launch(Dispatchers.Default) {
             fftState.collect { magnitude ->
-                if (magnitude.isEmpty()) {
-                    _hapticAmplitude.value = 0f
-                    _uiAmplitude.value = 1f
-                    _flashlightAmplitude.value = 0f
-                    smoothedUiAmplitude = 1f
-                    _isBeatDetected.value = false
-                    return@collect
-                }
-
                 val hzPerBin = 44100f / 2048f
-                val binLo = (_hapticFreqMin.value / hzPerBin).toInt().coerceIn(0, magnitude.lastIndex)
-                val binHi = (_hapticFreqMax.value / hzPerBin).toInt().coerceIn(binLo, magnitude.lastIndex)
+                val binLo = if (magnitude.isEmpty()) 0 else (_hapticFreqMin.value / hzPerBin).toInt().coerceIn(0, magnitude.lastIndex)
+                val binHi = if (magnitude.isEmpty()) 0 else (_hapticFreqMax.value / hzPerBin).toInt().coerceIn(binLo, magnitude.lastIndex)
 
-                var maxMag = 0f
-                for (i in binLo..binHi) {
-                    if (magnitude[i] > maxMag) maxMag = magnitude[i];
-                }
-                val targetHaptic = (maxMag * _hapticAudioGain.value * 12f).coerceIn(0f, 1.0f).toDouble().pow(_hapticGamma.value.toDouble()).toFloat()
+                val fBinLo = if (magnitude.isEmpty()) 0 else (_flashlightFreqMin.value / hzPerBin).toInt().coerceIn(0, magnitude.lastIndex)
+                val fBinHi = if (magnitude.isEmpty()) 0 else (_flashlightFreqMax.value / hzPerBin).toInt().coerceIn(fBinLo, magnitude.lastIndex)
 
-                // Asymmetric smoothing for haptics
-                if (targetHaptic > smoothedHapticAmplitude) {
-                    smoothedHapticAmplitude = smoothedHapticAmplitude * 0.15f + targetHaptic * 0.85f
+                val target = if (magnitude.isEmpty()) {
+                    _hapticAmplitude.value = 0f
+                    _flashlightAmplitude.value = 0f
+                    _isBeatDetected.value = false
+                    1.0f
                 } else {
-                    smoothedHapticAmplitude = smoothedHapticAmplitude * 0.7f + targetHaptic * 0.3f
-                }
+                    var maxMag = 0f
+                    for (i in binLo..binHi) {
+                        if (magnitude[i] > maxMag) maxMag = magnitude[i];
+                    }
+                    val targetHaptic = (maxMag * _hapticAudioGain.value * 12f).coerceIn(0f, 1.0f).toDouble().pow(_hapticGamma.value.toDouble()).toFloat()
 
-                val finalValue = (smoothedHapticAmplitude * _hapticMultiplier.value)
-                _hapticAmplitude.value = finalValue.coerceIn(0f, 1.2f)
+                    // Asymmetric smoothing for haptics
+                    if (targetHaptic > smoothedHapticAmplitude) {
+                        smoothedHapticAmplitude = smoothedHapticAmplitude * 0.15f + targetHaptic * 0.85f
+                    } else {
+                        smoothedHapticAmplitude = smoothedHapticAmplitude * 0.7f + targetHaptic * 0.3f
+                    }
 
-                // Flashlight Amplitude Calculation
-                val fBinLo = (_flashlightFreqMin.value / hzPerBin).toInt().coerceIn(0, magnitude.lastIndex)
-                val fBinHi = (_flashlightFreqMax.value / hzPerBin).toInt().coerceIn(fBinLo, magnitude.lastIndex)
-                var fMaxMag = 0f
-                for (i in fBinLo..fBinHi) {
-                    if (magnitude[i] > fMaxMag) fMaxMag = magnitude[i];
-                }
-                val fTarget = (fMaxMag * 16.0f).coerceIn(0f, 1.2f)
-                val fCur = Math.pow(fTarget.toDouble(), 2.2).toFloat()
-                
-                // Add a bit of derivative boost to the UI monitor as well
-                val fDelta = (fCur - _flashlightAmplitude.value).coerceAtLeast(0f)
-                _flashlightAmplitude.value = (fCur + fDelta * 1.5f).coerceIn(0f, 1.2f)
+                    val finalValue = (smoothedHapticAmplitude * _hapticMultiplier.value)
+                    _hapticAmplitude.value = finalValue.coerceIn(0f, 1.2f)
 
-                // UI Amplitude (70-130 Hz) for global reactive UI elements
-                val uiBinLo = (70f / hzPerBin).toInt().coerceIn(0, magnitude.lastIndex)
-                val uiBinHi = (130f / hzPerBin).toInt().coerceIn(uiBinLo, magnitude.lastIndex)
-                var uiMaxMag = 0f
-                for (i in uiBinLo..uiBinHi) {
-                    if (magnitude[i] > uiMaxMag) uiMaxMag = magnitude[i];
+                    // Flashlight Amplitude Calculation
+                    var fMaxMag = 0f
+                    for (i in fBinLo..fBinHi) {
+                        if (magnitude[i] > fMaxMag) fMaxMag = magnitude[i];
+                    }
+                    val fTarget = (fMaxMag * 16.0f).coerceIn(0f, 1.2f)
+                    val fCur = Math.pow(fTarget.toDouble(), 2.2).toFloat()
+                    
+                    // Add a bit of derivative boost to the UI monitor as well
+                    val fDelta = (fCur - _flashlightAmplitude.value).coerceAtLeast(0f)
+                    _flashlightAmplitude.value = (fCur + fDelta * 1.5f).coerceIn(0f, 1.2f)
+
+                    // UI Amplitude (70-130 Hz) for global reactive UI elements
+                    val uiBinLo = (70f / hzPerBin).toInt().coerceIn(0, magnitude.lastIndex)
+                    val uiBinHi = (130f / hzPerBin).toInt().coerceIn(uiBinLo, magnitude.lastIndex)
+                    var uiMaxMag = 0f
+                    for (i in uiBinLo..uiBinHi) {
+                        if (magnitude[i] > uiMaxMag) uiMaxMag = magnitude[i];
+                    }
+                    
+                    // Sensitivity boost: map energy to a target factor
+                    // Centered at 1.0, range [0.8, 1.2]
+                    (1.0f + (uiMaxMag * 12f - 0.2f)).coerceIn(0.8f, 1.2f)
                 }
-                
-                // Sensitivity boost: map energy to a target factor
-                // Centered at 1.0, range [0.8, 1.2]
-                val target = (1.0f + (uiMaxMag * 12f - 0.2f)).coerceIn(0.8f, 1.2f)
 
                 // Asymmetric smoothing: very fast attack, slower decay
                 if (target > smoothedUiAmplitude) {
                     smoothedUiAmplitude = smoothedUiAmplitude * 0.15f + target * 0.85f
                 } else {
-                    smoothedUiAmplitude = smoothedUiAmplitude * 0.8f + target * 0.20f
+                    // Even slower decay when returning to 1.0
+                    smoothedUiAmplitude = smoothedUiAmplitude * 0.92f + target * 0.08f
                 }
                 
                 _uiAmplitude.value = if (_uiAmplitudeSyncEnabled.value) {
@@ -1463,6 +1463,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 } else {
                     1.0f
                 }
+
+                if (magnitude.isEmpty()) return@collect
 
                 // 2. Beat Detection (matching HapticEngine.kt logic)
                 if (_hapticMode.value == HapticMode.BEAT_DETECTION) {

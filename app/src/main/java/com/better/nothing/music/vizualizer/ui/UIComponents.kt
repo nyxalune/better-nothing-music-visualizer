@@ -584,7 +584,7 @@ fun StartStopButton(
                 scaleX = scale
                 scaleY = scale
             }
-            .padding((8 + (uiAmp - 1) * 15).dp),
+            .padding(8.dp),
         contentAlignment = Alignment.Center
     ) {
         FloatingActionButton(
@@ -593,16 +593,16 @@ fun StartStopButton(
                 onClick()
             },
             interactionSource = interactionSource,
-            shape             = RoundedCornerShape(18.dp),
+            shape             = RoundedCornerShape((18 + (uiAmp - 1) * 50).dp),
             modifier          = Modifier
-                .height(60.dp)
-                .widthIn(min = (130+ (uiAmp - 1) * 30).dp),
+                .height((60+ (uiAmp - 1) * 50).dp)
+                .widthIn(min = (130+ (uiAmp - 1) * 50).dp),
             containerColor = containerColor,
             contentColor   = contentColor,
             elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 6.dp)
         ) {
             Row(
-                modifier             = Modifier.padding(horizontal = 10.dp),
+                modifier             = Modifier.padding(horizontal = 15.dp),
                 verticalAlignment    = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center
             ) {
@@ -617,7 +617,7 @@ fun StartStopButton(
                         modifier        = Modifier.size(24.dp)
                     )
                 }
-                Spacer(Modifier.width(12.dp))
+                Spacer(Modifier.width(20.dp))
                 Text(
                     text  = stringResource(if (running) R.string.stop_visualizer else R.string.start_visualizer).uppercase(),
                     style = MaterialTheme.typography.labelLarge.copy(
