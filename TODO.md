@@ -4,7 +4,7 @@
 
 * rework the qs tiles, make one for glyph viz, one for haptic viz, and one for flashlight viz. enable of disable the service automatically based on if we have anything running or not.
   
-* and work on the translation tools so we can get hoomans to translate our app.
+* **and work on the translation tools so we can get hoomans to translate our app.**
 
 * Remove brightness value text on the glyph brightness slider
 
@@ -15,6 +15,8 @@
 * Last viewed screen should be kept in memory
 
 * Check if auto update works
+
+* ENHANCE THE FUCKING WIDGET
 
 ---
 
