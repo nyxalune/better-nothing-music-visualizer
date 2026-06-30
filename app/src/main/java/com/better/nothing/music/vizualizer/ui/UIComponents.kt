@@ -773,7 +773,7 @@ fun <T> ExpressiveSplitButton(
                     )
                     
                     val animatedWeight = if (isSelected) {
-                        baseWeight * (1f + uiAmpProvider())
+                        baseWeight * uiAmpProvider()
                     } else {
                         baseWeight
                     }

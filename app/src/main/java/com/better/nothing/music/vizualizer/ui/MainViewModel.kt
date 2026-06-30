@@ -1387,9 +1387,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             fftState.collect { magnitude ->
                 if (magnitude.isEmpty()) {
                     _hapticAmplitude.value = 0f
-                    _uiAmplitude.value = 0f
+                    _uiAmplitude.value = 1f
                     _flashlightAmplitude.value = 0f
-                    smoothedUiAmplitude = 0f
+                    smoothedUiAmplitude = 1f
                     _isBeatDetected.value = false
                     return@collect
                 }
@@ -1435,8 +1435,17 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 for (i in uiBinLo..uiBinHi) {
                     if (magnitude[i] > uiMaxMag) uiMaxMag = magnitude[i];
                 }
+                
+                // Map amplitude to a reactive boost factor (0.0 to 0.3)
+                // 10x gain, cubic curve for punchiness
                 val rawTarget = (uiMaxMag * 10f).coerceIn(0f, 1.0f).toDouble().pow(3.0).toFloat()
-                val target = (rawTarget * 1.3f) - 0.3f
+                val boost = rawTarget * 0.3f
+                
+                // Final value is base (1.0) + boost (-0.3 to +0.3)
+                // We want 1.0 when silent, up to 1.3 when loud
+                // But the user asked for 0.7 to 1.3 range. 
+                // Let's center it at 1.0 and let it oscillate based on energy.
+                val target = 1.0f + (rawTarget * 0.6f - 0.3f)
 
                 // Asymmetric smoothing: very fast attack, slower decay
                 if (target > smoothedUiAmplitude) {
