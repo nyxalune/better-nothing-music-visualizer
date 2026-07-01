@@ -727,7 +727,7 @@ fun <T> ExpressiveSplitButton(
         var currentCharacterCount = 0
 
         // Threshold budget limit per row
-        val maxCharactersPerRow = 32
+        val maxCharactersPerRow = 26
 
         items.forEach { item ->
             val labelText = resolvedLabels[item].orEmpty()
