@@ -722,29 +722,33 @@ fun <T> ExpressiveSplitButton(
 
     // 2. Chunk items into rows using the resolved plain string map
     val chunkedRows = remember(items, resolvedLabels) {
-        val rows = mutableListOf<MutableList<T>>()
-        var currentRow = mutableListOf<T>()
-        var currentCharacterCount = 0
+        if (items.size <= 3) {
+            listOf(items)
+        } else {
+            val rows = mutableListOf<MutableList<T>>()
+            var currentRow = mutableListOf<T>()
+            var currentCharacterCount = 0
 
-        // Threshold budget limit per row
-        val maxCharactersPerRow = 26
+            // Threshold budget limit per row
+            val maxCharactersPerRow = 26
 
-        items.forEach { item ->
-            val labelText = resolvedLabels[item].orEmpty()
-            val textLength = labelText.length
+            items.forEach { item ->
+                val labelText = resolvedLabels[item].orEmpty()
+                val textLength = labelText.length
 
-            if (currentCharacterCount + textLength > maxCharactersPerRow && currentRow.isNotEmpty()) {
-                rows.add(currentRow)
-                currentRow = mutableListOf()
-                currentCharacterCount = 0
+                if (currentCharacterCount + textLength > maxCharactersPerRow && currentRow.isNotEmpty()) {
+                    rows.add(currentRow)
+                    currentRow = mutableListOf()
+                    currentCharacterCount = 0
+                }
+                currentRow.add(item)
+                currentCharacterCount += textLength
             }
-            currentRow.add(item)
-            currentCharacterCount += textLength
+            if (currentRow.isNotEmpty()) {
+                rows.add(currentRow)
+            }
+            rows
         }
-        if (currentRow.isNotEmpty()) {
-            rows.add(currentRow)
-        }
-        rows
     }
 
     Column(
