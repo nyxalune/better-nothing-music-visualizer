@@ -35,12 +35,8 @@ public final class ContinuousHapticEngine {
     // Don't spam the vibrator service faster than this.
     private static final long MIN_RESUBMIT_INTERVAL_MS = 20L;
 
-    // Minimum change in amplitude to trigger a resubmit (0-255).
-    private static final int AMPLITUDE_THRESHOLD = 1;
 
     private static final float SPECTRUM_GAIN = 12.0f;
-
-    // Keep the motor from going completely dead for tiny non-zero values.
     private static final int MAX_AMPLITUDE = 255;
 
     private final Vibrator vibrator;

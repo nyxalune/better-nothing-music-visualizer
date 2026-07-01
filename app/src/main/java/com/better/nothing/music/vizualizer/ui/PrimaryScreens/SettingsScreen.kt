@@ -534,11 +534,11 @@ internal fun SettingsScreen(
                         val patternOptions = listOf(
                             "pulse" to stringResource(R.string.idle_pattern_pulse),
                             "wave" to stringResource(R.string.idle_pattern_wave),
-                            "scanner" to stringResource(R.string.idle_pattern_cylon),
+                            "rain" to stringResource(R.string.idle_pattern_rain),
                             "zebra" to stringResource(R.string.idle_pattern_zebra),
-                            "heartbeat" to stringResource(R.string.idle_pattern_heartbeat),
                             "orbit" to stringResource(R.string.idle_pattern_orbit),
-                            "rain" to stringResource(R.string.idle_pattern_rain)
+                            "heartbeat" to stringResource(R.string.idle_pattern_heartbeat),
+                            "scanner" to stringResource(R.string.idle_pattern_cylon)
                         )
 
                         ExpressiveSplitButton(
