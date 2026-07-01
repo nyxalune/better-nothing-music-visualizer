@@ -61,6 +61,15 @@ data class AudioRoute(
 )
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
+    companion object {
+        var instance: MainViewModel? = null
+            private set
+    }
+
+    init {
+        instance = this
+    }
+
     val ctx = application
     val communityRepository = CommunityRepository()
     val announcementRepository = AnnouncementRepository()

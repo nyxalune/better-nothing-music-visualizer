@@ -23,6 +23,8 @@
 ## Oliver's todo
 * track audio source playing time, not audio_source_change
 * Add multiples intensities to flashlight 
+* Tapping back on the Viz preset editor should go to the prev screen., and tapping back should 
+predictively go to the prev viewed screen tab before exiting the app.
 
 ---
 
@@ -30,8 +32,6 @@
 * track viz mode playing time (flashlight time, haptics time, glyphs time, these will be added up in the firebase charts if possible)
 
 * ***Improve notification (ALEKS DOES IT)***
-
-* Tapping back on the Viz preset editor should go to the prev screen., and tapping back should predictively go to the prev viewed screen tab before exiting the app.
 
 * BNMV redisigned settings expandable cards, with M3E BOUNCY ARROW
 
@@ -52,8 +52,6 @@
 * Add rotary haptic motor mode
 
 * parametric spectrum range preset for all phones
-
-* Adapt ui depending on the audio source (Aleks)
 
 * update flashlight monitor with shape = audio, and other thing next to it = flashlight intensity.
   * make the shape flash to the flashlight brightness
