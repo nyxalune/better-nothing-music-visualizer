@@ -51,7 +51,6 @@ fun BetterVizTheme(
     themeName: String = "Default",
     fontName: String = "NDot",
     m3eEnabled: Boolean = true,
-    uiAmplitude: Float = 1.0f,
     musicPrimaryColor: Color? = null,
     content: @Composable () -> Unit
 ) {
@@ -341,6 +340,7 @@ fun BetterVizTheme(
         shapes = shapes,
         typography = typography
     ) {
+        val uiAmplitude by MainViewModel.instance!!.uiAmplitude.collectAsStateWithLifecycle()
         CompositionLocalProvider(
             LocalAppSpacing provides appSpacing,
             LocalM3EEnabled provides m3eEnabled,
