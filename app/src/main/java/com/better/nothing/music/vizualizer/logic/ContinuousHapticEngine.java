@@ -104,9 +104,8 @@ public final class ContinuousHapticEngine {
 
         // Only resubmit if change is significant AND enough time has passed
         boolean cooldownOver = (now - lastSubmitMs) >= MIN_RESUBMIT_INTERVAL_MS;
-        boolean significantChange = Math.abs(nextAmplitude - lastAmplitude) >= AMPLITUDE_THRESHOLD;
 
-        if (!cooldownOver || !significantChange) {
+        if (!cooldownOver) {
             return;
         }
 

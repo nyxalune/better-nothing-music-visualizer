@@ -209,6 +209,8 @@ fun MorphingPolygon(
     }
 
     val path = remember { AndroidPath() }
+    val composePath = remember { AndroidPath().asComposePath() }
+    val matrix = remember { Matrix() }
 
     Canvas(modifier = modifier) {
         val size = size.minDimension
@@ -216,17 +218,19 @@ fun MorphingPolygon(
         val scale = size * (0.15f + (animatedAmplitude * 0.7f))
         
         path.reset()
-        val matrix = Matrix()
+        matrix.reset()
         matrix.scale(scale, scale)
         matrix.translate(size / (2 * scale), size / (2 * scale))
         
         morph.toPath(progress.value, path)
-        val composePath = path.asComposePath()
-        composePath.transform(matrix)
+        // Note: asComposePath() usually wraps the same underlying object, 
+        // but we need to ensure the transformation is applied correctly.
+        val currentComposePath = path.asComposePath()
+        currentComposePath.transform(matrix)
 
         rotate(baseRotation) {
             drawPath(
-                path = composePath,
+                path = currentComposePath,
                 color = color,
                 style = Fill
             )
@@ -380,8 +384,9 @@ fun FlowRowScope.OptionTile(
 
     // Weight Animation using the managed isWeightExpanded state
     val targetWeight = if (isWeightExpanded && enabled) 1.2f else 1f
+    val uiAmp = LocalUIAmplitude.current
     val animatedWeight by animateFloatAsState(
-        targetValue = targetWeight,
+        targetValue = targetWeight * uiAmp,
         animationSpec = spring(
             dampingRatio = Spring.DampingRatioMediumBouncy,
             stiffness = Spring.StiffnessMediumLow

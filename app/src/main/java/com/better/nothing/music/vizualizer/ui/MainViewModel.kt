@@ -1394,6 +1394,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     var smoothedUiAmplitude = 1f
     var smoothedHapticAmplitude = 0f
+    private var uiDynamicGain = 1.0f
+    private var uiPeakValue = 0.1f
 
     val _fftState = MutableStateFlow(floatArrayOf())
     val fftState = _fftState.asStateFlow()
@@ -1451,20 +1453,26 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     val uiBinHi = (130f / hzPerBin).toInt().coerceIn(uiBinLo, magnitude.lastIndex)
                     var uiMaxMag = 0f
                     for (i in uiBinLo..uiBinHi) {
-                        if (magnitude[i] > uiMaxMag) uiMaxMag = magnitude[i];
+                        if (magnitude[i] > uiMaxMag) uiMaxMag = magnitude[i]
                     }
+
+                    // Dynamic gain logic: track peaks and adjust gain
+                    uiPeakValue = uiPeakValue * 0.98f + uiMaxMag * 0.02f
+                    if (uiMaxMag > uiPeakValue) uiPeakValue = uiMaxMag
                     
-                    // Sensitivity boost: map energy to a target factor
-                    // Centered at 1.0, range [0.8, 1.2]
-                    (1.0f + (uiMaxMag * 12f - 0.2f)).coerceIn(0.8f, 1.2f)
+                    val targetGain = if (uiPeakValue > 0.01f) 0.15f / uiPeakValue else 12f
+                    uiDynamicGain = uiDynamicGain * 0.9f + targetGain.coerceIn(5f, 25f) * 0.1f
+                    
+                    // Apply dynamic gain and map to [0.8, 1.2]
+                    (1.0f + (uiMaxMag * uiDynamicGain - 0.2f)).coerceIn(0.8f, 1.2f)
                 }
 
-                // Asymmetric smoothing: very fast attack, slower decay
+                // Asymmetric smoothing: very fast attack, faster decay than before
                 if (target > smoothedUiAmplitude) {
-                    smoothedUiAmplitude = smoothedUiAmplitude * 0.15f + target * 0.85f
+                    smoothedUiAmplitude = smoothedUiAmplitude * 0.1f + target * 0.9f
                 } else {
-                    // Even slower decay when returning to 1.0
-                    smoothedUiAmplitude = smoothedUiAmplitude * 0.92f + target * 0.08f
+                    // Faster decay: from 0.92/0.08 to 0.85/0.15
+                    smoothedUiAmplitude = smoothedUiAmplitude * 0.85f + target * 0.15f
                 }
                 
                 _uiAmplitude.value = if (_uiAmplitudeSyncEnabled.value) {

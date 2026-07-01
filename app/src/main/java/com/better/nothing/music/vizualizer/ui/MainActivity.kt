@@ -194,8 +194,6 @@ class MainActivity : ComponentActivity() {
             val selectedFont by viewModel.selectedFont.collectAsStateWithLifecycle()
             val musicThemeColor by viewModel.musicThemeColor.collectAsStateWithLifecycle()
             val isRunning by viewModel.runningState.collectAsStateWithLifecycle()
-            val uiAmplitudeFlow = remember { viewModel.uiAmplitude }
-            val uiAmplitude by uiAmplitudeFlow.collectAsStateWithLifecycle()
 
             LaunchedEffect(isRunning) {
                 if (isRunning) {
