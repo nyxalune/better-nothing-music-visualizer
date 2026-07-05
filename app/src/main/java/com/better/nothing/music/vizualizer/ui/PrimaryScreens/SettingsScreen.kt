@@ -36,18 +36,11 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.AnnotatedString
-import com.better.nothing.music.vizualizer.ui.AuthDialog
 import com.better.nothing.music.vizualizer.ui.BodyText
 import com.better.nothing.music.vizualizer.ui.CardHeader
 import com.better.nothing.music.vizualizer.ui.ExpressiveCard
@@ -72,6 +65,7 @@ internal fun SettingsScreen(
     onDisableGlyphsWhenSilentChanged: (Boolean) -> Unit,
     overlayEnabled: Boolean,
     onOverlayEnabledChanged: (Boolean) -> Unit,
+    onGoogleSignIn: () -> Unit,
     padding: PaddingValues = PaddingValues(),
 ) {
     val m3eEnabled by viewModel.m3eEnabled.collectAsStateWithLifecycle()
@@ -82,16 +76,7 @@ internal fun SettingsScreen(
     val overlayHeight by viewModel.overlayHeight.collectAsStateWithLifecycle()
     val overlayYOffset by viewModel.overlayYOffset.collectAsStateWithLifecycle()
     val isAnonymous by viewModel.isAnonymous.collectAsStateWithLifecycle()
-    var showAuthDialog by remember { mutableStateOf(false) }
     val scrollState = rememberScrollState()
-
-    if (showAuthDialog) {
-        AuthDialog(
-            onDismiss = { showAuthDialog = false },
-            onSignIn = { e, p -> viewModel.signInWithEmail(e, p) },
-            onSignUp = { e, p -> viewModel.signUpWithEmail(e, p) },
-        )
-    }
 
     val selectedTheme by viewModel.selectedTheme.collectAsStateWithLifecycle()
     val selectedFont by viewModel.selectedFont.collectAsStateWithLifecycle()
@@ -152,149 +137,11 @@ internal fun SettingsScreen(
             )
         }
 
-        // ── Profile ─────────────────────────────────────────────────────────
-        ExpressiveCard {
-            CardHeader(title = stringResource(R.string.profile))
-            val userNickname by viewModel.userNickname.collectAsStateWithLifecycle()
-            val userProfile by viewModel.userProfile.collectAsStateWithLifecycle()
-            var nicknameInput by remember(userNickname) { mutableStateOf(userNickname) }
-
-            val launcher = rememberLauncherForActivityResult(
-                contract = ActivityResultContracts.GetContent()
-            ) { uri ->
-                uri?.let { viewModel.updateProfilePicture(it) }
-            }
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(64.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f))
-                        .clickable { launcher.launch("image/*") },
-                    contentAlignment = Alignment.Center
-                ) {
-                    if (userProfile?.profilePictureUrl != null) {
-                        AsyncImage(
-                            model = userProfile?.profilePictureUrl,
-                            contentDescription = stringResource(R.string.profile_picture),
-                            modifier = Modifier.fillMaxSize(),
-                            contentScale = ContentScale.Crop
-                        )
-                    } else {
-                        Icon(
-                            Icons.Default.Person,
-                            contentDescription = null,
-                            modifier = Modifier.size(32.dp),
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                    }
-
-                    Surface(
-                        modifier = Modifier
-                            .align(Alignment.BottomEnd)
-                            .size(20.dp),
-                        shape = CircleShape,
-                        color = MaterialTheme.colorScheme.primary,
-                        contentColor = Color.White
-                    ) {
-                        Icon(
-                            Icons.Default.AddAPhoto,
-                            contentDescription = null,
-                            modifier = Modifier.padding(4.dp)
-                        )
-                    }
-                }
-
-                Column(modifier = Modifier.weight(1f)) {
-                    OutlinedTextField(
-                        value = nicknameInput,
-                        onValueChange = {
-                            nicknameInput = it
-                            if (it.length <= 20) viewModel.setUserNickname(it)
-                        },
-                        label = { Text(stringResource(R.string.leaderboard_nickname)) },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
-                        trailingIcon = {
-                            Icon(Icons.Default.Edit, null, modifier = Modifier.size(18.dp))
-                        }
-                    )
-
-                    val clipboardManager = LocalClipboardManager.current
-                    val currentUid = viewModel.userId.collectAsStateWithLifecycle().value
-                    Text(
-                        text = "UID: ${currentUid ?: "None"}",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
-                        modifier = Modifier
-                            .padding(top = 4.dp, start = 4.dp)
-                            .clickable {
-                                currentUid?.let {
-                                    clipboardManager.setText(AnnotatedString(it))
-                                    Toast.makeText(
-                                        localContext,
-                                        "UID copied to clipboard",
-                                        Toast.LENGTH_SHORT
-                                    ).show()
-                                }
-                            }
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-            Text(
-                text = "Choose an avatar",
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.primary
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-
-            val defaultAvatars = listOf(
-                R.drawable.avatar_1,
-                R.drawable.avatar_2,
-                R.drawable.avatar_3
-            )
-
-            LazyRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                items(defaultAvatars) { resId ->
-                    Box(
-                        modifier = Modifier
-                            .size(48.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.surfaceVariant)
-                            .clickable { viewModel.selectDefaultAvatar(resId) },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            painter = painterResource(resId),
-                            contentDescription = null,
-                            modifier = Modifier.fillMaxSize().padding(8.dp),
-                            tint = Color.Unspecified
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-            BodyText(
-                text = stringResource(R.string.profile_help_text),
-                size = 12.sp
-            )
-        }
-
         // ── Account ─────────────────────────────────────────────────────────
         ExpressiveCard {
             CardHeader(title = "Account")
+            val userProfile by viewModel.userProfile.collectAsStateWithLifecycle()
+            
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -303,22 +150,29 @@ internal fun SettingsScreen(
                 Box(
                     modifier = Modifier
                         .size(48.dp)
-                        .clip(RoundedCornerShape(12.dp))
+                        .clip(CircleShape)
                         .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        if (isAnonymous) Icons.Default.CloudOff else Icons.Default.CloudDone,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary
-                    )
+                    if (userProfile?.profilePictureUrl != null) {
+                        AsyncImage(
+                            model = userProfile?.profilePictureUrl,
+                            contentDescription = stringResource(R.string.profile_picture),
+                            modifier = Modifier.fillMaxSize().clip(CircleShape),
+                            contentScale = ContentScale.Crop
+                        )
+                    } else {
+                        Icon(
+                            if (isAnonymous) Icons.Default.CloudOff else Icons.Default.CloudDone,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
                 }
 
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = if (isAnonymous) stringResource(R.string.anonymous_user) else stringResource(
-                            R.string.authenticated_user
-                        ),
+                        text = if (isAnonymous) stringResource(R.string.anonymous_user) else userProfile?.displayName ?: stringResource(R.string.authenticated_user),
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold
                     )
@@ -331,10 +185,13 @@ internal fun SettingsScreen(
 
                 if (isAnonymous) {
                     Button(
-                        onClick = { showAuthDialog = true },
+                        onClick = { onGoogleSignIn() },
                         shape = RoundedCornerShape(12.dp)
                     ) {
-                        Text(stringResource(R.string.sign_in))
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Icon(Icons.Default.Login, null, modifier = Modifier.size(18.dp))
+                            Text(stringResource(R.string.sign_in))
+                        }
                     }
                 } else {
                     IconButton(onClick = { viewModel.signOut() }) {

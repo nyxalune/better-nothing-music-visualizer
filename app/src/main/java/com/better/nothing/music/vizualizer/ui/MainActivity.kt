@@ -6,7 +6,11 @@ import android.content.ComponentName
 import android.content.Intent
 import android.content.ServiceConnection
 import android.content.pm.PackageManager
-import android.graphics.Bitmap
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import com.google.firebase.auth.GoogleAuthProvider
+import com.google.firebase.database.FirebaseDatabase
+import com.google.android.material.snackbar.Snackbar
 import android.media.AudioDeviceCallback
 import android.media.AudioDeviceInfo
 import android.media.AudioManager
@@ -165,6 +169,30 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private val googleSignInLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == RESULT_OK) {
+            val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
+            try {
+                val account = task.getResult(Exception::class.java)
+                val credential = GoogleAuthProvider.getCredential(account?.idToken, null)
+                viewModel.linkWithCredential(credential)
+            } catch (e: Exception) {
+                Log.e("MainActivity", "Google sign in failed", e)
+                Toast.makeText(this, "Google sign in failed: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun launchGoogleSignIn() {
+        val webClientId = getString(R.string.default_web_client_id)
+        val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+            .requestIdToken(webClientId)
+            .requestEmail()
+            .build()
+        val googleSignInClient = GoogleSignIn.getClient(this, gso)
+        googleSignInLauncher.launch(googleSignInClient.signInIntent)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge(
@@ -172,7 +200,9 @@ class MainActivity : ComponentActivity() {
             navigationBarStyle = androidx.activity.SystemBarStyle.auto(android.graphics.Color.TRANSPARENT, android.graphics.Color.TRANSPARENT)
         )
 
-        FirebaseFuckery.init()
+        try {
+            FirebaseDatabase.getInstance().setPersistenceEnabled(true)
+        } catch (_: Exception) {}
 
         val intent = Intent(this, AudioCaptureService::class.java)
         startForegroundService(intent)
@@ -220,7 +250,7 @@ class MainActivity : ComponentActivity() {
                 BetterVizApp(
                     viewModel = viewModel,
                     onToggleVisualizer = { toggleVisualizer() },
-                    onGoogleSignIn = {  },
+                    onGoogleSignIn = { launchGoogleSignIn() },
                     onOverlayPermissionRequest = {
                         val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, "package:$packageName".toUri())
                         overlayPermissionLauncher.launch(intent)
@@ -300,7 +330,9 @@ class MainActivity : ComponentActivity() {
             pendingData = data
             hasPendingToken = true
             pendingVisualizerStart = true
-            FirebaseFuckery.init()
+            try {
+            FirebaseDatabase.getInstance().setPersistenceEnabled(true)
+        } catch (_: Exception) {}
 
             val intent = Intent(this, AudioCaptureService::class.java)
             bindService(intent, serviceConnection, BIND_AUTO_CREATE)
@@ -408,7 +440,7 @@ val HeavyEasingSpec = tween<Float>(durationMillis = 600)
 internal fun BetterVizApp(
     viewModel: MainViewModel,
     onToggleVisualizer: () -> Unit,
-    onGoogleSignIn: @Composable () -> Unit,
+    onGoogleSignIn: () -> Unit,
     onOverlayPermissionRequest: () -> Unit
 ) {
     val selectedTab by viewModel.selectedTab.collectAsStateWithLifecycle()
@@ -701,6 +733,7 @@ internal fun BetterVizApp(
                                     viewModel.setOverlayEnabled(enabled)
                                 }
                             },
+                            onGoogleSignIn = onGoogleSignIn,
                             padding = padding
                         )
                     }

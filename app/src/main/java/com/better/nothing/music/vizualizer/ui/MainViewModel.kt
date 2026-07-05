@@ -24,8 +24,6 @@ import com.better.nothing.music.vizualizer.model.*
 import com.better.nothing.music.vizualizer.service.AudioCaptureService
 import com.better.nothing.music.vizualizer.util.AnalyticsHelper
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.EmailAuthProvider
-import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.auth.AuthCredential
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
@@ -552,52 +550,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             connection?.disconnect()
         }
     }
-    fun updateProfilePicture(uri: android.net.Uri) {
-        val uid = _userId.value ?: return
-        viewModelScope.launch {
-            try {
-                val base64 = userRepository.uploadProfilePicture(uid, uri, ctx)
-                val profile = _userProfile.value?.copy(profilePictureUrl = base64)
-                    ?: UserProfile(userId = uid, profilePictureUrl = base64)
-                userRepository.saveUserProfile(profile)
-                _userProfile.value = profile
-                analytics.logProfileUpdate("profile_picture")
-            } catch (e: Exception) {
-                Log.e("MainViewModel", "Failed to update profile picture", e)
-            }
-        }
-    }
-
-    fun selectDefaultAvatar(resId: Int) {
-        val uid = _userId.value ?: return
-        viewModelScope.launch {
-            try {
-                val base64 = userRepository.uploadAvatarFromResource(uid, resId, ctx)
-                val profile = _userProfile.value?.copy(profilePictureUrl = base64)
-                    ?: UserProfile(userId = uid, profilePictureUrl = base64)
-                userRepository.saveUserProfile(profile)
-                _userProfile.value = profile
-                analytics.logProfileUpdate("avatar")
-            } catch (e: Exception) {
-                Log.e("MainViewModel", "Failed to select avatar", e)
-            }
-        }
-    }
-    fun setUserNickname(nickname: String) {
-        _userNickname.value = nickname
-        val uid = _userId.value ?: return
-        viewModelScope.launch {
-            try {
-                val profile = _userProfile.value?.copy(displayName = nickname)
-                    ?: UserProfile(userId = uid, displayName = nickname)
-                userRepository.saveUserProfile(profile)
-                _userProfile.value = profile
-                analytics.logProfileUpdate("nickname")
-            } catch (e: Exception) {
-                Log.e("MainViewModel", "Failed to update nickname", e)
-            }
-        }
-    }
+    // Profile logic now managed via Google Sign-in / Firebase
 
     private val _overlayEnabled = MutableStateFlow(false)
     val overlayEnabled = _overlayEnabled.asStateFlow()
@@ -879,6 +832,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 _isAnonymous.value = user.isAnonymous
                 analytics.setUserId(user.uid)
                 prefs.edit().putString("user_id", user.uid).apply()
+                
+                // If not anonymous, fetch/sync profile
+                if (!user.isAnonymous) {
+                    syncStats()
+                }
             }
         }
 
@@ -1690,45 +1648,68 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         val user = FirebaseAuth.getInstance().currentUser ?: return
         viewModelScope.launch {
             try {
-                user.linkWithCredential(credential).await()
+                val result = user.linkWithCredential(credential).await()
+                val firebaseUser = result.user
+                
+                // Update profile from firebase user info
+                if (firebaseUser != null) {
+                    val profile = _userProfile.value?.copy(
+                        displayName = firebaseUser.displayName ?: _userNickname.value,
+                        profilePictureUrl = firebaseUser.photoUrl?.toString() ?: _userProfile.value?.profilePictureUrl
+                    ) ?: UserProfile(
+                        userId = firebaseUser.uid,
+                        displayName = firebaseUser.displayName ?: "Anonymous",
+                        profilePictureUrl = firebaseUser.photoUrl?.toString(),
+                        createdAt = System.currentTimeMillis()
+                    )
+                    userRepository.saveUserProfile(profile)
+                    _userProfile.value = profile
+                    _userNickname.value = profile.displayName
+                }
+                
                 syncStats()
                 withContext(Dispatchers.Main) {
                     Toast.makeText(ctx, ctx.getString(R.string.account_linked), Toast.LENGTH_SHORT).show()
                 }
             } catch (e: Exception) {
                 Log.e("MainViewModel", "Linking failed", e)
-                withContext(Dispatchers.Main) {
-                    Toast.makeText(ctx, ctx.getString(R.string.auth_failed, e.localizedMessage), Toast.LENGTH_LONG).show()
-                }
-            }
-        }
-    }
-
-    fun signInWithEmail(email: String, psw: String) {
-        viewModelScope.launch {
-            try {
-                FirebaseAuth.getInstance().signInWithEmailAndPassword(email, psw).await()
-                syncStats()
-            } catch (e: Exception) {
-                withContext(Dispatchers.Main) {
-                    Toast.makeText(ctx, ctx.getString(R.string.auth_failed, e.localizedMessage), Toast.LENGTH_LONG).show()
-                }
-            }
-        }
-    }
-
-    fun signUpWithEmail(email: String, psw: String) {
-        val user = FirebaseAuth.getInstance().currentUser
-        viewModelScope.launch {
-            try {
-                if (user != null && user.isAnonymous) {
-                    val credential = EmailAuthProvider.getCredential(email, psw)
-                    user.linkWithCredential(credential).await()
+                
+                // If linking fails because provider is already linked, try signing in instead
+                if (e.message?.contains("provider already linked", ignoreCase = true) == true || 
+                    e.message?.contains("already in use", ignoreCase = true) == true) {
+                    signInWithCredential(credential)
                 } else {
-                    FirebaseAuth.getInstance().createUserWithEmailAndPassword(email, psw).await()
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(ctx, ctx.getString(R.string.auth_failed, e.localizedMessage), Toast.LENGTH_LONG).show()
+                    }
+                }
+            }
+        }
+    }
+
+    fun signInWithCredential(credential: AuthCredential) {
+        viewModelScope.launch {
+            try {
+                val result = FirebaseAuth.getInstance().signInWithCredential(credential).await()
+                val firebaseUser = result.user
+                if (firebaseUser != null) {
+                    // Try to fetch existing profile
+                    var profile = userRepository.getUserProfile(firebaseUser.uid)
+                    if (profile == null) {
+                        profile = UserProfile(
+                            userId = firebaseUser.uid,
+                            displayName = firebaseUser.displayName ?: "Anonymous",
+                            profilePictureUrl = firebaseUser.photoUrl?.toString(),
+                            createdAt = System.currentTimeMillis()
+                        )
+                        userRepository.saveUserProfile(profile)
+                    }
+                    _userProfile.value = profile
+                    _userNickname.value = profile.displayName
                 }
                 syncStats()
             } catch (e: Exception) {
+                Log.e("MainViewModel", "Sign in failed", e)
                 withContext(Dispatchers.Main) {
                     Toast.makeText(ctx, ctx.getString(R.string.auth_failed, e.localizedMessage), Toast.LENGTH_LONG).show()
                 }
