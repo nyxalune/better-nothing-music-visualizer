@@ -16,7 +16,11 @@ This android app grabs the live audio stream from your device using sources such
 ## 💬 Join Our Discord Server
 
 Click the banner below to join our Discord server and connect with the community:
-[![Discord Server](https://discord.com/api/guilds/1509496060094054531/widget.png?style=banner3)](https://discord.gg/h7DYNttc8K)
+<a href="https://discord.gg/h7DYNttc8K">
+  <img src="https://discord.com/api/guilds/1509496060094054531/widget.png?style=banner3" 
+       alt="Discord Server" 
+       style="border-radius: 12px; box-shadow: 0 0 15px rgba(88, 101, 242, 0.4); max-width: 100%; height: auto;">
+</a>
 
 ## <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Smilies/Thinking%20Face.png" alt="Thinking Face" width="25" height="25" /> Why does this exist?
 For a lot of people (including me), the *stock Glyph Music Visualiastion provided by Nothing* feels random.  
