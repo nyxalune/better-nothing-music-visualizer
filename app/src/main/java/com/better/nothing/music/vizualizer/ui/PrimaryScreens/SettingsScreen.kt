@@ -37,10 +37,10 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.automirrored.filled.Login
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.res.painterResource
 import com.better.nothing.music.vizualizer.ui.BodyText
 import com.better.nothing.music.vizualizer.ui.CardHeader
 import com.better.nothing.music.vizualizer.ui.ExpressiveCard
@@ -68,7 +68,6 @@ internal fun SettingsScreen(
     onGoogleSignIn: () -> Unit,
     padding: PaddingValues = PaddingValues(),
 ) {
-    val m3eEnabled by viewModel.m3eEnabled.collectAsStateWithLifecycle()
     val uiAmplitudeSyncEnabled by viewModel.uiAmplitudeSyncEnabled.collectAsStateWithLifecycle()
     val dynamicGainEnabled by viewModel.dynamicGainEnabled.collectAsStateWithLifecycle()
     val flashlightMultiIntensityForced by viewModel.flashlightMultiIntensityForced.collectAsStateWithLifecycle()
@@ -103,6 +102,27 @@ internal fun SettingsScreen(
                 showDevModePanel = !showDevModePanel
             }
         )
+
+        // ── Shortcuts ──────────────────────────────────────────────────────
+        FlowRow(
+            modifier = Modifier.fillMaxWidth(),
+            maxItemsInEachRow = 2,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            LinkCard(
+                title = "Leaderboard",
+                icon = Icons.Default.EmojiEvents,
+                onClick = { viewModel.showLeaderboard() },
+                modifier = Modifier.weight(1f)
+            )
+            LinkCard(
+                title = "Usage Stats",
+                icon = Icons.Default.BarChart,
+                onClick = { viewModel.showAbout() },
+                modifier = Modifier.weight(1f)
+            )
+        }
 
         // ── Links & Info ────────────────────────────────────────────────────
         FlowRow(
@@ -142,10 +162,9 @@ internal fun SettingsScreen(
             CardHeader(title = "Account")
             val userProfile by viewModel.userProfile.collectAsStateWithLifecycle()
             
-            Row(
+            Column(
                 modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 Box(
                     modifier = Modifier
@@ -189,7 +208,7 @@ internal fun SettingsScreen(
                         shape = RoundedCornerShape(12.dp)
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Icon(Icons.Default.Login, null, modifier = Modifier.size(18.dp))
+                            Icon(Icons.AutoMirrored.Filled.Login, null, modifier = Modifier.size(18.dp))
                             Text(stringResource(R.string.sign_in))
                         }
                     }
@@ -684,7 +703,7 @@ internal fun SettingsScreen(
                                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                                         verticalArrangement = Arrangement.spacedBy(8.dp)
                                     ) {
-                                        devices.forEach { dev ->
+                                        devices.forEach { _ ->
                                             ExpressiveSplitButton(
                                                 items = devices,
                                                 selectedItem = spoofedDevice,

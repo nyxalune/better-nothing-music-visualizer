@@ -426,9 +426,9 @@ fun FlowRowScope.OptionTile(
 }
 
 @Composable
-fun ScreenTitle(text: String, onLongPress: (() -> Unit)? = null) {
+fun ScreenTitle(text: String, modifier: Modifier = Modifier, onLongPress: (() -> Unit)? = null) {
     Column(
-        modifier = Modifier
+        modifier = modifier
             .padding(bottom = 8.dp)
             .then(
                 if (onLongPress != null) {

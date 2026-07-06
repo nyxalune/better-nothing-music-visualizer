@@ -33,6 +33,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.EaseOutCubic
 import androidx.compose.animation.core.FastOutLinearInEasing
 import androidx.compose.animation.core.LinearEasing
@@ -184,13 +185,22 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun launchGoogleSignIn() {
-        val webClientId = getString(R.string.default_web_client_id)
-        val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-            .requestIdToken(webClientId)
-            .requestEmail()
-            .build()
-        val googleSignInClient = GoogleSignIn.getClient(this, gso)
-        googleSignInLauncher.launch(googleSignInClient.signInIntent)
+        try {
+            val webClientId = getString(R.string.default_web_client_id)
+            if (webClientId.isEmpty()) {
+                Toast.makeText(this, "Web Client ID is missing!", Toast.LENGTH_LONG).show()
+                return
+            }
+            val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                .requestIdToken(webClientId)
+                .requestEmail()
+                .build()
+            val googleSignInClient = GoogleSignIn.getClient(this, gso)
+            googleSignInLauncher.launch(googleSignInClient.signInIntent)
+        } catch (e: Exception) {
+            Log.e("MainActivity", "Failed to launch Google Sign In", e)
+            Toast.makeText(this, "Launcher error: ${e.message}", Toast.LENGTH_SHORT).show()
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -247,6 +257,12 @@ class MainActivity : ComponentActivity() {
                 fontName = selectedFont,
                 musicPrimaryColor = musicThemeColor,
             ) {
+                BackHandler {
+                    if (!viewModel.navigateBack()) {
+                        finish()
+                    }
+                }
+
                 BetterVizApp(
                     viewModel = viewModel,
                     onToggleVisualizer = { toggleVisualizer() },

@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.ComponentName
 import android.os.Build
+import android.os.SystemClock
 import android.os.Vibrator
 import android.os.VibratorManager
 import android.graphics.Bitmap
@@ -101,6 +102,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     val _totalVisualizedTime = MutableStateFlow(0L)
     val totalVisualizedTime = _totalVisualizedTime.asStateFlow()
+
+    val _totalIdleTime = MutableStateFlow(0L)
+    val totalIdleTime = _totalIdleTime.asStateFlow()
+
+    val _totalActiveTime = MutableStateFlow(0L)
+    val totalActiveTime = _totalActiveTime.asStateFlow()
 
     val _totalGlyphTime = MutableStateFlow(0L)
     val totalGlyphTime = _totalGlyphTime.asStateFlow()
@@ -818,6 +825,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _uiAmplitudeSyncEnabled.value = prefs.getBoolean("ui_amplitude_sync_enabled", true)
 
         _totalVisualizedTime.value = prefs.getLong("total_visualized_time", 0L)
+        _totalIdleTime.value = prefs.getLong("total_idle_time", 0L)
+        _totalActiveTime.value = prefs.getLong("total_active_time", 0L)
         _totalGlyphTime.value = prefs.getLong("total_glyph_time", 0L)
         _totalHapticTime.value = prefs.getLong("total_haptic_time", 0L)
         _totalFlashlightTime.value = prefs.getLong("total_flashlight_time", 0L)
@@ -872,6 +881,37 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         prefs.edit().putInt("app_open_count", openCount).apply()
         analytics.logAppOpen(openCount)
 
+        // Time tracking
+        viewModelScope.launch {
+            var lastUpdate = SystemClock.elapsedRealtime()
+            while (true) {
+                delay(1000)
+                val now = SystemClock.elapsedRealtime()
+                val delta = now - lastUpdate
+                lastUpdate = now
+
+                if (_runningState.value) {
+                    _totalVisualizedTime.value += delta
+                    
+                    val hasActivity = _fftState.value.any { it > 0.001f }
+                    if (hasActivity) {
+                        _totalActiveTime.value += delta
+                    } else {
+                        _totalIdleTime.value += delta
+                    }
+
+                    // Save periodically
+                    viewModelScope.launch(Dispatchers.IO) {
+                        prefs.edit()
+                            .putLong("total_visualized_time", _totalVisualizedTime.value)
+                            .putLong("total_idle_time", _totalIdleTime.value)
+                            .putLong("total_active_time", _totalActiveTime.value)
+                            .apply()
+                    }
+                }
+            }
+        }
+
         viewModelScope.launch {
             if (!hasFlashlight) return@launch
             while (true) {
@@ -887,12 +927,40 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     // ── Tab ───────────────────────────────────────────────────────────────────
     val _selectedTab = MutableStateFlow(Tab.Audio)
     val selectedTab = _selectedTab.asStateFlow()
-    fun selectTab(tab: Tab) {
+    private val tabHistory = mutableListOf<Tab>()
+
+    fun selectTab(tab: Tab, recordHistory: Boolean = true) {
         if (selectedDevice.value == DeviceProfile.DEVICE_UNKNOWN && tab == Tab.Glyphs) return
         if (!hasHapticMotor && tab == Tab.Haptics) return
         if (!hasFlashlight && tab == Tab.Flashlight) return
+        
+        if (recordHistory && _selectedTab.value != tab) {
+            tabHistory.add(_selectedTab.value)
+            if (tabHistory.size > 20) tabHistory.removeAt(0)
+        }
+        
         _selectedTab.value = tab
         analytics.logTabSelected(tab.name)
+    }
+
+    fun navigateBack(): Boolean {
+        // First check for overlays
+        if (_isShowingEditor.value) { hideEditor(); return true }
+        if (_isShowingAbout.value) { hideAbout(); return true }
+        if (_isShowingLicense.value) { hideLicense(); return true }
+        if (_isShowingCommunity.value) { hideCommunity(); return true }
+        if (_isShowingLeaderboard.value) { hideLeaderboard(); return true }
+        if (_showAnnouncementHistory.value) { hideAnnouncementHistory(); return true }
+        if (_showAnnouncementModal.value) { _showAnnouncementModal.value = false; return true }
+        if (_showAnnouncementEditor.value) { hideAnnouncementEditor(); return true }
+
+        // Then check tab history
+        if (tabHistory.isNotEmpty()) {
+            val previousTab = tabHistory.removeAt(tabHistory.size - 1)
+            selectTab(previousTab, recordHistory = false)
+            return true
+        }
+        return false
     }
 
     fun setCaptureSource(source: AudioCaptureService.CaptureSource) {
@@ -1648,6 +1716,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         val user = FirebaseAuth.getInstance().currentUser ?: return
         viewModelScope.launch {
             try {
+                Log.d("MainViewModel", "Linking user with credential...")
                 val result = user.linkWithCredential(credential).await()
                 val firebaseUser = result.user
                 
@@ -1664,23 +1733,26 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     )
                     userRepository.saveUserProfile(profile)
                     _userProfile.value = profile
-                    _userNickname.value = profile.displayName
+                    _userNickname.value = profile.displayName ?: "Anonymous"
                 }
                 
                 syncStats()
                 withContext(Dispatchers.Main) {
-                    Toast.makeText(ctx, ctx.getString(R.string.account_linked), Toast.LENGTH_SHORT).show()
+                    Toast.makeText(ctx, "Google account linked!", Toast.LENGTH_SHORT).show()
                 }
             } catch (e: Exception) {
                 Log.e("MainViewModel", "Linking failed", e)
                 
                 // If linking fails because provider is already linked, try signing in instead
-                if (e.message?.contains("provider already linked", ignoreCase = true) == true || 
-                    e.message?.contains("already in use", ignoreCase = true) == true) {
+                val msg = e.message ?: ""
+                if (msg.contains("provider already linked", ignoreCase = true) || 
+                    msg.contains("already in use", ignoreCase = true) ||
+                    msg.contains("credential_already_associated", ignoreCase = true)) {
+                    Log.d("MainViewModel", "Credential already linked, signing in instead...")
                     signInWithCredential(credential)
                 } else {
                     withContext(Dispatchers.Main) {
-                        Toast.makeText(ctx, ctx.getString(R.string.auth_failed, e.localizedMessage), Toast.LENGTH_LONG).show()
+                        Toast.makeText(ctx, "Linking failed: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
                     }
                 }
             }
@@ -1690,6 +1762,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun signInWithCredential(credential: AuthCredential) {
         viewModelScope.launch {
             try {
+                Log.d("MainViewModel", "Signing in with credential...")
                 val result = FirebaseAuth.getInstance().signInWithCredential(credential).await()
                 val firebaseUser = result.user
                 if (firebaseUser != null) {
@@ -1705,13 +1778,17 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         userRepository.saveUserProfile(profile)
                     }
                     _userProfile.value = profile
-                    _userNickname.value = profile.displayName
+                    _userNickname.value = profile.displayName ?: "Anonymous"
+                    
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(ctx, "Welcome, ${profile.displayName}!", Toast.LENGTH_SHORT).show()
+                    }
                 }
                 syncStats()
             } catch (e: Exception) {
                 Log.e("MainViewModel", "Sign in failed", e)
                 withContext(Dispatchers.Main) {
-                    Toast.makeText(ctx, ctx.getString(R.string.auth_failed, e.localizedMessage), Toast.LENGTH_LONG).show()
+                    Toast.makeText(ctx, "Sign in failed: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
                 }
             }
         }

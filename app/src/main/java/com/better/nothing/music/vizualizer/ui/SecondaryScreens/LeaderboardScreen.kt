@@ -8,6 +8,7 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material3.*
@@ -39,30 +40,40 @@ internal fun LeaderboardScreen(
             .background(MaterialTheme.colorScheme.background)
             .padding(horizontal = 16.dp)
     ) {
-        Spacer(modifier = Modifier.height(16.dp))
-        IconButton(onClick = onDismiss) {
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                contentDescription = stringResource(R.string.back)
-            )
+        Spacer(Modifier.windowInsetsTopHeight(WindowInsets.statusBars))
+        
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(onClick = onDismiss) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = stringResource(R.string.back),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+            ScreenTitle(text = "Leaderboard", modifier = Modifier.padding(bottom = 0.dp))
         }
 
-        ScreenTitle(text = "Leaderboard")
         Text(
             text = "Weekly top visualizers",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-            modifier = Modifier.padding(bottom = 24.dp)
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.padding(start = 8.dp, bottom = 16.dp)
         )
 
         if (entries.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
+                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
             }
         } else {
             LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                contentPadding = PaddingValues(bottom = 32.dp)
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                contentPadding = PaddingValues(bottom = 80.dp)
             ) {
                 itemsIndexed(entries) { index, entry ->
                     LeaderboardItem(index + 1, entry)
@@ -78,41 +89,43 @@ private fun LeaderboardItem(rank: Int, entry: LeaderboardEntry) {
         1 -> Color(0xFFFFD700).copy(alpha = 0.1f) // Gold
         2 -> Color(0xFFC0C0C0).copy(alpha = 0.1f) // Silver
         3 -> Color(0xFFCD7F32).copy(alpha = 0.1f) // Bronze
-        else -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+        else -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)
     }
 
     val iconColor = when (rank) {
         1 -> Color(0xFFFFD700)
         2 -> Color(0xFFC0C0C0)
         3 -> Color(0xFFCD7F32)
-        else -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f)
+        else -> MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
     }
 
     ExpressiveCard(
         containerColor = backgroundColor,
-        border = if (rank <= 3) BorderStroke(1.dp, iconColor.copy(alpha = 0.3f)) else null
+        border = if (rank <= 3) BorderStroke(1.dp, iconColor.copy(alpha = 0.3f)) else BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.1f))
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Box(
-                modifier = Modifier.size(40.dp),
+                modifier = Modifier.size(48.dp),
                 contentAlignment = Alignment.BottomEnd
             ) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
                         .clip(CircleShape)
-                        .background(if (rank <= 3) iconColor else MaterialTheme.colorScheme.surfaceVariant),
+                        .background(if (rank <= 3) iconColor.copy(alpha = 0.2f) else MaterialTheme.colorScheme.surfaceVariant),
                     contentAlignment = Alignment.Center
                 ) {
                     if (entry.profilePictureUrl != null) {
                         AsyncImage(
                             model = entry.profilePictureUrl,
                             contentDescription = null,
-                            modifier = Modifier.fillMaxSize(),
+                            modifier = Modifier.fillMaxSize().clip(CircleShape),
                             contentScale = ContentScale.Crop
                         )
                     } else {
@@ -120,26 +133,25 @@ private fun LeaderboardItem(rank: Int, entry: LeaderboardEntry) {
                             text = rank.toString(),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
-                            color = if (rank <= 3) Color.Black else MaterialTheme.colorScheme.onSurface
+                            color = if (rank <= 3) iconColor else MaterialTheme.colorScheme.onSurface
                         )
                     }
                 }
 
                 if (entry.profilePictureUrl != null) {
-                    // Overlay rank if we have a profile picture
                     Surface(
-                        modifier = Modifier.size(16.dp),
+                        modifier = Modifier.size(18.dp),
                         shape = CircleShape,
-                        color = if (rank <= 3) iconColor else MaterialTheme.colorScheme.surface,
-                        border = BorderStroke(1.dp, Color.Black.copy(alpha = 0.1f))
+                        color = if (rank <= 3) iconColor else MaterialTheme.colorScheme.primary,
+                        contentColor = if (rank <= 3) Color.Black else Color.White,
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.background)
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Text(
                                 text = rank.toString(),
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.ExtraBold,
-                                fontSize = 8.sp,
-                                color = if (rank <= 3) Color.Black else MaterialTheme.colorScheme.onSurface
+                                fontSize = 9.sp
                             )
                         }
                     }
@@ -150,22 +162,24 @@ private fun LeaderboardItem(rank: Int, entry: LeaderboardEntry) {
                 Text(
                     text = entry.name,
                     style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    color = if (rank <= 3) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
                 )
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Default.Timer,
                         contentDescription = null,
-                        modifier = Modifier.size(12.dp),
-                        tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
+                        modifier = Modifier.size(14.dp),
+                        tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
                     )
                     Text(
                         text = formatDuration(entry.totalTimeMs),
                         style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                        fontWeight = FontWeight.Medium
                     )
                 }
             }
@@ -174,7 +188,15 @@ private fun LeaderboardItem(rank: Int, entry: LeaderboardEntry) {
                 Icon(
                     imageVector = Icons.Default.EmojiEvents,
                     contentDescription = null,
-                    tint = iconColor
+                    tint = iconColor,
+                    modifier = Modifier.size(24.dp)
+                )
+            } else {
+                Icon(
+                    imageVector = Icons.Default.ChevronRight,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f),
+                    modifier = Modifier.size(16.dp)
                 )
             }
         }
