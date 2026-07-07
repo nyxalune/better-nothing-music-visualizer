@@ -231,10 +231,6 @@ fun AudioScreen(
         AnimatedVisibility(visible = isRunning) {
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
 
-                ExpressiveCard {
-
-                }
-
                 if (captureSource != AudioCaptureService.CaptureSource.MIC) {
                     LatencyCard(
                         latencyMs = latencyMs,

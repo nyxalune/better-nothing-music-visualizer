@@ -970,75 +970,111 @@ internal fun SettingsScreen(
 }
 
 @Composable
-private fun LinkCard(
+fun LinkCard(
     title: String,
     icon: ImageVector,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    subtitle: String? = null
 ) {
-    val haptics = LocalHapticFeedback.current
-    var isPressed by remember { mutableStateOf(false) }
-    
+    val interactionSource = remember { MutableInteractionSource() }
+    val view = LocalView.current
+
+    // 1. Stream raw touch events directly to trigger frame-perfect hardware haptics
+    LaunchedEffect(interactionSource) {
+        interactionSource.interactions.collect { interaction ->
+            when (interaction) {
+                is PressInteraction.Press -> {
+                    // Tactile down-press simulation
+                    view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                }
+                is PressInteraction.Release -> {
+                    // Tactile up-release simulation
+                    view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY_RELEASE)
+                }
+                is PressInteraction.Cancel -> {
+                    // Mutes or triggers a light cleanup if the user drags their finger away
+                    view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY_RELEASE)
+                }
+            }
+        }
+    }
+
+    // 2. Purely visual spring-physics layout tracking
+    val isPressed by interactionSource.collectIsPressedAsState()
     val scale by animateFloatAsState(
-        targetValue = if (isPressed) 0.94f else 1f,
-        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow),
-        label = "link_card_scale"
+        targetValue = if (isPressed) 0.96f else 1f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessLow
+        ),
+        label = "m3e_link_card_scale"
     )
 
     Surface(
-        onClick = {
-            haptics.performHapticFeedback(HapticFeedbackType.GestureThresholdActivate)
-            onClick()
-        },
-        shape = RoundedCornerShape(28.dp),
-        color = if (isPressed) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
-        border = if (isPressed) BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)) else null,
-        contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+        onClick = onClick,
         modifier = modifier
-            .height(84.dp)
+            .fillMaxWidth()
             .graphicsLayer {
                 scaleX = scale
                 scaleY = scale
-            }
-            .pointerInput(Unit) {
-                awaitPointerEventScope {
-                    while (true) {
-                        val event = awaitPointerEvent()
-                        when (event.type) {
-                            androidx.compose.ui.input.pointer.PointerEventType.Press -> isPressed = true
-                            androidx.compose.ui.input.pointer.PointerEventType.Release -> isPressed = false
-                            androidx.compose.ui.input.pointer.PointerEventType.Exit -> isPressed = false
-                        }
-                    }
-                }
-            }
+            },
+        shape = RoundedCornerShape(24.dp),
+        color = if (isPressed) {
+            MaterialTheme.colorScheme.surfaceContainerHigh
+        } else {
+            MaterialTheme.colorScheme.surfaceContainer
+        },
+        interactionSource = interactionSource
     ) {
         Row(
-            modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp),
+            modifier = Modifier.padding(horizontal = 20.dp, vertical = 18.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Surface(
-                shape = CircleShape,
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(44.dp)
+                shape = RoundedCornerShape(16.dp),
+                color = MaterialTheme.colorScheme.primaryContainer,
+                contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                modifier = Modifier.size(48.dp)
             ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(icon, contentDescription = null, modifier = Modifier.size(24.dp), tint = Color.White)
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        modifier = Modifier.size(24.dp)
+                    )
                 }
             }
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleMedium,
-                maxLines = 1,
-                fontWeight = FontWeight.ExtraBold,
-                modifier = Modifier.weight(1f)
-            )
+
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                if (subtitle != null) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = subtitle,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
             Icon(
-                Icons.Default.ChevronRight, 
-                null, 
-                modifier = Modifier.size(24.dp),
-                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f)
+                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
+                modifier = Modifier.size(24.dp)
             )
         }
     }
