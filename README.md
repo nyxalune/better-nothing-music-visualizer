@@ -10,8 +10,8 @@ This android app grabs the live audio stream from your device using sources such
   src="https://img.shields.io/github/downloads/Aleks-Levet/better-nothing-music-visualizer/total?style=for-the-badge&logo=github&label=Devices%20made%20better:&color=ff0000&labelColor=000000"
   style="height:40px;">
 
-### **Click the link below to download the app:**
-[<img height="80" alt="Get it on GitHub" src="./.github/assets/get-it-on-github.png" />](https://github.com/Aleks-Levet/better-nothing-music-visualizer/releases)
+# **Here's the fucking download button, use it!**
+[<img height="80" alt="Get it on GitHub" src="./.github/assets/get-it-on-github.png" />](https://github.com/Aleks-Levet/better-nothing-music-visualizer/releases/download/V3.2.1/Better-Nothing-Music-Vizualizer-V3.2.1.apk)
    
 ## 💬 Join Our Discord Server
 
@@ -213,9 +213,9 @@ https://www.virustotal.com/gui/url/c92c1ff82b56eb60bfd1e159592d09f949f0ea2d195e0
 ### <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Travel%20and%20places/Star.png" alt="Star" width="25" height="25" />Star History
 <a href="https://www.star-history.com/?repos=Aleks-Levet%2Fbetter-nothing-music-visualizer&type=date&legend=top-left">
  <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=Aleks-Levet/better-nothing-music-visualizer&type=date&theme=dark&legend=top-left" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=Aleks-Levet/better-nothing-music-visualizer&type=date&legend=top-left" />
-   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=Aleks-Levet/better-nothing-music-visualizer&type=date&legend=top-left" />
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=Aleks-Levet/better-nothing-music-visualizer&type=date&theme=dark&legend=top-left&sealed_token=uvxovJ58naHdu_btCKJ4NCVFxaJ9PE-ZZ6uqvQByXxpP7Vq9oz-siTnlfLNPp6ZFKPcs9Da1hzOKf2q23WK4pA2blP_UD8K9FtE4zD7nOE00sCJjRpGdyMR_83XnsequVLTfgBM5YpxhfbIzOM6SAvcw_qUiedoPTiCzficgf19uj_2PBHA4UmcuHNyI" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=Aleks-Levet/better-nothing-music-visualizer&type=date&legend=top-left&sealed_token=uvxovJ58naHdu_btCKJ4NCVFxaJ9PE-ZZ6uqvQByXxpP7Vq9oz-siTnlfLNPp6ZFKPcs9Da1hzOKf2q23WK4pA2blP_UD8K9FtE4zD7nOE00sCJjRpGdyMR_83XnsequVLTfgBM5YpxhfbIzOM6SAvcw_qUiedoPTiCzficgf19uj_2PBHA4UmcuHNyI" />
+   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=Aleks-Levet/better-nothing-music-visualizer&type=date&legend=top-left&sealed_token=uvxovJ58naHdu_btCKJ4NCVFxaJ9PE-ZZ6uqvQByXxpP7Vq9oz-siTnlfLNPp6ZFKPcs9Da1hzOKf2q23WK4pA2blP_UD8K9FtE4zD7nOE00sCJjRpGdyMR_83XnsequVLTfgBM5YpxhfbIzOM6SAvcw_qUiedoPTiCzficgf19uj_2PBHA4UmcuHNyI" />
  </picture>
 </a>
 
