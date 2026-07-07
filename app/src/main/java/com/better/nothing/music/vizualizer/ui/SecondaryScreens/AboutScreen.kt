@@ -166,8 +166,8 @@ internal fun AboutScreen(
 
             HorizontalDivider(
                 modifier = Modifier.padding(vertical = 8.dp),
-                thickness = 0.5.dp,
-                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f)
+                thickness = 4.dp,
+                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
             )
 
             // Version detail
@@ -269,20 +269,6 @@ internal fun AboutScreen(
                     }
                 }
             )
-        }
-
-        ExpressiveCard {
-            BodyText(text = stringResource(R.string.about_intro), size = 15.sp)
-        }
-
-        SectionHeader(text = stringResource(R.string.about_section_why))
-        ExpressiveCard {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                BodyText(text = stringResource(R.string.about_why_1), size = 14.sp)
-                BodyText(text = stringResource(R.string.about_why_2), size = 14.sp)
-                BodyText(text = stringResource(R.string.about_why_3), size = 14.sp)
-                BodyText(text = stringResource(R.string.about_why_4), size = 14.sp)
-            }
         }
 
         SectionHeader(text = stringResource(R.string.credits))
