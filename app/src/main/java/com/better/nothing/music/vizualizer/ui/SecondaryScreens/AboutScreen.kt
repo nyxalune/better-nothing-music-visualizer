@@ -24,6 +24,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.filled.Campaign
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.EmojiEvents
@@ -186,6 +187,14 @@ internal fun AboutScreen(
                 icon = Icons.Default.Info,
                 title = "Configuration Version",
                 subtitle = configVersion
+            )
+
+            // App News Action
+            InfoRow(
+                icon = Icons.Default.Campaign,
+                title = stringResource(R.string.app_news),
+                subtitle = "Latest updates and announcements",
+                onClick = { viewModel.showAnnouncementHistory() }
             )
 
             // GitHub Action

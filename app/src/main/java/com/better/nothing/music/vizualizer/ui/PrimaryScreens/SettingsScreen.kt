@@ -6,6 +6,9 @@ import com.better.nothing.music.vizualizer.BuildConfig
 import com.better.nothing.music.vizualizer.model.DeviceProfile
 import android.widget.Toast
 import androidx.compose.animation.*
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -18,6 +21,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -41,6 +45,7 @@ import androidx.compose.material.icons.automirrored.filled.Login
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.pointerInput
 import com.better.nothing.music.vizualizer.ui.BodyText
 import com.better.nothing.music.vizualizer.ui.CardHeader
 import com.better.nothing.music.vizualizer.ui.ExpressiveCard
@@ -104,25 +109,12 @@ internal fun SettingsScreen(
         )
 
         // ── Shortcuts ──────────────────────────────────────────────────────
-        FlowRow(
-            modifier = Modifier.fillMaxWidth(),
-            maxItemsInEachRow = 2,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            LinkCard(
-                title = "Leaderboard",
-                icon = Icons.Default.EmojiEvents,
-                onClick = { viewModel.showLeaderboard() },
-                modifier = Modifier.weight(1f)
-            )
-            LinkCard(
-                title = "Usage Stats",
-                icon = Icons.Default.BarChart,
-                onClick = { viewModel.showStats() },
-                modifier = Modifier.weight(1f)
-            )
-        }
+        LinkCard(
+            title = "Visualization Analytics",
+            icon = Icons.Default.BarChart,
+            onClick = { viewModel.showStats() },
+            modifier = Modifier.fillMaxWidth()
+        )
 
         // ── Links & Info ────────────────────────────────────────────────────
         FlowRow(
@@ -131,12 +123,6 @@ internal fun SettingsScreen(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            LinkCard(
-                title = stringResource(R.string.app_news),
-                icon = Icons.Default.Campaign,
-                onClick = { viewModel.showAnnouncementHistory() },
-                modifier = Modifier.weight(1f)
-            )
             LinkCard(
                 title = stringResource(R.string.about_title),
                 icon = Icons.Default.Info,
@@ -149,12 +135,6 @@ internal fun SettingsScreen(
                 onClick = { uriHandler.openUri("https://discord.gg/h7DYNttc8K") },
                 modifier = Modifier.weight(1f)
             )
-            LinkCard(
-                title = stringResource(R.string.github_repository),
-                icon = Icons.Default.Code,
-                onClick = { uriHandler.openUri("https://github.com/Aleks-Levet/better-nothing-music-visualizer") },
-                modifier = Modifier.weight(1f)
-            )
         }
 
         // ── Account ─────────────────────────────────────────────────────────
@@ -163,8 +143,7 @@ internal fun SettingsScreen(
             val userProfile by viewModel.userProfile.collectAsStateWithLifecycle()
             
             Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
             ) {
                 Box(
                     modifier = Modifier
@@ -998,31 +977,69 @@ private fun LinkCard(
     modifier: Modifier = Modifier
 ) {
     val haptics = LocalHapticFeedback.current
+    var isPressed by remember { mutableStateOf(false) }
+    
+    val scale by animateFloatAsState(
+        targetValue = if (isPressed) 0.94f else 1f,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow),
+        label = "link_card_scale"
+    )
+
     Surface(
         onClick = {
-            haptics.performHapticFeedback(HapticFeedbackType.SegmentTick)
+            haptics.performHapticFeedback(HapticFeedbackType.GestureThresholdActivate)
             onClick()
         },
-        shape = MaterialTheme.shapes.medium,
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+        shape = RoundedCornerShape(28.dp),
+        color = if (isPressed) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+        border = if (isPressed) BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)) else null,
         contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = modifier.height(64.dp)
+        modifier = modifier
+            .height(84.dp)
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+            }
+            .pointerInput(Unit) {
+                awaitPointerEventScope {
+                    while (true) {
+                        val event = awaitPointerEvent()
+                        when (event.type) {
+                            androidx.compose.ui.input.pointer.PointerEventType.Press -> isPressed = true
+                            androidx.compose.ui.input.pointer.PointerEventType.Release -> isPressed = false
+                            androidx.compose.ui.input.pointer.PointerEventType.Exit -> isPressed = false
+                        }
+                    }
+                }
+            }
     ) {
         Row(
-            modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp),
+            modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Icon(icon, contentDescription = null, modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.primary)
+            Surface(
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(44.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(icon, contentDescription = null, modifier = Modifier.size(24.dp), tint = Color.White)
+                }
+            }
             Text(
                 text = title,
-                style = MaterialTheme.typography.labelSmall,
-                maxLines = 2,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.weight(1f),
-                lineHeight = 14.sp
+                style = MaterialTheme.typography.titleMedium,
+                maxLines = 1,
+                fontWeight = FontWeight.ExtraBold,
+                modifier = Modifier.weight(1f)
             )
-            Icon(Icons.Default.ChevronRight, null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f))
+            Icon(
+                Icons.Default.ChevronRight, 
+                null, 
+                modifier = Modifier.size(24.dp),
+                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f)
+            )
         }
     }
 }

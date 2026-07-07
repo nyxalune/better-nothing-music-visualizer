@@ -1,5 +1,7 @@
 package com.better.nothing.music.vizualizer.ui
 
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -18,7 +20,16 @@ internal fun MainOverlays(
     val isShowingLicense by viewModel.isShowingLicense.collectAsStateWithLifecycle()
     val isShowingStats by viewModel.isShowingStats.collectAsStateWithLifecycle()
 
-    if (isShowingEditor) {
+    val expansionSpec = spring<Float>(
+        dampingRatio = Spring.DampingRatioLowBouncy,
+        stiffness = Spring.StiffnessLow
+    )
+
+    AnimatedVisibility(
+        visible = isShowingEditor,
+        enter = scaleIn(animationSpec = expansionSpec, initialScale = 0.8f) + fadeIn(),
+        exit = scaleOut(animationSpec = expansionSpec, targetScale = 0.8f) + fadeOut()
+    ) {
         val fftState by viewModel.fftState.collectAsStateWithLifecycle()
         CustomPresetEditorScreen(
             selectedDevice = selectedDevice,
@@ -29,15 +40,27 @@ internal fun MainOverlays(
         )
     }
 
-    if (isShowingAbout) {
+    AnimatedVisibility(
+        visible = isShowingAbout,
+        enter = scaleIn(animationSpec = expansionSpec, initialScale = 0.9f) + fadeIn(),
+        exit = scaleOut(animationSpec = expansionSpec, targetScale = 0.9f) + fadeOut()
+    ) {
         AboutScreen(onDismiss = { viewModel.hideAbout() }, viewModel = viewModel)
     }
 
-    if (isShowingLicense) {
+    AnimatedVisibility(
+        visible = isShowingLicense,
+        enter = slideInVertically { it } + fadeIn(),
+        exit = slideOutVertically { it } + fadeOut()
+    ) {
         LicenseScreen(onDismiss = { viewModel.hideLicense() })
     }
 
-    if (isShowingStats) {
+    AnimatedVisibility(
+        visible = isShowingStats,
+        enter = scaleIn(animationSpec = expansionSpec, initialScale = 0.8f) + fadeIn(),
+        exit = scaleOut(animationSpec = expansionSpec, targetScale = 0.8f) + fadeOut()
+    ) {
         StatsScreen(viewModel = viewModel, onDismiss = { viewModel.hideStats() })
     }
 }
