@@ -125,13 +125,17 @@ fun BetterVizTheme(
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                         dynamicDarkColorScheme(context)
                     } else {
-                        androidx.compose.material3.darkColorScheme()
+                        androidx.compose.material3.darkColorScheme(
+                            background = Color.Black
+                        )
                     }
                 } else {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                         dynamicLightColorScheme(context)
                     } else {
-                        androidx.compose.material3.lightColorScheme()
+                        androidx.compose.material3.lightColorScheme(
+                            background = Color.White
+                        )
                     }
                 }
             }
@@ -228,8 +232,8 @@ fun BetterVizTheme(
                 } else {
                     androidx.compose.material3.darkColorScheme(
                         background = Color.Black,
-                        surface = Color(0xFF1A1A1A),
-                        primary = Color(0xFFD8D3DA),
+                        surface = Color(0xFF282828),
+                        primary = Color(0xFFDCDCDC),
                         secondary = Color(0xFFA0FFA3),
                         error = Color(0xFFC83B3B),
                         onBackground = Color.White,
@@ -237,8 +241,8 @@ fun BetterVizTheme(
                         onPrimary = Color(0xFF1C1A1D),
                         onSecondary = Color(0xFF1C5A21),
                         onError = Color.White,
-                        surfaceVariant = Color(0xFF242424),
-                        onSurfaceVariant = Color(0xFF676767),
+                        surfaceVariant = Color(0xFF3C3C3C),
+                        onSurfaceVariant = Color(0xFFA0A0A0),
                         outline = Color(0xFF2C2C2C)
                     )
                 }

@@ -408,7 +408,7 @@ fun FlowRowScope.OptionTile(
             .height(64.dp)
     ) {
         Row(
-            modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp),
+            modifier = Modifier.fillMaxSize().padding(horizontal = 18.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
@@ -764,7 +764,7 @@ fun <T> ExpressiveSplitButton(
                     var isPressed by remember { mutableStateOf(false) }
 
                     val bouncySpec = spring<Float>(
-                        dampingRatio = Spring.DampingRatioHighBouncy,
+                        dampingRatio = Spring.DampingRatioMediumBouncy,
                         stiffness = Spring.StiffnessMediumLow
                     )
                     val dpBouncySpec = spring<androidx.compose.ui.unit.Dp>(
@@ -790,7 +790,7 @@ fun <T> ExpressiveSplitButton(
                     val targetContainerColor = if (isSelected) {
                         MaterialTheme.colorScheme.primary
                     } else {
-                        MaterialTheme.colorScheme.surfaceContainerHighest
+                        MaterialTheme.colorScheme.surfaceVariant
                     }
 
                     val targetContentColor = if (isSelected) {
@@ -855,7 +855,7 @@ fun <T> ExpressiveSplitButton(
                                         } finally {
                                             haptics.performHapticFeedback(HapticFeedbackType.SegmentFrequentTick)
                                             val elapsedTime = System.currentTimeMillis() - startTime
-                                            val remainingTime = 150L - elapsedTime
+                                            val remainingTime = 100L - elapsedTime
 
                                             scope.launch {
                                                 if (remainingTime > 0) {
