@@ -215,7 +215,6 @@ class MainActivity : ComponentActivity() {
         } catch (_: Exception) {}
 
         val intent = Intent(this, AudioCaptureService::class.java)
-        startForegroundService(intent)
         bindService(intent, serviceConnection, BIND_AUTO_CREATE)
 
         audioManager.registerAudioDeviceCallback(audioDeviceCallback, mainHandler)
@@ -300,6 +299,9 @@ class MainActivity : ComponentActivity() {
         if (s.isVisualizerRunning) {
             s.stopVisualizer()
         } else {
+            val intent = Intent(this, AudioCaptureService::class.java)
+            startForegroundService(intent)
+
             val source = viewModel.captureSource.value
             when (source) {
                 AudioCaptureService.CaptureSource.INTERNAL -> launchProjection()

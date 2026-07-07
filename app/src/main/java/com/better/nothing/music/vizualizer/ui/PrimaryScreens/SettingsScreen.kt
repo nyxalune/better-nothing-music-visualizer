@@ -26,6 +26,11 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalUriHandler
+import android.view.HapticFeedbackConstants
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.PressInteraction
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
 import androidx.compose.material.icons.Icons
@@ -107,22 +112,21 @@ internal fun SettingsScreen(
                 showDevModePanel = !showDevModePanel
             }
         )
-
-        // ── Shortcuts ──────────────────────────────────────────────────────
-        LinkCard(
-            title = "Visualization Analytics",
-            icon = Icons.Default.BarChart,
-            onClick = { viewModel.showStats() },
-            modifier = Modifier.fillMaxWidth()
-        )
+        
 
         // ── Links & Info ────────────────────────────────────────────────────
         FlowRow(
             modifier = Modifier.fillMaxWidth(),
-            maxItemsInEachRow = 2,
+            maxItemsInEachRow = 3,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
+            LinkCard(
+                title = "Vizualizer Stats",
+                icon = Icons.Default.BarChart,
+                onClick = { viewModel.showStats() },
+                modifier = Modifier.weight(1f)
+            )
             LinkCard(
                 title = stringResource(R.string.about_title),
                 icon = Icons.Default.Info,
@@ -143,49 +147,59 @@ internal fun SettingsScreen(
             val userProfile by viewModel.userProfile.collectAsStateWithLifecycle()
             
             Column(
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(56.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
-                    contentAlignment = Alignment.Center
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    if (userProfile?.profilePictureUrl != null) {
-                        AsyncImage(
-                            model = userProfile?.profilePictureUrl,
-                            contentDescription = stringResource(R.string.profile_picture),
-                            modifier = Modifier.fillMaxSize().clip(CircleShape),
-                            contentScale = ContentScale.Crop
+                    Box(
+                        modifier = Modifier
+                            .size(56.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (userProfile?.profilePictureUrl != null) {
+                            AsyncImage(
+                                model = userProfile?.profilePictureUrl,
+                                contentDescription = stringResource(R.string.profile_picture),
+                                modifier = Modifier.fillMaxSize().clip(CircleShape),
+                                contentScale = ContentScale.Crop
+                            )
+                        } else {
+                            Icon(
+                                if (isAnonymous) Icons.Default.CloudOff else Icons.Default.CloudDone,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(28.dp)
+                            )
+                        }
+                    }
+
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = if (isAnonymous) stringResource(R.string.anonymous_user) else userProfile?.displayName ?: stringResource(R.string.authenticated_user),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = MaterialTheme.colorScheme.onSurface
                         )
-                    } else {
-                        Icon(
-                            if (isAnonymous) Icons.Default.CloudOff else Icons.Default.CloudDone,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(28.dp)
+                        Text(
+                            text = if (isAnonymous) stringResource(R.string.sync_account_desc) else "Your visualization data is synced.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                         )
                     }
-                }
-
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = if (isAnonymous) stringResource(R.string.anonymous_user) else userProfile?.displayName ?: stringResource(R.string.authenticated_user),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Text(
-                        text = if (isAnonymous) stringResource(R.string.sync_account_desc) else "Your visualization data is synced.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                    )
                 }
 
                 if (isAnonymous) {
                     Button(
                         onClick = { onGoogleSignIn() },
+                        modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
                         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
                     ) {
@@ -194,16 +208,19 @@ internal fun SettingsScreen(
                         Text(stringResource(R.string.sign_in))
                     }
                 } else {
-                    IconButton(
+                    Button(
                         onClick = { viewModel.signOut() },
-                        modifier = Modifier.background(MaterialTheme.colorScheme.error.copy(alpha = 0.1f), CircleShape)
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.error.copy(alpha = 0.1f),
+                            contentColor = MaterialTheme.colorScheme.error
+                        ),
+                        shape = RoundedCornerShape(12.dp),
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
                     ) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.Logout,
-                            null,
-                            tint = MaterialTheme.colorScheme.error,
-                            modifier = Modifier.size(20.dp)
-                        )
+                        Icon(Icons.AutoMirrored.Filled.Logout, null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text(stringResource(R.string.sign_out))
                     }
                 }
             }
@@ -1071,7 +1088,7 @@ fun LinkCard(
             }
 
             Icon(
-                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                imageVector = Icons.Default.ChevronRight,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
                 modifier = Modifier.size(24.dp)

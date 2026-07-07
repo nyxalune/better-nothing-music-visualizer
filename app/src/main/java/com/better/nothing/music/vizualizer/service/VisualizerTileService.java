@@ -37,7 +37,7 @@ public class VisualizerTileService extends TileService {
         t.setState(on?Tile.STATE_ACTIVE:Tile.STATE_INACTIVE);
         t.setLabel("BNMV");
         t.setSubtitle(on?"Running":"Better Nothing Music Vizualiser");
-        t.setIcon(Icon.createWithResource(this, R.drawable.app_icon));
+        t.setIcon(Icon.createWithResource(this, R.drawable.ic_launcher_monochrome));
         t.updateTile();
     }
 }

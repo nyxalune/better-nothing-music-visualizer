@@ -629,14 +629,7 @@ public class AudioCaptureService extends Service {
             }
         }
 
-        // Only call startForeground here if we haven't already started it in startCaptureInternal
-        if (!sIsRunning) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                startForeground(NOTIF_ID, buildNotification(), ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE);
-            } else {
-                startForeground(NOTIF_ID, buildNotification());
-            }
-        } else {
+        if (sIsRunning) {
             // Service is running, just refresh notification if needed
             refreshNotification();
         }
@@ -2163,7 +2156,7 @@ public class AudioCaptureService extends Service {
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setContentTitle("Glyph Visualizer")
                 .setContentText(content)
-                .setSmallIcon(com.better.nothing.music.vizualizer.R.mipmap.ic_launcher)
+                .setSmallIcon(com.better.nothing.music.vizualizer.R.drawable.ic_notif_monochrome)
                 .setContentIntent(contentIntent)
                 .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
                 .setCategory(NotificationCompat.CATEGORY_SERVICE)
@@ -2249,6 +2242,7 @@ public class AudioCaptureService extends Service {
     }
 
     private void refreshNotification() {
+        if (!mCapturing) return;
         NotificationManager notificationManager = getSystemService(NotificationManager.class);
         if (notificationManager != null) notificationManager.notify(NOTIF_ID, buildNotification());
     }
