@@ -83,13 +83,6 @@ internal fun AboutScreen(
     val configVersion by viewModel.configVersion.collectAsStateWithLifecycle()
     val appUpdateStatus by viewModel.appUpdateStatus.collectAsStateWithLifecycle()
     
-    val totalTime by viewModel.totalVisualizedTime.collectAsStateWithLifecycle()
-    val idleTime by viewModel.totalIdleTime.collectAsStateWithLifecycle()
-    val activeTime by viewModel.totalActiveTime.collectAsStateWithLifecycle()
-    val glyphTime by viewModel.totalGlyphTime.collectAsStateWithLifecycle()
-    val hapticTime by viewModel.totalHapticTime.collectAsStateWithLifecycle()
-    val flashlightTime by viewModel.totalFlashlightTime.collectAsStateWithLifecycle()
-    
     var depressedClickCount by remember { mutableIntStateOf(0) }
 
     LaunchedEffect(Unit) {
@@ -109,14 +102,17 @@ internal fun AboutScreen(
         CreditEntry("Interlastic", stringResource(R.string.credit_interlastic_role), "Interlastic"),
     )
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .padding(horizontal = 8.dp)
-            .verticalScroll(scrollState),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background
     ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 8.dp)
+                .verticalScroll(scrollState),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
         Spacer(Modifier.windowInsetsTopHeight(WindowInsets.statusBars))
 
         if (onDismiss == null) {
@@ -278,82 +274,6 @@ internal fun AboutScreen(
             )
         }
 
-        SectionHeader(text = "Usage Statistics")
-        Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
-            // Main visualizer time
-            StatCard(
-                icon = Icons.Default.Timer,
-                label = "Total Visualized",
-                value = formatTime(totalTime),
-                color = MaterialTheme.colorScheme.primary
-            )
-            
-            // Active vs Idle breakdown
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                SmallStatCard(
-                    label = "Active Music",
-                    value = formatTime(activeTime),
-                    icon = Icons.Default.BarChart,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.weight(1f)
-                )
-                SmallStatCard(
-                    label = "Idle Pulse",
-                    value = formatTime(idleTime),
-                    icon = Icons.Default.Sync,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                    modifier = Modifier.weight(1f)
-                )
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Feature specific times
-            ExpressiveCard {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    StatRow(
-                        icon = ImageVector.vectorResource(id = R.drawable.ic_nav_glyphs),
-                        label = "Glyph Interface",
-                        value = formatTime(glyphTime)
-                    )
-                    StatRow(
-                        icon = Icons.Default.Vibration,
-                        label = "Haptic Visualization",
-                        value = formatTime(hapticTime)
-                    )
-                    StatRow(
-                        icon = Icons.Default.FlashOn,
-                        label = "Flashlight Visualization",
-                        value = formatTime(flashlightTime)
-                    )
-                    
-                    HorizontalDivider(
-                        modifier = Modifier.padding(vertical = 4.dp),
-                        thickness = 0.5.dp,
-                        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f)
-                    )
-
-                    Button(
-                        onClick = { viewModel.showLeaderboard() },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(16.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary,
-                            contentColor = MaterialTheme.colorScheme.onPrimary
-                        ),
-                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp)
-                    ) {
-                        Icon(Icons.Default.EmojiEvents, null, modifier = Modifier.size(20.dp))
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Text("View Global Leaderboard", fontWeight = FontWeight.ExtraBold)
-                    }
-                }
-            }
-        }
-
         ExpressiveCard {
             BodyText(text = stringResource(R.string.about_intro), size = 15.sp)
         }
@@ -416,91 +336,6 @@ internal fun AboutScreen(
         Spacer(modifier = Modifier.height(70.dp))
     }
 }
-
-@Composable
-private fun StatCard(
-    icon: ImageVector,
-    label: String,
-    value: String,
-    color: Color
-) {
-    ExpressiveCard(
-        containerColor = color.copy(alpha = 0.1f),
-        border = BorderStroke(1.dp, color.copy(alpha = 0.2f))
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            Surface(
-                shape = CircleShape,
-                color = color,
-                modifier = Modifier.size(44.dp)
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(icon, null, modifier = Modifier.size(24.dp), tint = Color.White)
-                }
-            }
-            Column {
-                Text(
-                    text = label,
-                    style = MaterialTheme.typography.labelMedium,
-                    color = color,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    text = value,
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.ExtraBold,
-                    letterSpacing = (-0.5).sp
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun SmallStatCard(
-    label: String,
-    value: String,
-    icon: ImageVector,
-    color: Color,
-    modifier: Modifier = Modifier
-) {
-    ExpressiveCard(
-        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.1f)),
-        modifier = modifier
-    ) {
-        Column(
-            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    modifier = Modifier.size(14.dp),
-                    tint = color
-                )
-                Text(
-                    text = label,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = color,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-            Text(
-                text = value,
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold
-            )
-        }
-    }
 }
 
 @Composable

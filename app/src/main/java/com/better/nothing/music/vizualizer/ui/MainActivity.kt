@@ -257,7 +257,8 @@ class MainActivity : ComponentActivity() {
                 fontName = selectedFont,
                 musicPrimaryColor = musicThemeColor,
             ) {
-                BackHandler {
+                // Predictive Back Handling
+                BackHandler(enabled = true) {
                     if (!viewModel.navigateBack()) {
                         finish()
                     }

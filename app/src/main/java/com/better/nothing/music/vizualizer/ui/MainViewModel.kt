@@ -344,6 +344,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun showLeaderboard() { _isShowingLeaderboard.value = true }
     fun hideLeaderboard() { _isShowingLeaderboard.value = false }
 
+    private val _isShowingStats = MutableStateFlow(false)
+    val isShowingStats = _isShowingStats.asStateFlow()
+    fun showStats() { _isShowingStats.value = true }
+    fun hideStats() { _isShowingStats.value = false }
+
     fun deleteCustomPreset(key: String) {
         viewModelScope.launch {
             try {
@@ -893,20 +898,38 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 if (_runningState.value) {
                     _totalVisualizedTime.value += delta
                     
-                    val hasActivity = _fftState.value.any { it > 0.001f }
+                    val magnitudes = MainActivity.serviceStatic?.latestMagnitudes ?: _fftState.value
+                    val hasActivity = magnitudes.any { it > 0.001f }
+                    
                     if (hasActivity) {
                         _totalActiveTime.value += delta
+                        
+                        if (_hapticMotorEnabled.value) {
+                            _totalHapticTime.value += delta
+                        }
+                        if (_flashlightEnabled.value) {
+                            _totalFlashlightTime.value += delta
+                        }
+                        if (_maxBrightness.value > 0) {
+                            _totalGlyphTime.value += delta
+                        }
                     } else {
+                        // Only count as idle if it's actually running but quiet
                         _totalIdleTime.value += delta
                     }
 
-                    // Save periodically
-                    viewModelScope.launch(Dispatchers.IO) {
-                        prefs.edit()
-                            .putLong("total_visualized_time", _totalVisualizedTime.value)
-                            .putLong("total_idle_time", _totalIdleTime.value)
-                            .putLong("total_active_time", _totalActiveTime.value)
-                            .apply()
+                    // Save periodically (every 5 seconds to reduce IO)
+                    if (SystemClock.elapsedRealtime() % 5000 < 1100) {
+                        viewModelScope.launch(Dispatchers.IO) {
+                            prefs.edit()
+                                .putLong("total_visualized_time", _totalVisualizedTime.value)
+                                .putLong("total_idle_time", _totalIdleTime.value)
+                                .putLong("total_active_time", _totalActiveTime.value)
+                                .putLong("total_glyph_time", _totalGlyphTime.value)
+                                .putLong("total_haptic_time", _totalHapticTime.value)
+                                .putLong("total_flashlight_time", _totalFlashlightTime.value)
+                                .apply()
+                        }
                     }
                 }
             }
@@ -950,6 +973,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         if (_isShowingLicense.value) { hideLicense(); return true }
         if (_isShowingCommunity.value) { hideCommunity(); return true }
         if (_isShowingLeaderboard.value) { hideLeaderboard(); return true }
+        if (_isShowingStats.value) { hideStats(); return true }
         if (_showAnnouncementHistory.value) { hideAnnouncementHistory(); return true }
         if (_showAnnouncementModal.value) { _showAnnouncementModal.value = false; return true }
         if (_showAnnouncementEditor.value) { hideAnnouncementEditor(); return true }

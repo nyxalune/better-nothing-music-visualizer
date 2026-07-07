@@ -53,7 +53,6 @@ import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -66,7 +65,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.FlowRowScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
@@ -1115,7 +1113,6 @@ internal fun AnimatedToggleCard(
 ) {
     // Tweak these defaults here when tuning the shared motion/scale behavior.
     val motionDurationMs = animationDurationMs
-    val offTopSpacerFraction = disabledTopSpacerFraction
     val offTitleScale = disabledTitleScaleFactor
     val offSwitchScale = disabledSwitchScaleFactor
     val offTitleSpacing = disabledTitleSpacing
@@ -1162,7 +1159,7 @@ internal fun AnimatedToggleCard(
     val titleScale = offTitleScale - ((offTitleScale - 1f) * progress)
     val switchScale = offSwitchScale - ((offSwitchScale - 1f) * progress)
     val titleSpacing = lerp(offTitleSpacing, 0.dp, progress)
-    val topSpacer = lerp(screenHeight * offTopSpacerFraction, 0.dp, progress)
+    val topSpacer = lerp(screenHeight * disabledTopSpacerFraction, 0.dp, progress)
 
     Spacer(modifier = Modifier.height(topSpacer))
 

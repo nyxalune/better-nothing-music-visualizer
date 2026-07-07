@@ -119,7 +119,7 @@ internal fun SettingsScreen(
             LinkCard(
                 title = "Usage Stats",
                 icon = Icons.Default.BarChart,
-                onClick = { viewModel.showAbout() },
+                onClick = { viewModel.showStats() },
                 modifier = Modifier.weight(1f)
             )
         }
@@ -162,13 +162,14 @@ internal fun SettingsScreen(
             CardHeader(title = "Account")
             val userProfile by viewModel.userProfile.collectAsStateWithLifecycle()
             
-            Column(
+            Row(
                 modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 Box(
                     modifier = Modifier
-                        .size(48.dp)
+                        .size(56.dp)
                         .clip(CircleShape)
                         .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
                     contentAlignment = Alignment.Center
@@ -184,7 +185,8 @@ internal fun SettingsScreen(
                         Icon(
                             if (isAnonymous) Icons.Default.CloudOff else Icons.Default.CloudDone,
                             contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(28.dp)
                         )
                     }
                 }
@@ -192,11 +194,12 @@ internal fun SettingsScreen(
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = if (isAnonymous) stringResource(R.string.anonymous_user) else userProfile?.displayName ?: stringResource(R.string.authenticated_user),
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        text = if (isAnonymous) stringResource(R.string.sync_account_desc) else "Your data is backed up.",
+                        text = if (isAnonymous) stringResource(R.string.sync_account_desc) else "Your visualization data is synced.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                     )
@@ -205,19 +208,23 @@ internal fun SettingsScreen(
                 if (isAnonymous) {
                     Button(
                         onClick = { onGoogleSignIn() },
-                        shape = RoundedCornerShape(12.dp)
+                        shape = RoundedCornerShape(12.dp),
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
                     ) {
-                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Icon(Icons.AutoMirrored.Filled.Login, null, modifier = Modifier.size(18.dp))
-                            Text(stringResource(R.string.sign_in))
-                        }
+                        Icon(Icons.AutoMirrored.Filled.Login, null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text(stringResource(R.string.sign_in))
                     }
                 } else {
-                    IconButton(onClick = { viewModel.signOut() }) {
+                    IconButton(
+                        onClick = { viewModel.signOut() },
+                        modifier = Modifier.background(MaterialTheme.colorScheme.error.copy(alpha = 0.1f), CircleShape)
+                    ) {
                         Icon(
                             Icons.AutoMirrored.Filled.Logout,
                             null,
-                            tint = MaterialTheme.colorScheme.error
+                            tint = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(20.dp)
                         )
                     }
                 }

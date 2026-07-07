@@ -50,14 +50,17 @@ internal fun StatsScreen(
     val hapticTime by viewModel.totalHapticTime.collectAsStateWithLifecycle()
     val flashlightTime by viewModel.totalFlashlightTime.collectAsStateWithLifecycle()
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .padding(horizontal = 16.dp)
-            .verticalScroll(scrollState),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background
     ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 16.dp)
+                .verticalScroll(scrollState),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
         Spacer(Modifier.windowInsetsTopHeight(WindowInsets.statusBars))
 
         Row(
@@ -93,15 +96,19 @@ internal fun StatsScreen(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
+                val total = (activeTime + idleTime).coerceAtLeast(1L)
+                val activePercent = (activeTime * 100 / total).toInt()
+                val idlePercent = 100 - activePercent
+
                 SmallStatCard(
-                    label = "Active Music",
+                    label = "Active Music ($activePercent%)",
                     value = formatTime(activeTime),
                     icon = Icons.Default.BarChart,
                     color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.weight(1f)
                 )
                 SmallStatCard(
-                    label = "Idle Breathing",
+                    label = "Idle Pulse ($idlePercent%)",
                     value = formatTime(idleTime),
                     icon = Icons.Default.Sync,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
@@ -162,6 +169,7 @@ internal fun StatsScreen(
 
         Spacer(modifier = Modifier.height(80.dp))
     }
+}
 }
 
 @Composable
