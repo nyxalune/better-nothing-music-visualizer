@@ -66,7 +66,7 @@
         <service
             android:name=".service.VisualizerTileService"
             android:exported="true"
-            android:icon="@drawable/app_icon"
+            android:icon="@drawable/ic_launcher_monochrome"
             android:label="@string/app_name"
             android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
             <intent-filter>
@@ -79,7 +79,7 @@
         <service
             android:name=".service.HapticsTileService"
             android:exported="true"
-            android:icon="@drawable/app_icon"
+            android:icon="@drawable/ic_launcher_monochrome"
             android:label="Glyph Haptics"
             android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
             <intent-filter>

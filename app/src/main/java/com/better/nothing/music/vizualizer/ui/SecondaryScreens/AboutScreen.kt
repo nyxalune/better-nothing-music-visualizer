@@ -4,6 +4,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -118,7 +119,7 @@ internal fun AboutScreen(
         ScreenTitle(text = stringResource(R.string.about_title))
 
         ExpressiveCard {
-            CardHeader(title = "Application")
+            CardHeader(title = "App info")
 
             Row(
                 modifier = Modifier
@@ -142,7 +143,7 @@ internal fun AboutScreen(
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
-                            painter = painterResource(R.drawable.app_icon),
+                            painter = painterResource(R.drawable.ic_launcher),
                             contentDescription = null,
                             modifier = Modifier.size(48.dp),
                             tint = Color.Unspecified
@@ -272,8 +273,19 @@ internal fun AboutScreen(
         }
 
         SectionHeader(text = stringResource(R.string.credits))
-        credits.forEach { credit ->
+        credits.forEachIndexed { index, credit ->
+            val isFirst = index == 0
+            val isLast = index == credits.size - 1
+            val topRounding = if (isFirst) MaterialTheme.shapes.large.topStart else CornerSize(6.dp)
+            val bottomRounding = if (isLast) MaterialTheme.shapes.large.bottomStart else CornerSize(6.dp)
+
             ExpressiveCard(
+                shape = RoundedCornerShape(
+                    topStart = topRounding,
+                    topEnd = topRounding,
+                    bottomStart = bottomRounding,
+                    bottomEnd = bottomRounding
+                ),
                 modifier = Modifier.let { m ->
                     if (credit.githubUsername != null) {
                         m.clickable { uriHandler.openUri("https://github.com/${credit.githubUsername}") }
@@ -283,7 +295,7 @@ internal fun AboutScreen(
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
