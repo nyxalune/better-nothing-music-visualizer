@@ -355,13 +355,13 @@ fun FlowRowScope.OptionTile(
     // Color States - Base them on selection OR active expansion animation
     val isEffectivelySelected = (isSelected || isWeightExpanded) && enabled
     val backgroundColor by animateColorAsState(
-        if (!enabled) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+        if (!enabled) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
         else if (isEffectivelySelected) MaterialTheme.colorScheme.primary
-        else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.8f),
+        else MaterialTheme.colorScheme.surfaceVariant,
         label = "backgroundColor"
     )
     val contentColor by animateColorAsState(
-        if (!enabled) MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
+        if (!enabled) MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
         else if (isEffectivelySelected) MaterialTheme.colorScheme.onPrimary
         else MaterialTheme.colorScheme.onSurfaceVariant,
         label = "contentColor"

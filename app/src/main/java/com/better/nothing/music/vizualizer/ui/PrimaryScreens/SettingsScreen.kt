@@ -112,34 +112,6 @@ internal fun SettingsScreen(
                 showDevModePanel = !showDevModePanel
             }
         )
-        
-
-        // ── Links & Info ────────────────────────────────────────────────────
-        FlowRow(
-            modifier = Modifier.fillMaxWidth(),
-            maxItemsInEachRow = 3,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            LinkCard(
-                title = "Vizualizer Stats",
-                icon = Icons.Default.BarChart,
-                onClick = { viewModel.showStats() },
-                modifier = Modifier.weight(1f)
-            )
-            LinkCard(
-                title = stringResource(R.string.about_title),
-                icon = Icons.Default.Info,
-                onClick = { viewModel.showAbout() },
-                modifier = Modifier.weight(1f)
-            )
-            LinkCard(
-                title = stringResource(R.string.discord_server),
-                icon = Icons.Default.Public,
-                onClick = { uriHandler.openUri("https://discord.gg/h7DYNttc8K") },
-                modifier = Modifier.weight(1f)
-            )
-        }
 
         // ── Account ─────────────────────────────────────────────────────────
         ExpressiveCard {
@@ -981,6 +953,32 @@ internal fun SettingsScreen(
                 }
             }
         }
+        // ── Links & Info ────────────────────────────────────────────────────
+        FlowRow(
+            modifier = Modifier.fillMaxWidth(),
+            maxItemsInEachRow = 3,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            LinkCard(
+                title = stringResource(R.string.discord_server),
+                icon = Icons.Default.Public,
+                onClick = { uriHandler.openUri("https://discord.gg/h7DYNttc8K") },
+                modifier = Modifier.weight(1f)
+            )
+            LinkCard(
+                title = "Vizualizer Stats",
+                icon = Icons.Default.BarChart,
+                onClick = { viewModel.showStats() },
+                modifier = Modifier.weight(1f)
+            )
+            LinkCard(
+                title = stringResource(R.string.about_title),
+                icon = Icons.Default.Info,
+                onClick = { viewModel.showAbout() },
+                modifier = Modifier.weight(1f)
+            )
+        }
 
         Spacer(modifier = Modifier.height(70.dp))
     }
@@ -1050,10 +1048,10 @@ fun LinkCard(
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Surface(
-                shape = RoundedCornerShape(16.dp),
-                color = MaterialTheme.colorScheme.primaryContainer,
-                contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                modifier = Modifier.size(48.dp)
+                shape = RoundedCornerShape(10.dp),
+                color = MaterialTheme.colorScheme.surfaceBright,
+                contentColor = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.size(40.dp)
             ) {
                 Box(
                     contentAlignment = Alignment.Center,
@@ -1062,7 +1060,7 @@ fun LinkCard(
                     Icon(
                         imageVector = icon,
                         contentDescription = null,
-                        modifier = Modifier.size(24.dp)
+                        modifier = Modifier.size(23.dp)
                     )
                 }
             }
@@ -1090,8 +1088,8 @@ fun LinkCard(
             Icon(
                 imageVector = Icons.Default.ChevronRight,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
-                modifier = Modifier.size(24.dp)
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(30.dp)
             )
         }
     }
