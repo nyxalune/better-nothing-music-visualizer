@@ -370,7 +370,6 @@ class MainActivity : ComponentActivity() {
             it.setHapticMotorEnabled(viewModel.hapticMotorEnabled.value)
             it.setHapticMode(viewModel.hapticMode.value)
             it.setFlashlightEnabled(viewModel.flashlightEnabled.value)
-            it.setFlashlightMultiIntensityForced(viewModel.flashlightMultiIntensityForced.value)
             viewModel.setFlashlightIntensityLevels(it.flashlightIntensityLevels)
             it.setIdleBreathingEnabled(viewModel.idleBreathingEnabled.value)
             it.setIdlePattern(viewModel.idlePattern.value)

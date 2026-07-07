@@ -31,6 +31,7 @@ public final class FlashlightEngine {
     private boolean hasTorchStrength;
     private int maxTorchStrength = 1;
     private int detectedMaxTorchStrength = 1;
+    private boolean forceMultiIntensity = false;
 
     private TorchMode torchMode = TorchMode.AMPLITUDE;
 
@@ -84,7 +85,7 @@ public final class FlashlightEngine {
     }
 
     public synchronized int getTorchIntensityLevels() {
-        return Math.max(1, maxTorchStrength);
+        return (hasTorchStrength || forceMultiIntensity) ? Math.max(1, maxTorchStrength) : 1;
     }
 
     public synchronized int getCurrentLevel() {
@@ -92,7 +93,19 @@ public final class FlashlightEngine {
     }
 
     public synchronized boolean hasVariableTorchStrength() {
-        return maxTorchStrength > 1;
+        return (hasTorchStrength || forceMultiIntensity) && maxTorchStrength > 1;
+    }
+
+    public synchronized void setForceMultiIntensity(boolean force) {
+        this.forceMultiIntensity = force;
+        if (force) {
+            if (maxTorchStrength <= 1) {
+                maxTorchStrength = 255;
+            }
+        } else {
+            maxTorchStrength = detectedMaxTorchStrength;
+            hasTorchStrength = detectedMaxTorchStrength > 1;
+        }
     }
 
     private void initCamera() {
@@ -122,13 +135,12 @@ public final class FlashlightEngine {
             if (bestCameraId != null) {
                 cameraId = bestCameraId;
                 detectedMaxTorchStrength = bestMaxStrength;
-                maxTorchStrength = (bestMaxStrength > 1) ? bestMaxStrength : 255;
-                hasTorchStrength = bestMaxStrength > 1;
-                
-                if (hasTorchStrength) {
-                    Log.d(TAG, "Selected Camera " + cameraId + " with max torch strength: " + maxTorchStrength);
+                if (bestMaxStrength > 1) {
+                    hasTorchStrength = true;
+                    maxTorchStrength = bestMaxStrength;
+                    Log.d(TAG, "Selected Camera " + cameraId + " with max torch strength: " + bestMaxStrength);
                 } else {
-                    Log.d(TAG, "Selected Camera " + cameraId + " (multi-intensity enabled via software fallback)");
+                    Log.d(TAG, "Selected Camera " + cameraId + " (binary torch only)");
                 }
             }
         } catch (CameraAccessException e) {
@@ -355,20 +367,24 @@ public final class FlashlightEngine {
         }
 
         if (significantChange) {
-            Log.d(TAG, "Submitting torch level: " + level + " / " + maxTorchStrength);
+            Log.d(TAG, "Submitting torch level: " + level + " / " + maxTorchStrength + (forceMultiIntensity ? " (FORCED)" : ""));
         }
 
         try {
-            if (Build.VERSION.SDK_INT >= 33) {
-                try {
-                    cameraManager.turnOnTorchWithStrengthLevel(cameraId, Math.max(1, level));
-                } catch (IllegalArgumentException e) {
-                    Log.w(TAG, "Requested intensity " + level + " failed: " + e.getMessage());
-                    // If it fails because of range, try to automatically adjust maxTorchStrength down
-                    if (level > 1) {
-                        maxTorchStrength = Math.max(1, level - 1);
-                        Log.d(TAG, "Auto-adjusting max intensity to: " + maxTorchStrength);
+            if (hasVariableTorchStrength()) {
+                if (Build.VERSION.SDK_INT >= 33) {
+                    try {
+                        cameraManager.turnOnTorchWithStrengthLevel(cameraId, Math.max(1, level));
+                    } catch (IllegalArgumentException e) {
+                        Log.w(TAG, "Requested intensity " + level + " failed: " + e.getMessage());
+                        // If it fails because of range, try to automatically adjust maxTorchStrength down
+                        if (forceMultiIntensity && level > 1) {
+                            maxTorchStrength = Math.max(1, level - 1);
+                            Log.d(TAG, "Auto-adjusting max forced intensity to: " + maxTorchStrength);
+                        }
+                        cameraManager.setTorchMode(cameraId, true);
                     }
+                } else {
                     cameraManager.setTorchMode(cameraId, true);
                 }
             } else {

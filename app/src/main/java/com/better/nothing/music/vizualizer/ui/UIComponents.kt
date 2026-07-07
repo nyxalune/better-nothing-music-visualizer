@@ -459,7 +459,7 @@ fun ExpressiveCard(
 ) {
     Card(
         modifier = modifier
-            .padding(vertical = LocalAppSpacing.current.between / 2),
+            .padding(vertical = 0.dp),
         shape = shape,
         colors = CardDefaults.cardColors(containerColor = containerColor)
     ) {

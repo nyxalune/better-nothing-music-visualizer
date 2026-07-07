@@ -482,7 +482,7 @@ public class AudioCaptureService extends Service {
         mFlashlightEnabled = hasFlashlight(this) && appPrefs.getBoolean("flashlight_enabled", false);
         mFlashlightMinHz = appPrefs.getInt("flashlight_freq_min", 60);
         mFlashlightMaxHz = appPrefs.getInt("flashlight_freq_max", 250);
-        
+
         boolean forcedMulti = appPrefs.getBoolean("flashlight_multi_intensity_forced", false);
         if (mFlashlightEngine != null) {
             mFlashlightEngine.setForceMultiIntensity(forcedMulti);

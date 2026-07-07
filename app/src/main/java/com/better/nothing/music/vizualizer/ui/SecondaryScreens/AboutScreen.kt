@@ -82,8 +82,6 @@ internal fun AboutScreen(
 ) {
     val scrollState = rememberScrollState()
     val uriHandler = LocalUriHandler.current
-    val haptics = LocalHapticFeedback.current
-    val configVersion by viewModel.configVersion.collectAsStateWithLifecycle()
     val appUpdateStatus by viewModel.appUpdateStatus.collectAsStateWithLifecycle()
     
     var depressedClickCount by remember { mutableIntStateOf(0) }
@@ -146,7 +144,7 @@ internal fun AboutScreen(
                         Icon(
                             painter = painterResource(R.drawable.ic_launcher_foreground),
                             contentDescription = null,
-                            modifier = Modifier.size(64.dp),
+                            modifier = Modifier.size(80.dp),
                             tint = Color.Unspecified
                         )
                     }
