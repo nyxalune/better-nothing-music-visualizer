@@ -162,10 +162,9 @@ internal fun SettingsScreen(
             CardHeader(title = "Account")
             val userProfile by viewModel.userProfile.collectAsStateWithLifecycle()
             
-            Row(
+            Column(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 Box(
                     modifier = Modifier
