@@ -985,7 +985,7 @@ fun ExpressiveSlider(
                 trackInsideCornerSize = 2.dp,
                 colors = SliderDefaults.colors(
                     activeTrackColor = MaterialTheme.colorScheme.primary,
-                    inactiveTrackColor = MaterialTheme.colorScheme.onSurfaceVariant
+                    inactiveTrackColor = MaterialTheme.colorScheme.surfaceVariant
                 )
             )
         }
