@@ -265,7 +265,7 @@ fun AudioScreen(
                 }
             }
         }
-        Spacer(modifier = Modifier.height(85.dp))
+        Spacer(modifier = Modifier.height(86.dp)) //no one will notice
     }
 }
 
