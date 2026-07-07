@@ -302,4 +302,11 @@
     <string name="end_of_license">END OF LICENSE AGREEMENT</string>
     <string name="haptics_richtap_freq_label">h</string>
     <string name="haptics_mode_richtap">h</string>
+    <string name="flashlight_sensitivity_desc">h</string>
+    <string name="flashlight_smoothing_label">h</string>
+    <string name="flashlight_smoothing_desc">h</string>
+    <string name="flashlight_gamma_label">h</string>
+    <string name="notification_flash_title">h</string>
+    <string name="notification_flash_desc">h</string>
+    <string name="flashlight_sensitivity_label">h</string>
 </resources>
