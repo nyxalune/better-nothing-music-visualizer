@@ -69,6 +69,7 @@ import com.better.nothing.music.vizualizer.R
 import com.better.nothing.music.vizualizer.ui.BodyText
 import com.better.nothing.music.vizualizer.ui.CardHeader
 import com.better.nothing.music.vizualizer.ui.ExpressiveCard
+import com.better.nothing.music.vizualizer.ui.LocalAppSpacing
 import com.better.nothing.music.vizualizer.ui.MainViewModel
 import com.better.nothing.music.vizualizer.ui.ScreenTitle
 import com.better.nothing.music.vizualizer.ui.SectionHeader
@@ -111,11 +112,11 @@ internal fun AboutScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 8.dp)
+                .padding(horizontal = LocalAppSpacing.current.edge)
                 .verticalScroll(scrollState),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-
+            Spacer(Modifier.windowInsetsTopHeight(WindowInsets.statusBars))
         ScreenTitle(text = stringResource(R.string.about_title))
 
         ExpressiveCard {
@@ -130,7 +131,7 @@ internal fun AboutScreen(
             ) {
                 Surface(
                     shape = MaterialTheme.shapes.medium,
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                    color = Color.White,
                     modifier = Modifier
                         .size(64.dp)
                         .clickable {
@@ -145,7 +146,7 @@ internal fun AboutScreen(
                         Icon(
                             painter = painterResource(R.drawable.ic_launcher_foreground),
                             contentDescription = null,
-                            modifier = Modifier.size(48.dp),
+                            modifier = Modifier.size(64.dp),
                             tint = Color.Unspecified
                         )
                     }
@@ -168,14 +169,7 @@ internal fun AboutScreen(
             HorizontalDivider(
                 modifier = Modifier.padding(vertical = 8.dp),
                 thickness = 4.dp,
-                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
-            )
-
-            // Version detail
-            InfoRow(
-                icon = Icons.Default.Info,
-                title = "Configuration Version",
-                subtitle = configVersion
+                color = MaterialTheme.colorScheme.surfaceVariant
             )
 
             // App News Action
@@ -273,62 +267,70 @@ internal fun AboutScreen(
         }
 
         SectionHeader(text = stringResource(R.string.credits))
-        credits.forEachIndexed { index, credit ->
-            val isFirst = index == 0
-            val isLast = index == credits.size - 1
-            val topRounding = if (isFirst) MaterialTheme.shapes.large.topStart else CornerSize(6.dp)
-            val bottomRounding = if (isLast) MaterialTheme.shapes.large.bottomStart else CornerSize(6.dp)
-
-            ExpressiveCard(
-                shape = RoundedCornerShape(
-                    topStart = topRounding,
-                    topEnd = topRounding,
-                    bottomStart = bottomRounding,
-                    bottomEnd = bottomRounding
-                ),
-                modifier = Modifier.let { m ->
-                    if (credit.githubUsername != null) {
-                        m.clickable { uriHandler.openUri("https://github.com/${credit.githubUsername}") }
-                    } else m
-                }
+            Column(
+                modifier = Modifier
+                    .fillMaxSize(),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            credit.name,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-                        if (credit.role.isNotBlank()) {
-                            Text(
-                                credit.role,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                            )
+                credits.forEachIndexed { index, credit ->
+                    val isFirst = index == 0
+                    val isLast = index == credits.size - 1
+                    val topRounding =
+                        if (isFirst) MaterialTheme.shapes.large.topStart else CornerSize(6.dp)
+                    val bottomRounding =
+                        if (isLast) MaterialTheme.shapes.large.bottomStart else CornerSize(6.dp)
+
+                    ExpressiveCard(
+                        shape = RoundedCornerShape(
+                            topStart = topRounding,
+                            topEnd = topRounding,
+                            bottomStart = bottomRounding,
+                            bottomEnd = bottomRounding
+                        ),
+                        modifier = Modifier.let { m ->
+                            if (credit.githubUsername != null) {
+                                m.clickable { uriHandler.openUri("https://github.com/${credit.githubUsername}") }
+                            } else m
                         }
-                        if (credit.githubUsername != null) {
-                            Text(
-                                "@${credit.githubUsername}",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.primary
-                            )
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    credit.name,
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                if (credit.role.isNotBlank()) {
+                                    Text(
+                                        credit.role,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                                    )
+                                }
+                                if (credit.githubUsername != null) {
+                                    Text(
+                                        "@${credit.githubUsername}",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                            }
+                            if (credit.githubUsername != null) {
+                                Icon(
+                                    Icons.Default.ChevronRight,
+                                    null,
+                                    tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f)
+                                )
+                            }
                         }
-                    }
-                    if (credit.githubUsername != null) {
-                        Icon(
-                            Icons.Default.ChevronRight,
-                            null,
-                            tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f)
-                        )
                     }
                 }
             }
-        }
-        Spacer(modifier = Modifier.height(70.dp))
+            Spacer(modifier = Modifier.height(70.dp))
     }
 }
 }
