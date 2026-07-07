@@ -114,19 +114,7 @@ internal fun AboutScreen(
                 .verticalScroll(scrollState),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-        Spacer(Modifier.windowInsetsTopHeight(WindowInsets.statusBars))
 
-        if (onDismiss == null) {
-            Spacer(modifier = Modifier.height(50.dp))
-        } else {
-            Spacer(modifier = Modifier.height(16.dp))
-            IconButton(onClick = onDismiss) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = stringResource(R.string.back)
-                )
-            }
-        }
         ScreenTitle(text = stringResource(R.string.about_title))
 
         ExpressiveCard {
