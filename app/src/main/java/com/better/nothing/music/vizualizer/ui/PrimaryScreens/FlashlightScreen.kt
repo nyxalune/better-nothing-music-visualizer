@@ -305,6 +305,6 @@ fun FlashlightScreen(
             }
         }
 
-        Spacer(modifier = Modifier.height(70.dp))
+        Spacer(modifier = Modifier.height(85.dp))
     }
 }

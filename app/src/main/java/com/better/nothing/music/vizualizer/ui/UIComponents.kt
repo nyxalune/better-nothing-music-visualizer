@@ -457,33 +457,24 @@ fun ExpressiveCard(
     border: BorderStroke? = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.1f)),
     content: @Composable ColumnScope.() -> Unit
 ) {
-    val m3eEnabled = LocalM3EEnabled.current
     Card(
         modifier = modifier
             .padding(vertical = LocalAppSpacing.current.between / 2),
         shape = shape,
-        colors = CardDefaults.cardColors(containerColor = containerColor),
-        border = border,
-        elevation = CardDefaults.cardElevation(defaultElevation = if (m3eEnabled) 2.dp else 0.dp)
+        colors = CardDefaults.cardColors(containerColor = containerColor)
     ) {
         Column(
             modifier = Modifier
-                .padding(if (m3eEnabled) LocalAppSpacing.current.inner else 12.dp)
                 .animateContentSize(
-                    animationSpec = if (m3eEnabled) {
-                        spring(
-                            dampingRatio = Spring.DampingRatioLowBouncy,
-                            stiffness = Spring.StiffnessLow
-                        )
-                    } else {
-                        spring(
-                            dampingRatio = Spring.DampingRatioNoBouncy,
-                            stiffness = Spring.StiffnessMedium
-                        )
-                    }
-                ),
-            content = content
-        )
+                    animationSpec = spring(
+                        dampingRatio = Spring.DampingRatioLowBouncy,
+                        stiffness = Spring.StiffnessLow
+                    )
+                )
+                .padding(16.dp)
+        ) {
+            content()
+        }
     }
 }
 
@@ -544,7 +535,7 @@ fun BodyText(
                 fontWeight = FontWeight.Normal,
             )
         },
-        color    = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f),
+        color    = MaterialTheme.colorScheme.onBackground,
         modifier = modifier,
     )
 }

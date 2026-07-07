@@ -981,8 +981,7 @@ internal fun SettingsScreen(
                 modifier = Modifier.weight(1f)
             )
         }
-
-        Spacer(modifier = Modifier.height(70.dp))
+        Spacer(modifier = Modifier.height(85.dp))
     }
 }
 

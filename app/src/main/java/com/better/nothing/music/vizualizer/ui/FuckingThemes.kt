@@ -121,7 +121,7 @@ fun BetterVizTheme(
                 }
             }
             "Material You" -> {
-                if (isDark) {
+                val base = if (isDark) {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                         dynamicDarkColorScheme(context)
                     } else {
@@ -137,6 +137,17 @@ fun BetterVizTheme(
                             background = Color.White
                         )
                     }
+                }
+                
+                // Boost surface brightness for better contrast against background
+                if (isDark) {
+                    base.copy(
+                        surface = Color(ColorUtils.blendARGB(base.surface.toArgb(), Color.White.toArgb(), 0.1f)),
+                    )
+                } else {
+                    base.copy(
+                        surface = Color(ColorUtils.blendARGB(base.surface.toArgb(), Color.White.toArgb(), 0.5f)),
+                    )
                 }
             }
             "Nothing" -> {
