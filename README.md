@@ -12,6 +12,7 @@ This android app grabs the live audio stream from your device using sources such
 
 # **Here's the fucking download button, use it!**
 > (if you don't want to read the rest of the readme)
+
 [<img widtht="60%" alt="Get it on GitHub" src="./.github/assets/big-ass-fucking-download-button.png" />](https://github.com/Aleks-Levet/better-nothing-music-visualizer/releases/download/V3.2.1/Better-Nothing-Music-Vizualizer-V3.2.1.apk)
    
 ## 💬 Join Our Discord Server
