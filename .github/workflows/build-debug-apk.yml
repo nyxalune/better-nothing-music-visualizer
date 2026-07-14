@@ -37,16 +37,17 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
 
-    - name: Build Debug APK
-      run: ./gradlew assembleDebug
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@v4
+      with:
+        cache-read-only: ${{ github.ref != 'refs/heads/main' }}
 
-    - name: Prepare Artifacts
-      run: |
-        mkdir -p artifacts
-        find app/build/outputs/apk/debug -name "*.apk" ! -name "*-androidTest.apk" -exec cp {} artifacts/app-debug.apk \;
+    - name: Build Debug APK
+      run: ./gradlew assembleDebug --parallel --build-cache
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
       with:
         name: debug-apks
-        path: artifacts/
+        path: app/build/outputs/apk/debug/*.apk
+        if-no-files-found: error
