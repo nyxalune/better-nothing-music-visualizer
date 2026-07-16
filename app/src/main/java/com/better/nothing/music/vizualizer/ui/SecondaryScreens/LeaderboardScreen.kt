@@ -66,7 +66,7 @@ internal fun LeaderboardScreen(
             }
 
             Text(
-                text = "Weekly top visualizers",
+                text = "Top visualizers",
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.padding(start = 8.dp, bottom = 16.dp)

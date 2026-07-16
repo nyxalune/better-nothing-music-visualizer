@@ -51,7 +51,7 @@ internal fun CommunityOverlays(
     }
 
     if (isShowingLeaderboard) {
-        val entries by viewModel.leaderboardRepository.getTopUsers().collectAsStateWithLifecycle(initialValue = emptyList())
+        val entries by viewModel.leaderboardEntries.collectAsStateWithLifecycle()
         LeaderboardScreen(
             entries = entries,
             onDismiss = { viewModel.hideLeaderboard() }

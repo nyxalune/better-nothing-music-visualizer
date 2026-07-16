@@ -131,7 +131,7 @@ less reactive than the narrow ones, which are usually the bass ones, so we can't
 * decrease the decay for the android built in vizualiser (make the decay 60 fps even if the incoming data is 20fps)
 * Add a disclaimer popup on first use of the media projection source that we do not record the screen, even if it looks like it.
 * Track preset usage time instead
-* Implement weekly leaderboard and usage statistics
+* Implement leaderboard and usage statistics
 * --- 3.2.1
 * Refine beat detection engine haptics
 * Fix the amplitude haptics (Aleks)

@@ -85,7 +85,11 @@ internal fun SettingsScreen(
     val overlayHeight by viewModel.overlayHeight.collectAsStateWithLifecycle()
     val overlayYOffset by viewModel.overlayYOffset.collectAsStateWithLifecycle()
     val isAnonymous by viewModel.isAnonymous.collectAsStateWithLifecycle()
+    val userProfile by viewModel.userProfile.collectAsStateWithLifecycle()
     val scrollState = rememberScrollState()
+
+    var showNicknameDialog by remember { mutableStateOf(false) }
+    var newNickname by remember { mutableStateOf("") }
 
     val selectedTheme by viewModel.selectedTheme.collectAsStateWithLifecycle()
     val selectedFont by viewModel.selectedFont.collectAsStateWithLifecycle()
@@ -873,7 +877,6 @@ internal fun SettingsScreen(
         // ── Account ─────────────────────────────────────────────────────────
         ExpressiveCard {
             CardHeader(title = "Account")
-            val userProfile by viewModel.userProfile.collectAsStateWithLifecycle()
 
             Column(
                 modifier = Modifier
@@ -882,7 +885,12 @@ internal fun SettingsScreen(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable(!isAnonymous) { 
+                            newNickname = userProfile?.displayName ?: ""
+                            showNicknameDialog = true 
+                        },
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
@@ -911,12 +919,23 @@ internal fun SettingsScreen(
                     }
 
                     Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = if (isAnonymous) stringResource(R.string.anonymous_user) else userProfile?.displayName ?: stringResource(R.string.authenticated_user),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.ExtraBold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = if (isAnonymous) stringResource(R.string.anonymous_user) else userProfile?.displayName ?: stringResource(R.string.authenticated_user),
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            if (!isAnonymous) {
+                                Spacer(Modifier.width(8.dp))
+                                Icon(
+                                    Icons.Default.Edit,
+                                    null,
+                                    modifier = Modifier.size(14.dp),
+                                    tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+                                )
+                            }
+                        }
                         Text(
                             text = if (isAnonymous) stringResource(R.string.sync_account_desc) else "Your visualization data is synced.",
                             style = MaterialTheme.typography.bodySmall,
@@ -982,6 +1001,39 @@ internal fun SettingsScreen(
             )
         }
         Spacer(modifier = Modifier.height(85.dp))
+    }
+
+    if (showNicknameDialog) {
+        AlertDialog(
+            onDismissRequest = { showNicknameDialog = false },
+            title = { Text(stringResource(R.string.leaderboard_nickname)) },
+            text = {
+                OutlinedTextField(
+                    value = newNickname,
+                    onValueChange = { if (it.length <= 20) newNickname = it },
+                    label = { Text("Nickname") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp)
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        viewModel.updateProfile(newNickname)
+                        showNicknameDialog = false
+                    },
+                    enabled = newNickname.isNotBlank()
+                ) {
+                    Text(stringResource(R.string.save))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showNicknameDialog = false }) {
+                    Text(stringResource(R.string.cancel))
+                }
+            }
+        )
     }
 }
 

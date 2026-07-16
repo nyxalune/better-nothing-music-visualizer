@@ -673,10 +673,65 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     profile.totalVisualizedTime,
                     0, 0, 0 // Add other stats if tracked
                 )
+                
+                // Update leaderboard to make sure we are there
+                updateLeaderboard()
             } catch (e: Exception) {
                 Log.e("MainViewModel", "Failed to sync stats", e)
             }
         }
+    }
+
+    fun updateProfile(nickname: String, profilePictureBase64: String? = null) {
+        val uid = _userId.value ?: return
+        viewModelScope.launch {
+            try {
+                val currentProfile = _userProfile.value ?: UserProfile(
+                    userId = uid,
+                    displayName = _userNickname.value,
+                    createdAt = System.currentTimeMillis()
+                )
+                val updatedProfile = currentProfile.copy(
+                    displayName = nickname,
+                    profilePictureUrl = profilePictureBase64 ?: currentProfile.profilePictureUrl
+                )
+                userRepository.saveUserProfile(updatedProfile)
+                _userProfile.value = updatedProfile
+                _userNickname.value = nickname
+                
+                // Update leaderboard as well
+                updateLeaderboard()
+                
+                analytics.logProfileUpdate("nickname")
+            } catch (e: Exception) {
+                Log.e("MainViewModel", "Failed to update profile", e)
+            }
+        }
+    }
+
+    fun updateLeaderboard() {
+        val uid = _userId.value ?: return
+        if (_isAnonymous.value) return 
+
+        viewModelScope.launch {
+            try {
+                val profile = _userProfile.value ?: return@launch
+                val entry = LeaderboardEntry(
+                    userId = uid,
+                    name = nicknameForLeaderboard(profile.displayName),
+                    profilePictureUrl = profile.profilePictureUrl,
+                    totalTimeMs = _totalVisualizedTime.value,
+                    lastUpdated = System.currentTimeMillis()
+                )
+                leaderboardRepository.updateScore(entry)
+            } catch (e: Exception) {
+                Log.e("MainViewModel", "Failed to update leaderboard", e)
+            }
+        }
+    }
+
+    private fun nicknameForLeaderboard(name: String): String {
+        return if (name.isBlank() || name == "Anonymous") "Anonymous User" else name
     }
 
     fun isNotificationAccessGranted(): Boolean {
@@ -816,6 +871,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val announcementHistory = announcementRepository.getAnnouncementHistory()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    val leaderboardEntries = leaderboardRepository.getTopUsers()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
     val _spoofLocale = MutableStateFlow<String?>(null)
     val spoofLocale = _spoofLocale.asStateFlow()
 
@@ -846,26 +904,44 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 _isAnonymous.value = user.isAnonymous
                 analytics.setUserId(user.uid)
                 prefs.edit().putString("user_id", user.uid).apply()
-                
+
                 // If not anonymous, fetch/sync profile
                 if (!user.isAnonymous) {
                     syncStats()
                 }
+            } else {
+                // User signed out (or never signed in). Clear all stale state so
+                // the UI doesn't keep showing the previous account.
+                _userId.value = null
+                _isAnonymous.value = true
+                _userProfile.value = null
+                analytics.setUserId(null)
+                prefs.edit().remove("user_id").apply()
             }
         }
 
         if (auth.currentUser == null) {
-            auth.signInAnonymously().addOnFailureListener { e ->
-                Log.e("MainViewModel", "Firebase Auth failed", e)
-                var uId = prefs.getString("user_id", null)
-                if (uId == null) {
-                    uId = java.util.UUID.randomUUID().toString()
-                    prefs.edit().putString("user_id", uId).apply()
+            // Defer authing-in anonymously until after we've had a chance to
+            // sign in with a real provider. This avoids race conditions where
+            // the init logic immediately re-creates an anonymous account
+            // before the user gets a chance to log in again.
+            viewModelScope.launch {
+                delay(500)
+                // Only auto sign-in if the listener still hasn't reported a user.
+                if (FirebaseAuth.getInstance().currentUser == null) {
+                    auth.signInAnonymously().addOnFailureListener { e ->
+                        Log.e("MainViewModel", "Firebase Auth failed", e)
+                        var uId = prefs.getString("user_id", null)
+                        if (uId == null) {
+                            uId = java.util.UUID.randomUUID().toString()
+                            prefs.edit().putString("user_id", uId).apply()
+                        }
+                        _userId.value = uId
+                    }
                 }
-                _userId.value = uId
             }
         } else {
-            _userId.value = auth.currentUser?.uid
+            _userId.value = auth.currentUser?.uid ?: ""
         }
 
         // Disable Haptic Tile if no motor
@@ -918,8 +994,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         _totalIdleTime.value += delta
                     }
 
-                    // Save periodically (every 5 seconds to reduce IO)
-                    if (SystemClock.elapsedRealtime() % 5000 < 1100) {
+                    // Save periodically (every 5 seconds to reduce IO, every 60s for leaderboard)
+                    val timestamp = SystemClock.elapsedRealtime()
+                    if (timestamp % 5000 < 1100) {
                         viewModelScope.launch(Dispatchers.IO) {
                             prefs.edit()
                                 .putLong("total_visualized_time", _totalVisualizedTime.value)
@@ -930,6 +1007,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                                 .putLong("total_flashlight_time", _totalFlashlightTime.value)
                                 .apply()
                         }
+                    }
+                    if (timestamp % 60000 < 1100) {
+                        updateLeaderboard()
                     }
                 }
             }
@@ -1179,6 +1259,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun setRunning(running: Boolean) {
         _runningState.value = running
+        if (!running) {
+            updateLeaderboard()
+        }
     }
 
     val _selectedPreset = MutableStateFlow("Default")
@@ -1730,14 +1813,55 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun signOut() {
+        // Just clear the user. The init logic will re-create an anonymous
+        // session (after a short delay) if no real sign-in happens.
+        // Previously this called signInAnonymously() immediately, which made
+        // it impossible to ever sign back in with the same provider right
+        // after logging out because Firebase would re-issue the cached
+        // anonymous account.
         FirebaseAuth.getInstance().signOut()
-        _userProfile.value = null
-        // Re-trigger anonymous sign-in if needed or just let the init logic handle it
-        FirebaseAuth.getInstance().signInAnonymously()
+    }
+
+    fun signInWithEmail(email: String, password: String, onError: (String) -> Unit) {
+        viewModelScope.launch {
+            try {
+                Log.d("MainViewModel", "Signing in with email: $email")
+                FirebaseAuth.getInstance().signInWithEmailAndPassword(email, password).await()
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(ctx, "Signed in!", Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: Exception) {
+                Log.e("MainViewModel", "Email sign in failed", e)
+                withContext(Dispatchers.Main) { onError(e.localizedMessage ?: "Sign in failed") }
+            }
+        }
+    }
+
+    fun signUpWithEmail(email: String, password: String, onError: (String) -> Unit) {
+        viewModelScope.launch {
+            try {
+                Log.d("MainViewModel", "Creating account for: $email")
+                FirebaseAuth.getInstance().createUserWithEmailAndPassword(email, password).await()
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(ctx, "Account created!", Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: Exception) {
+                Log.e("MainViewModel", "Email sign up failed", e)
+                withContext(Dispatchers.Main) { onError(e.localizedMessage ?: "Sign up failed") }
+            }
+        }
     }
 
     fun linkWithCredential(credential: AuthCredential) {
-        val user = FirebaseAuth.getInstance().currentUser ?: return
+        val auth = FirebaseAuth.getInstance()
+        // If there isn't an active user (e.g. logged out just now), fall back
+        // to a plain credential sign in. Otherwise the credential is dropped
+        // on the floor and the user can't log in again.
+        if (auth.currentUser == null) {
+            signInWithCredential(credential)
+            return
+        }
+        val user = auth.currentUser!!
         viewModelScope.launch {
             try {
                 Log.d("MainViewModel", "Linking user with credential...")

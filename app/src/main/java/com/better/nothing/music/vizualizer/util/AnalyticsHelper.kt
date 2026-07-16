@@ -7,7 +7,7 @@ import com.google.firebase.analytics.FirebaseAnalytics
 class AnalyticsHelper(context: Context) {
     private val firebaseAnalytics = FirebaseAnalytics.getInstance(context)
 
-    fun setUserId(userId: String) {
+    fun setUserId(userId: String?) {
         firebaseAnalytics.setUserId(userId)
     }
 
