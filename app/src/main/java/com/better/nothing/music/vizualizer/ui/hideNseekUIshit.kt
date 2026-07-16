@@ -5,6 +5,7 @@ import androidx.compose.animation.core.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.better.nothing.music.vizualizer.model.UserProfile
 import com.better.nothing.music.vizualizer.ui.SecondaryScreens.AboutScreen
 import com.better.nothing.music.vizualizer.ui.SecondaryScreens.CustomPresetEditorScreen
 import com.better.nothing.music.vizualizer.ui.SecondaryScreens.LicenseScreen
