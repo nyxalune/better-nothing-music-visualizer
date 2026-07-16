@@ -158,6 +158,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun showEditor() { _isShowingEditor.value = true }
     fun hideEditor() { _isShowingEditor.value = false }
 
+    private val _isShowingProfileSetup = MutableStateFlow(false)
+    val isShowingProfileSetup = _isShowingProfileSetup.asStateFlow()
+    fun showProfileSetup() { _isShowingProfileSetup.value = true }
+    fun hideProfileSetup() { _isShowingProfileSetup.value = false }
+
     private val _dynamicGainEnabled = MutableStateFlow(true)
     val dynamicGainEnabled = _dynamicGainEnabled.asStateFlow()
     fun setDynamicGainEnabled(enabled: Boolean) {
@@ -649,32 +654,54 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val _isAdmin = MutableStateFlow(false)
     val isAdmin = _isAdmin.asStateFlow()
 
-    fun syncStats() {
-        val uid = _userId.value ?: return
+    fun syncStats(explicitUid: String? = null) {
+        val uid = explicitUid ?: _userId.value ?: return
         viewModelScope.launch {
             try {
+                val prefs = ctx.getSharedPreferences("viz_prefs", Context.MODE_PRIVATE)
+                val localTime = _totalVisualizedTime.value
                 var profile = userRepository.getUserProfile(uid)
+                
                 if (profile == null) {
                     profile = UserProfile(
                         userId = uid,
                         displayName = _userNickname.value,
+                        totalVisualizedTime = localTime,
                         createdAt = System.currentTimeMillis()
                     )
                     userRepository.saveUserProfile(profile)
+                } else {
+                    // Reconcile: Take the maximum to avoid progress loss
+                    if (localTime > profile.totalVisualizedTime) {
+                        profile = profile.copy(totalVisualizedTime = localTime)
+                        userRepository.saveUserProfile(profile)
+                    } else if (profile.totalVisualizedTime > localTime) {
+                        _totalVisualizedTime.value = profile.totalVisualizedTime
+                        prefs.edit().putLong("total_visualized_time", profile.totalVisualizedTime).apply()
+                    }
                 }
-                _userProfile.value = profile
-                _userNickname.value = profile.displayName
-                _totalVisualizedTime.value = profile.totalVisualizedTime
                 
+                _userProfile.value = profile
+                _userNickname.value = profile.displayName ?: "Anonymous"
+                
+                // If the user has signed in but hasn't set up their profile yet, show the setup dialog
+                if (!_isAnonymous.value && (profile.displayName.isNullOrBlank() || profile.displayName == "Anonymous")) {
+                    showProfileSetup()
+                }
+
+                // Update internal UID if needed (though AuthListener should handle it)
+                if (explicitUid != null) {
+                    _userId.value = explicitUid
+                }
+
                 // Check if admin
-                _isAdmin.value = uid == "OLIVER_UID" || uid == "ALEKS_UID"
+                _isAdmin.value = uid == "acLuGkDEBNNhtIkuWDzlKuFhDI92" || uid == "hOQwgxRFB2fjko5mUaZraIcYRnl1"
                 
                 analytics.logStatsSynced(
-                    profile.totalVisualizedTime,
-                    0, 0, 0 // Add other stats if tracked
+                    _totalVisualizedTime.value,
+                    0, 0, 0 
                 )
                 
-                // Update leaderboard to make sure we are there
                 updateLeaderboard()
             } catch (e: Exception) {
                 Log.e("MainViewModel", "Failed to sync stats", e)
@@ -702,9 +729,21 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 // Update leaderboard as well
                 updateLeaderboard()
                 
-                analytics.logProfileUpdate("nickname")
+                analytics.logProfileUpdate(if (profilePictureBase64 != null) "avatar" else "nickname")
             } catch (e: Exception) {
                 Log.e("MainViewModel", "Failed to update profile", e)
+            }
+        }
+    }
+
+    fun uploadProfilePicture(uri: android.net.Uri) {
+        val uid = _userId.value ?: return
+        viewModelScope.launch {
+            try {
+                val base64 = userRepository.uploadProfilePicture(uid, uri, ctx)
+                updateProfile(_userNickname.value, base64)
+            } catch (e: Exception) {
+                Log.e("MainViewModel", "Failed to upload profile picture", e)
             }
         }
     }
@@ -715,18 +754,39 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
         viewModelScope.launch {
             try {
-                val profile = _userProfile.value ?: return@launch
+                val currentProfile = _userProfile.value ?: return@launch
+                val updatedTime = _totalVisualizedTime.value
+                
+                // Update User Profile as well so it's persistent
+                val updatedProfile = currentProfile.copy(totalVisualizedTime = updatedTime)
+                userRepository.saveUserProfile(updatedProfile)
+                _userProfile.value = updatedProfile
+
                 val entry = LeaderboardEntry(
                     userId = uid,
-                    name = nicknameForLeaderboard(profile.displayName),
-                    profilePictureUrl = profile.profilePictureUrl,
-                    totalTimeMs = _totalVisualizedTime.value,
+                    name = nicknameForLeaderboard(updatedProfile.displayName),
+                    profilePictureUrl = updatedProfile.profilePictureUrl,
+                    totalTimeMs = updatedTime,
                     lastUpdated = System.currentTimeMillis()
                 )
                 leaderboardRepository.updateScore(entry)
             } catch (e: Exception) {
                 Log.e("MainViewModel", "Failed to update leaderboard", e)
             }
+        }
+    }
+
+    fun saveStatsLocally() {
+        val prefs = ctx.getSharedPreferences("viz_prefs", Context.MODE_PRIVATE)
+        viewModelScope.launch(Dispatchers.IO) {
+            prefs.edit()
+                .putLong("total_visualized_time", _totalVisualizedTime.value)
+                .putLong("total_idle_time", _totalIdleTime.value)
+                .putLong("total_active_time", _totalActiveTime.value)
+                .putLong("total_glyph_time", _totalGlyphTime.value)
+                .putLong("total_haptic_time", _totalHapticTime.value)
+                .putLong("total_flashlight_time", _totalFlashlightTime.value)
+                .apply()
         }
     }
 
@@ -907,7 +967,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
                 // If not anonymous, fetch/sync profile
                 if (!user.isAnonymous) {
-                    syncStats()
+                    syncStats(user.uid)
                 }
             } else {
                 // User signed out (or never signed in). Clear all stale state so
@@ -915,6 +975,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 _userId.value = null
                 _isAnonymous.value = true
                 _userProfile.value = null
+                _userNickname.value = "Anonymous"
                 analytics.setUserId(null)
                 prefs.edit().remove("user_id").apply()
             }
@@ -941,7 +1002,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 }
             }
         } else {
-            _userId.value = auth.currentUser?.uid ?: ""
+            _userId.value = auth.currentUser?.uid
         }
 
         // Disable Haptic Tile if no motor
@@ -997,16 +1058,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     // Save periodically (every 5 seconds to reduce IO, every 60s for leaderboard)
                     val timestamp = SystemClock.elapsedRealtime()
                     if (timestamp % 5000 < 1100) {
-                        viewModelScope.launch(Dispatchers.IO) {
-                            prefs.edit()
-                                .putLong("total_visualized_time", _totalVisualizedTime.value)
-                                .putLong("total_idle_time", _totalIdleTime.value)
-                                .putLong("total_active_time", _totalActiveTime.value)
-                                .putLong("total_glyph_time", _totalGlyphTime.value)
-                                .putLong("total_haptic_time", _totalHapticTime.value)
-                                .putLong("total_flashlight_time", _totalFlashlightTime.value)
-                                .apply()
-                        }
+                        saveStatsLocally()
                     }
                     if (timestamp % 60000 < 1100) {
                         updateLeaderboard()
@@ -1054,6 +1106,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         if (_isShowingCommunity.value) { hideCommunity(); return true }
         if (_isShowingLeaderboard.value) { hideLeaderboard(); return true }
         if (_isShowingStats.value) { hideStats(); return true }
+        if (_isShowingProfileSetup.value) { hideProfileSetup(); return true }
         if (_showAnnouncementHistory.value) { hideAnnouncementHistory(); return true }
         if (_showAnnouncementModal.value) { _showAnnouncementModal.value = false; return true }
         if (_showAnnouncementEditor.value) { hideAnnouncementEditor(); return true }
@@ -1260,6 +1313,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun setRunning(running: Boolean) {
         _runningState.value = running
         if (!running) {
+            saveStatsLocally()
             updateLeaderboard()
         }
     }
@@ -1884,7 +1938,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     _userNickname.value = profile.displayName ?: "Anonymous"
                 }
                 
-                syncStats()
+                syncStats(firebaseUser?.uid)
                 withContext(Dispatchers.Main) {
                     Toast.makeText(ctx, "Google account linked!", Toast.LENGTH_SHORT).show()
                 }
@@ -1917,22 +1971,31 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     // Try to fetch existing profile
                     var profile = userRepository.getUserProfile(firebaseUser.uid)
                     if (profile == null) {
-                        profile = UserProfile(
+                        val newProfile = UserProfile(
                             userId = firebaseUser.uid,
                             displayName = firebaseUser.displayName ?: "Anonymous",
                             profilePictureUrl = firebaseUser.photoUrl?.toString(),
                             createdAt = System.currentTimeMillis()
                         )
-                        userRepository.saveUserProfile(profile)
+                        userRepository.saveUserProfile(newProfile)
+                        profile = newProfile
+                    } else if (profile.displayName == "Anonymous") {
+                        // If existing profile has default name, try to use Google name
+                        val googleName = firebaseUser.displayName
+                        if (!googleName.isNullOrBlank()) {
+                            val updatedProfile = profile.copy(displayName = googleName)
+                            userRepository.saveUserProfile(updatedProfile)
+                            profile = updatedProfile
+                        }
                     }
                     _userProfile.value = profile
-                    _userNickname.value = profile.displayName ?: "Anonymous"
+                    _userNickname.value = profile.displayName
                     
                     withContext(Dispatchers.Main) {
                         Toast.makeText(ctx, "Welcome, ${profile.displayName}!", Toast.LENGTH_SHORT).show()
                     }
                 }
-                syncStats()
+                syncStats(firebaseUser?.uid)
             } catch (e: Exception) {
                 Log.e("MainViewModel", "Sign in failed", e)
                 withContext(Dispatchers.Main) {
@@ -1948,5 +2011,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     override fun onCleared() {
         super.onCleared()
+        saveStatsLocally()
     }
 }

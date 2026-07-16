@@ -19,6 +19,7 @@ internal fun MainOverlays(
     val isShowingAbout by viewModel.isShowingAbout.collectAsStateWithLifecycle()
     val isShowingLicense by viewModel.isShowingLicense.collectAsStateWithLifecycle()
     val isShowingStats by viewModel.isShowingStats.collectAsStateWithLifecycle()
+    val isShowingProfileSetup by viewModel.isShowingProfileSetup.collectAsStateWithLifecycle()
 
     val expansionSpec = spring<Float>(
         dampingRatio = Spring.DampingRatioLowBouncy,
@@ -62,5 +63,18 @@ internal fun MainOverlays(
         exit = scaleOut(animationSpec = expansionSpec, targetScale = 0.8f) + fadeOut()
     ) {
         StatsScreen(viewModel = viewModel, onDismiss = { viewModel.hideStats() })
+    }
+
+    if (isShowingProfileSetup) {
+        val userProfile by viewModel.userProfile.collectAsStateWithLifecycle()
+        ProfileSetupDialog(
+            userProfile = userProfile,
+            onSave = { 
+                viewModel.updateProfile(it)
+                viewModel.hideProfileSetup()
+            },
+            onPickImage = { viewModel.uploadProfilePicture(it) },
+            onDismiss = { viewModel.hideProfileSetup() }
+        )
     }
 }

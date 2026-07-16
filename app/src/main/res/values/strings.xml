@@ -200,7 +200,12 @@
     <string name="failed_to_upload_image">Failed to upload image: %s</string>
 
     <!-- Auth -->
-    <string name="sign_in">Sign In with Google</string>
+    <string name="sign_in">Sign In</string>
+    <string name="sign_up">Sign Up</string>
+    <string name="email">Email</string>
+    <string name="sign_in_with_google">Sign In with Google</string>
+    <string name="already_have_account">Already have an account? Sign In</string>
+    <string name="dont_have_account">Don\'t have an account? Sign Up</string>
     <string name="sign_out">Sign Out</string>
     <string name="sync_account_desc">Sign in with Google to keep your presets and stats synced across devices.</string>
     <string name="account_linked">Account synced successfully!</string>
