@@ -12,6 +12,7 @@ public class VisualizerOverlayView extends View {
     private static final int NUM_BARS = 16;
     private final float[] mSmoothedMagnitudes = new float[NUM_BARS];
     private int mColor = Color.WHITE;
+    private float mSensitivity = 1.0f;
 
     public VisualizerOverlayView(Context context) {
         super(context);
@@ -24,6 +25,10 @@ public class VisualizerOverlayView extends View {
         this.mColor = color;
         mPaint.setColor(color);
         invalidate();
+    }
+
+    public void setSensitivity(float sensitivity) {
+        this.mSensitivity = sensitivity;
     }
 
     public void updateMagnitudes(float[] magnitudes) {
@@ -52,7 +57,7 @@ public class VisualizerOverlayView extends View {
             float avg = count > 0 ? sum / count : 0f;
             
             // Smoothing for visual stability
-            float current = avg * 60.0f; // Gain
+            float current = avg * 60.0f * mSensitivity; // Gain
             mSmoothedMagnitudes[i] = mSmoothedMagnitudes[i] * 0.7f + current * 0.3f;
         }
         postInvalidateOnAnimation();
@@ -73,7 +78,7 @@ public class VisualizerOverlayView extends View {
             float val = mSmoothedMagnitudes[i];
             float barHeight = val * height;
             if (barHeight > height) barHeight = height;
-            if (barHeight < 1.5f) barHeight = 1.5f; // Baseline
+            if (barHeight < 1.0f) barHeight = 1.0f; // Baseline
 
             float left = i * barWidth + spacing;
             float top = height - barHeight;

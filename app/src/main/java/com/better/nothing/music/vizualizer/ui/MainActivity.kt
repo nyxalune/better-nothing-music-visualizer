@@ -78,6 +78,7 @@ import com.better.nothing.music.vizualizer.ui.PrimaryScreens.FlashlightScreen
 import com.better.nothing.music.vizualizer.ui.PrimaryScreens.GlyphsScreen
 import com.better.nothing.music.vizualizer.ui.PrimaryScreens.HapticsScreen
 import com.better.nothing.music.vizualizer.ui.PrimaryScreens.SettingsScreen
+import com.better.nothing.music.vizualizer.ui.PrimaryScreens.VisualsScreen
 import androidx.compose.runtime.collectAsState
 import kotlin.time.Duration.Companion.milliseconds
 import androidx.core.net.toUri
@@ -624,6 +625,16 @@ internal fun BetterVizApp(
                             padding = padding
                         )
                     }
+                    Tab.Visuals -> {
+                        val overlayEnabled by viewModel.overlayEnabled.collectAsStateWithLifecycle()
+                        VisualsScreen(
+                            viewModel = viewModel,
+                            overlayEnabled = overlayEnabled,
+                            onOverlayEnabledChanged = { viewModel.setOverlayEnabled(it) },
+                            onOverlayPermissionRequest = { onOverlayPermissionRequest() },
+                            padding = padding
+                        )
+                    }
                     Tab.Haptics -> {
                         val hapticMotorEnabled by viewModel.hapticMotorEnabled.collectAsStateWithLifecycle()
                         val hapticMode by viewModel.hapticMode.collectAsStateWithLifecycle()
@@ -723,7 +734,6 @@ internal fun BetterVizApp(
                         val idlePattern by viewModel.idlePattern.collectAsStateWithLifecycle()
                         val strobeEnabled by viewModel.strobeEnabled.collectAsStateWithLifecycle()
                         val disableGlyphsWhenSilent by viewModel.disableGlyphsWhenSilent.collectAsStateWithLifecycle()
-                        val overlayEnabled by viewModel.overlayEnabled.collectAsStateWithLifecycle()
 
                         SettingsScreen(
                             viewModel = viewModel,
@@ -742,14 +752,6 @@ internal fun BetterVizApp(
                                 viewModel.setDisableGlyphsWhenSilent(
                                     it
                                 )
-                            },
-                            overlayEnabled = overlayEnabled,
-                            onOverlayEnabledChanged = { enabled ->
-                                if (enabled && !Settings.canDrawOverlays(context)) {
-                                    onOverlayPermissionRequest()
-                                } else {
-                                    viewModel.setOverlayEnabled(enabled)
-                                }
                             },
                             onGoogleSignIn = onGoogleSignIn,
                             padding = padding

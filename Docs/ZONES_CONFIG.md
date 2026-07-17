@@ -26,7 +26,7 @@ Each top-level key (e.g., `"np2"`, `"np3a-bass"`) defines a unique visualization
 | Key | Type | Description |
 | :--- | :--- | :--- |
 | `description` | String | What this preset does (shown in the app). |
-| `phone_model` | String | The target device. <br> Supported: `PHONE1`, `PHONE2`, `PHONE2A`, `PHONE3A`, `PHONE4A`, `PHONE3`. |
+| `phone_model` | String | The target device. <br> Supported: `PHONE1`, `PHONE2`, `PHONE2A`, `PHONE3A`, `PHONE4A`, `PHONE4B`, `PHONE3`. |
 | `decay-alpha` | Number | *(Optional)* Override the global decay speed for this preset. |
 | `zones` | Array | **The Mapping Table.** Defines which frequencies go to which LEDs. |
 
@@ -68,6 +68,7 @@ The number of entries in the `zones` array must match the hardware capability of
 | **Phone (2a)** | 26 | Optimized for the three main glyph parts. |
 | **Phone (3a)** | 36 | Full addressable matrix segments. |
 | **Phone (4a)** | 7 | Simple segmented bar + red accent. |
+| **Phone (4b)** | 5 | Narrower segmented bar. |
 
 ---
 

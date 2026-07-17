@@ -29,6 +29,7 @@
 - Nothing phone (3a pro)
 - *Nothing phone (3)* **(beta, अभी अच्छा नहीं है)**
 - *Nothing Phone (4a)*
+- *Nothing Phone (4b)*
 
 ## 📖 ऐप का उपयोग कैसे करें?
 1. **Latest APK डाउनलोड करें**

@@ -134,6 +134,7 @@ public class AudioCaptureService extends Service {
     private static final String PHONE_MODEL_PHONE3 = "PHONE3";
     private static final String PHONE_MODEL_PHONE4A = "PHONE4A";
     private static final String PHONE_MODEL_PHONE4A_PRO = "PHONE4A_PRO";
+    private static final String PHONE_MODEL_PHONE4B = "PHONE4B";
 
     private static final int SAMPLE_RATE = 44100;
     private static final int FPS = 60;
@@ -227,6 +228,7 @@ public class AudioCaptureService extends Service {
             case DeviceProfile.DEVICE_NP4A -> Glyph.DEVICE_25111;
             case DeviceProfile.DEVICE_NP4APRO -> Glyph.DEVICE_25111p;
             case DeviceProfile.DEVICE_NP3 -> Glyph.DEVICE_23112;
+            case DeviceProfile.DEVICE_NP4B -> "26111";
             default -> Glyph.DEVICE_25111;
         };
         Log.d(TAG, "Registering GlyphManager with device: " + deviceStr);
@@ -276,6 +278,7 @@ public class AudioCaptureService extends Service {
     private int mOverlayWidth = 120;
     private int mOverlayHeight = 12;
     private int mOverlayYOffset = 2;
+    private float mOverlaySensitivity = 1.0f;
     private int mOverlayColor = android.graphics.Color.WHITE;
     private WindowManager mWindowManager;
     private VisualizerOverlayView mOverlayView;
@@ -457,6 +460,7 @@ public class AudioCaptureService extends Service {
         mOverlayWidth = appPrefs.getInt("overlay_width", 120);
         mOverlayHeight = appPrefs.getInt("overlay_height", 12);
         mOverlayYOffset = appPrefs.getInt("overlay_y_offset", 2);
+        mOverlaySensitivity = appPrefs.getFloat("overlay_sensitivity", 1.0f);
 
         boolean dynamicGainEnabled = appPrefs.getBoolean("dynamic_gain_enabled", true);
         if (mAudioProcessor != null) {
@@ -811,10 +815,11 @@ public class AudioCaptureService extends Service {
         try {
             JSONObject root = loadZonesConfigRoot(context);
             List<String> matching = getPresetKeysForPhoneModel(root, phoneModelForCatalog);
-            if (matching.isEmpty() && !PHONE_MODEL_UNKNOWN.equals(detectedPhoneModel)) {
+            if (matching.isEmpty() && !PHONE_MODEL_UNKNOWN.equals(detectedPhoneModel) && PHONE_MODEL_UNKNOWN.equals(selectedPhoneModel)) {
                 matching = getPresetKeysForPhoneModel(root, detectedPhoneModel);
             }
-            if (matching.isEmpty()) {
+            // Strict filtering: no broad fallback if a specific model is intended
+            if (matching.isEmpty() && device == DeviceProfile.DEVICE_UNKNOWN) {
                 matching = getAllPresetKeys(root);
             }
             return buildPresetInfos(root, matching);
@@ -1161,6 +1166,13 @@ public class AudioCaptureService extends Service {
         }
     }
 
+    public void setOverlaySensitivity(float sensitivity) {
+        mOverlaySensitivity = sensitivity;
+        if (mOverlayView != null) {
+            mMainHandler.post(() -> mOverlayView.setSensitivity(sensitivity));
+        }
+    }
+
     private void updateOverlayLayout() {
         if (mOverlayView == null || mWindowManager == null) return;
         mMainHandler.post(() -> {
@@ -1199,6 +1211,7 @@ public class AudioCaptureService extends Service {
         mWindowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
         mOverlayView = new VisualizerOverlayView(this);
         mOverlayView.setColor(mOverlayColor);
+        mOverlayView.setSensitivity(mOverlaySensitivity);
 
         int height = (int) (mOverlayHeight * getResources().getDisplayMetrics().density);
         int width = (int) (mOverlayWidth * getResources().getDisplayMetrics().density);
@@ -2268,8 +2281,12 @@ public class AudioCaptureService extends Service {
         String phoneModelForCatalog = PHONE_MODEL_UNKNOWN.equals(selectedPhoneModel) ? mDetectedPhoneModel : selectedPhoneModel;
         JSONObject root = loadZonesConfigRoot(this);
         List<String> matching = getPresetKeysForPhoneModel(root, phoneModelForCatalog);
-        if (matching.isEmpty() && !PHONE_MODEL_UNKNOWN.equals(mDetectedPhoneModel)) matching = getPresetKeysForPhoneModel(root, mDetectedPhoneModel);
-        if (matching.isEmpty()) matching = getAllPresetKeys(root);
+        if (matching.isEmpty() && !PHONE_MODEL_UNKNOWN.equals(mDetectedPhoneModel) && PHONE_MODEL_UNKNOWN.equals(selectedPhoneModel)) {
+            matching = getPresetKeysForPhoneModel(root, mDetectedPhoneModel);
+        }
+        if (matching.isEmpty() && mSelectedDevice == DeviceProfile.DEVICE_UNKNOWN) {
+            matching = getAllPresetKeys(root);
+        }
         mAvailablePresetKeys = matching;
     }
 
@@ -2301,15 +2318,15 @@ public class AudioCaptureService extends Service {
     private static boolean isPresetEntry(JSONObject root, String key) { if (key == null || key.isEmpty() || "version".equals(key) || "amp".equals(key) || key.startsWith("decay")) return false; JSONObject p = root.optJSONObject(key); return p != null && p.optJSONArray("zones") != null; }
     private static String chooseDefaultPresetKey(String phoneModel, List<String> presetKeys) {
         if (presetKeys == null || presetKeys.isEmpty()) return DEFAULT_PRESET_KEY;
-        List<String> prefs = switch (phoneModel) { case PHONE_MODEL_PHONE1 -> Arrays.asList("np1s", "np1"); case PHONE_MODEL_PHONE2 -> Collections.singletonList("np2"); case PHONE_MODEL_PHONE2A -> Collections.singletonList("np2a"); case PHONE_MODEL_PHONE3A -> Arrays.asList("np3as", "np3a"); case PHONE_MODEL_PHONE3 -> Collections.singletonList("np3test"); case PHONE_MODEL_PHONE4A -> Collections.singletonList("np4a"); case PHONE_MODEL_PHONE4A_PRO -> Collections.singletonList("np4ap-test"); default -> Collections.emptyList(); };
+        List<String> prefs = switch (phoneModel) { case PHONE_MODEL_PHONE1 -> Arrays.asList("np1s", "np1"); case PHONE_MODEL_PHONE2 -> Collections.singletonList("np2"); case PHONE_MODEL_PHONE2A -> Collections.singletonList("np2a"); case PHONE_MODEL_PHONE3A -> Arrays.asList("np3as", "np3a"); case PHONE_MODEL_PHONE3 -> Collections.singletonList("np3test"); case PHONE_MODEL_PHONE4A -> Collections.singletonList("np4a"); case PHONE_MODEL_PHONE4A_PRO -> Collections.singletonList("np4ap-test"); case PHONE_MODEL_PHONE4B -> Collections.singletonList("np4b"); default -> Collections.emptyList(); };
         for (String p : prefs) if (presetKeys.contains(p)) return p;
         return presetKeys.get(0);
     }
-    private static String phoneModelForDevice(int device) { return switch (device) { case DeviceProfile.DEVICE_NP1 -> PHONE_MODEL_PHONE1; case DeviceProfile.DEVICE_NP2 -> PHONE_MODEL_PHONE2; case DeviceProfile.DEVICE_NP2A -> PHONE_MODEL_PHONE2A; case DeviceProfile.DEVICE_NP3A -> PHONE_MODEL_PHONE3A; case DeviceProfile.DEVICE_NP4A -> PHONE_MODEL_PHONE4A; case DeviceProfile.DEVICE_NP4APRO -> PHONE_MODEL_PHONE4A_PRO; case DeviceProfile.DEVICE_NP3 -> PHONE_MODEL_PHONE3; default -> PHONE_MODEL_UNKNOWN; }; }
+    private static String phoneModelForDevice(int device) { return switch (device) { case DeviceProfile.DEVICE_NP1 -> PHONE_MODEL_PHONE1; case DeviceProfile.DEVICE_NP2 -> PHONE_MODEL_PHONE2; case DeviceProfile.DEVICE_NP2A -> PHONE_MODEL_PHONE2A; case DeviceProfile.DEVICE_NP3A -> PHONE_MODEL_PHONE3A; case DeviceProfile.DEVICE_NP4A -> PHONE_MODEL_PHONE4A; case DeviceProfile.DEVICE_NP4APRO -> PHONE_MODEL_PHONE4A_PRO; case DeviceProfile.DEVICE_NP3 -> PHONE_MODEL_PHONE3; case DeviceProfile.DEVICE_NP4B -> PHONE_MODEL_PHONE4B; default -> PHONE_MODEL_UNKNOWN; }; }
     private static String detectPhoneModel() {
         if (Common.is20111()) return PHONE_MODEL_PHONE1; if (Common.is22111()) return PHONE_MODEL_PHONE2; if (Common.is23111() || Common.is23113()) return PHONE_MODEL_PHONE2A; if (Common.is24111()) return PHONE_MODEL_PHONE3A; if (Common.is25111p()) return PHONE_MODEL_PHONE4A_PRO; if (Common.is25111()) return PHONE_MODEL_PHONE4A; if (Common.is23112()) return PHONE_MODEL_PHONE3;
         String b = (Build.MANUFACTURER + " " + Build.BRAND + " " + Build.MODEL + " " + Build.DEVICE + " " + Build.PRODUCT).toLowerCase(Locale.US);
-        if (b.contains("phone 4a pro")) return PHONE_MODEL_PHONE4A_PRO; if (b.contains("phone 4a")) return PHONE_MODEL_PHONE4A; if (b.contains("phone 3a")) return PHONE_MODEL_PHONE3A; if (b.contains("phone 3")) return PHONE_MODEL_PHONE3; if (b.contains("phone 2a")) return PHONE_MODEL_PHONE2A; if (b.contains("phone 2")) return PHONE_MODEL_PHONE2; if (b.contains("phone 1")) return PHONE_MODEL_PHONE1;
+        if (b.contains("phone 4b")) return PHONE_MODEL_PHONE4B; if (b.contains("phone 4a pro")) return PHONE_MODEL_PHONE4A_PRO; if (b.contains("phone 4a")) return PHONE_MODEL_PHONE4A; if (b.contains("phone 3a")) return PHONE_MODEL_PHONE3A; if (b.contains("phone 3")) return PHONE_MODEL_PHONE3; if (b.contains("phone 2a")) return PHONE_MODEL_PHONE2A; if (b.contains("phone 2")) return PHONE_MODEL_PHONE2; if (b.contains("phone 1")) return PHONE_MODEL_PHONE1;
         return PHONE_MODEL_UNKNOWN;
     }
     private static float parseOptionalPercent(JSONArray arr, int idx) { if (idx >= arr.length()) return Float.NaN; Object r = arr.opt(idx); if (r == null || r == JSONObject.NULL) return Float.NaN; try { float v; if (r instanceof Number n) v = n.floatValue(); else { String t = String.valueOf(r).trim(); if (t.endsWith("%")) t = t.substring(0, t.length() - 1).trim(); v = Float.parseFloat(t); } if (v >= 0f && v <= 1f) v *= 100f; return v; } catch (Exception ignored) { return Float.NaN; } }

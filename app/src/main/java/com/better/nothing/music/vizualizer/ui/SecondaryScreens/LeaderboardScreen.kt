@@ -12,7 +12,7 @@ import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -22,6 +22,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.window.Dialog
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.shape.RoundedCornerShape
 import coil3.compose.AsyncImage
 import com.better.nothing.music.vizualizer.R
 import com.better.nothing.music.vizualizer.model.LeaderboardEntry
@@ -34,6 +37,30 @@ internal fun LeaderboardScreen(
     entries: List<LeaderboardEntry>,
     onDismiss: () -> Unit
 ) {
+    var selectedImageUrl by remember { mutableStateOf<String?>(null) }
+
+    if (selectedImageUrl != null) {
+        Dialog(onDismissRequest = { selectedImageUrl = null }) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clickable { selectedImageUrl = null },
+                contentAlignment = Alignment.Center
+            ) {
+                AsyncImage(
+                    model = selectedImageUrl,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .fillMaxWidth(0.9f)
+                        .aspectRatio(1f)
+                        .clip(RoundedCornerShape(24.dp))
+                        .background(MaterialTheme.colorScheme.surface),
+                    contentScale = ContentScale.Crop
+                )
+            }
+        }
+    }
+
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
@@ -82,7 +109,9 @@ internal fun LeaderboardScreen(
                     contentPadding = PaddingValues(bottom = 80.dp)
                 ) {
                     itemsIndexed(entries) { index, entry ->
-                        LeaderboardItem(index + 1, entry)
+                        LeaderboardItem(index + 1, entry) {
+                            selectedImageUrl = entry.profilePictureUrl
+                        }
                     }
                 }
             }
@@ -91,7 +120,7 @@ internal fun LeaderboardScreen(
 }
 
 @Composable
-private fun LeaderboardItem(rank: Int, entry: LeaderboardEntry) {
+private fun LeaderboardItem(rank: Int, entry: LeaderboardEntry, onImageClick: () -> Unit) {
     val backgroundColor = when (rank) {
         1 -> Color(0xFFFFD700).copy(alpha = 0.1f) // Gold
         2 -> Color(0xFFC0C0C0).copy(alpha = 0.1f) // Silver
@@ -125,7 +154,8 @@ private fun LeaderboardItem(rank: Int, entry: LeaderboardEntry) {
                     modifier = Modifier
                         .fillMaxSize()
                         .clip(CircleShape)
-                        .background(if (rank <= 3) iconColor.copy(alpha = 0.2f) else MaterialTheme.colorScheme.surfaceVariant),
+                        .background(if (rank <= 3) iconColor.copy(alpha = 0.2f) else MaterialTheme.colorScheme.surfaceVariant)
+                        .clickable(enabled = entry.profilePictureUrl != null) { onImageClick() },
                     contentAlignment = Alignment.Center
                 ) {
                     if (entry.profilePictureUrl != null) {

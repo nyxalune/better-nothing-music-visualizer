@@ -49,6 +49,7 @@ import kotlin.math.sqrt
 enum class Tab(val label: String, val labelRes: Int) {
     Audio("Audio", R.string.tab_audio), 
     Glyphs("Glyphs", R.string.tab_glyphs), 
+    Visuals("Visuals", R.string.tab_visuals),
     Haptics("Haptics", R.string.tab_haptics), 
     Flashlight("Flashlight", R.string.tab_flashlight), 
     Settings("Settings", R.string.tab_settings);
@@ -238,6 +239,17 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch(Dispatchers.IO) {
             ctx.getSharedPreferences("viz_prefs", Context.MODE_PRIVATE)
                 .edit { putInt("overlay_y_offset", offset) }
+        }
+    }
+
+    private val _overlaySensitivity = MutableStateFlow(1.0f)
+    val overlaySensitivity = _overlaySensitivity.asStateFlow()
+    fun setOverlaySensitivity(sensitivity: Float) {
+        _overlaySensitivity.value = sensitivity
+        MainActivity.serviceStatic?.setOverlaySensitivity(sensitivity)
+        viewModelScope.launch(Dispatchers.IO) {
+            ctx.getSharedPreferences("viz_prefs", Context.MODE_PRIVATE)
+                .edit { putFloat("overlay_sensitivity", sensitivity) }
         }
     }
 
@@ -1740,6 +1752,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _overlayWidth.value = prefs.getInt("overlay_width", 120)
         _overlayHeight.value = prefs.getInt("overlay_height", 12)
         _overlayYOffset.value = prefs.getInt("overlay_y_offset", 2)
+        _overlaySensitivity.value = prefs.getFloat("overlay_sensitivity", 1.0f)
 
         reloadFlashlightSpeedForLevels()
 
@@ -1761,6 +1774,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             DeviceProfile.DEVICE_NP4A -> "Nothing Phone (4a)"
             DeviceProfile.DEVICE_NP4APRO -> "Nothing Phone (4a) Pro"
             DeviceProfile.DEVICE_NP3 -> "Nothing Phone (3)"
+            DeviceProfile.DEVICE_NP4B -> "Nothing Phone (4b)"
             else -> "Unknown Device"
         }
     }

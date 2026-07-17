@@ -206,7 +206,7 @@ fun CustomPresetEditorScreen(
             DeviceProfile.DEVICE_NP2 -> mapOf(20 to 23, 19 to 22, 23 to 20, 22 to 19)
             DeviceProfile.DEVICE_NP2A -> mapOf(24 to 25, 25 to 24)
             DeviceProfile.DEVICE_NP3A -> mapOf(31 to 35, 32 to 34, 35 to 31, 34 to 32)
-            DeviceProfile.DEVICE_NP4A -> emptyMap()
+            DeviceProfile.DEVICE_NP4A, DeviceProfile.DEVICE_NP4B -> emptyMap()
             DeviceProfile.DEVICE_NP4APRO, DeviceProfile.DEVICE_NP3 -> {
                 val w = DeviceProfile.getMatrixWidth(selectedDevice)
                 val h = DeviceProfile.getMatrixHeight(selectedDevice)
@@ -813,7 +813,7 @@ fun EditableGlyphPreview(
         .pointerInput(device) {
             detectTapGestures { offset ->
                 val viewBoxW = 182f
-                val viewBoxH = if (device == DeviceProfile.DEVICE_NP1 || device == DeviceProfile.DEVICE_NP2) 382f else 182f
+                val viewBoxH = if (device == DeviceProfile.DEVICE_NP1 || device == DeviceProfile.DEVICE_NP2 || device == DeviceProfile.DEVICE_NP4A || device == DeviceProfile.DEVICE_NP4B) 382f else 182f
                 val scale = min(size.width / viewBoxW, size.height / viewBoxH)
                 val dx = (size.width - viewBoxW * scale) / 2
                 val dy = (size.height - viewBoxH * scale) / 2
@@ -919,6 +919,22 @@ fun EditableGlyphPreview(
                                 "p4a_dot" -> 6
                                 else -> -1
                             }
+                            DeviceProfile.DEVICE_NP4B -> when(hit.key) {
+                                "p4b_bar" -> {
+                                    val b = hit.value.getBounds()
+                                    val row = ((localY - b.top) / (b.height / 5)).toInt().coerceIn(0, 4)
+                                    row
+                                }
+                                else -> -1
+                            }
+                            DeviceProfile.DEVICE_NP4B -> when(hit.key) {
+                                "p4b_bar" -> {
+                                    val b = hit.value.getBounds()
+                                    val row = ((localY - b.top) / (b.height / 5)).toInt().coerceIn(0, 4)
+                                    row
+                                }
+                                else -> -1
+                            }
                             else -> -1
                         }
                         if (idx != -1) onIndexSelected(idx, false)
@@ -930,7 +946,7 @@ fun EditableGlyphPreview(
             detectDragGestures { change, _ ->
                 change.consume()
                 val viewBoxW = 182f
-                val viewBoxH = if (device == DeviceProfile.DEVICE_NP1 || device == DeviceProfile.DEVICE_NP2) 382f else 182f
+                val viewBoxH = if (device == DeviceProfile.DEVICE_NP1 || device == DeviceProfile.DEVICE_NP2 || device == DeviceProfile.DEVICE_NP4A || device == DeviceProfile.DEVICE_NP4B) 382f else 182f
                 val scale = min(size.width / viewBoxW, size.height / viewBoxH)
                 val dx = (size.width - viewBoxW * scale) / 2
                 val dy = (size.height - viewBoxH * scale) / 2
@@ -1035,7 +1051,7 @@ fun EditableGlyphPreview(
         }
     ) {
         val viewBoxW = 182f
-        val viewBoxH = if (device == DeviceProfile.DEVICE_NP1 || device == DeviceProfile.DEVICE_NP2) 382f else 182f
+        val viewBoxH = if (device == DeviceProfile.DEVICE_NP1 || device == DeviceProfile.DEVICE_NP2 || device == DeviceProfile.DEVICE_NP4A || device == DeviceProfile.DEVICE_NP4B) 382f else 182f
         val scale = min(size.width / viewBoxW, size.height / viewBoxH)
         val dx = (size.width - viewBoxW * scale) / 2
         val dy = (size.height - viewBoxH * scale) / 2
@@ -1143,6 +1159,13 @@ private fun drawEditorGlyphs(scope: DrawScope, device: Int, selectedIndices: Lis
             paths["p4a_bar"]?.let { drawPathSegmentedVertical(scope, it, (0..5).toList(), selectedIndices, intensities, selectedColor, normalColor, baseAlpha, vertical = false) }
             paths["p4a_dot"]?.let { scope.drawPath(it, getColor(6), alpha = getAlpha(6)) }
         }
+        DeviceProfile.DEVICE_NP4B -> {
+            paths["p4b_island"]?.let {
+                scope.drawPath(it, Color.White.copy(alpha = 0.05f))
+                scope.drawPath(it, Color.White.copy(alpha = 0.15f), style = Stroke(width = 1f))
+            }
+            paths["p4b_bar"]?.let { drawPathSegmentedVertical(scope, it, (0..4).toList(), selectedIndices, intensities, selectedColor, normalColor, baseAlpha, vertical = true, specialBaseColors = mapOf(4 to Color.Red)) }
+        }
         DeviceProfile.DEVICE_NP4APRO, DeviceProfile.DEVICE_NP3 -> {
             val isPro = device == DeviceProfile.DEVICE_NP4APRO
 
@@ -1194,7 +1217,8 @@ private fun drawPathSegmentedVertical(
     selectedColor: Color,
     normalColor: Color,
     baseAlpha: Float,
-    vertical: Boolean = true
+    vertical: Boolean = true,
+    specialBaseColors: Map<Int, Color> = emptyMap()
 ) {
     val b = path.getBounds()
     val count = indices.size
@@ -1204,12 +1228,13 @@ private fun drawPathSegmentedVertical(
     indices.forEachIndexed { i, idx ->
         val isSelected = selectedIndices.contains(idx)
         val intensity = if (idx < intensities.size) intensities[idx] else 0f
+        val baseColor = specialBaseColors[idx] ?: normalColor
         
         val color = if (intensity > 0.01f) {
             if (isSelected) lerp(selectedColor, Color.White, intensity)
-            else lerp(normalColor.copy(alpha = baseAlpha), Color.White, intensity)
+            else lerp(baseColor.copy(alpha = baseAlpha), Color.White, intensity)
         } else {
-            if (isSelected) selectedColor else normalColor
+            if (isSelected) selectedColor else baseColor
         }
         
         val alpha = if (intensity > 0.01f) {
@@ -1329,6 +1354,20 @@ private fun getGlyphPaths(parser: PathParser): Map<String, Path> {
 
         put("p4a_bar", parser.parsePathString("M40.5,300.5L142.5,300.5").toPath())
         put("p4a_dot", parser.parsePathString("M91,330.5A5,5 0 1,1 90.99,330.5Z").toPath())
+
+        // --- Phone (4b) ---
+        put("p4b_island", Path().apply {
+            addRoundRect(
+                RoundRect(
+                    left = 10f,
+                    top = 10f,
+                    right = 172f,
+                    bottom = 160f,
+                    cornerRadius = CornerRadius(24f)
+                )
+            )
+        })
+        put("p4b_bar", parser.parsePathString("M144,50h14v100h-14z").toPath())
 
 
         // --- Phone (4a) Pro Camera Bump ---

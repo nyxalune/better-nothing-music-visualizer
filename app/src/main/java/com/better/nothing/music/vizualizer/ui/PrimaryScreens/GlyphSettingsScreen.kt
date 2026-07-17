@@ -309,6 +309,7 @@ internal fun GlyphsScreen(
                         com.better.nothing.music.vizualizer.model.DeviceProfile.DEVICE_NP1,
                         com.better.nothing.music.vizualizer.model.DeviceProfile.DEVICE_NP3,
                         com.better.nothing.music.vizualizer.model.DeviceProfile.DEVICE_NP4A,
+                        com.better.nothing.music.vizualizer.model.DeviceProfile.DEVICE_NP4B,
                         com.better.nothing.music.vizualizer.model.DeviceProfile.DEVICE_NP4APRO -> 560.dp
                         else -> 400.dp
                     }

@@ -76,17 +76,12 @@ internal fun SettingsScreen(
     onStrobeEnabledChanged: (Boolean) -> Unit,
     disableGlyphsWhenSilent: Boolean,
     onDisableGlyphsWhenSilentChanged: (Boolean) -> Unit,
-    overlayEnabled: Boolean,
-    onOverlayEnabledChanged: (Boolean) -> Unit,
     onGoogleSignIn: () -> Unit,
     padding: PaddingValues = PaddingValues(),
 ) {
     val uiAmplitudeSyncEnabled by viewModel.uiAmplitudeSyncEnabled.collectAsStateWithLifecycle()
     val dynamicGainEnabled by viewModel.dynamicGainEnabled.collectAsStateWithLifecycle()
     val flashlightMultiIntensityForced by viewModel.flashlightMultiIntensityForced.collectAsStateWithLifecycle()
-    val overlayWidth by viewModel.overlayWidth.collectAsStateWithLifecycle()
-    val overlayHeight by viewModel.overlayHeight.collectAsStateWithLifecycle()
-    val overlayYOffset by viewModel.overlayYOffset.collectAsStateWithLifecycle()
     val isAnonymous by viewModel.isAnonymous.collectAsStateWithLifecycle()
     val userProfile by viewModel.userProfile.collectAsStateWithLifecycle()
     val scrollState = rememberScrollState()
@@ -370,7 +365,7 @@ internal fun SettingsScreen(
                     Button(
                         onClick = {
                             if (viewModel.verifyDeveloperPassword(passwordInput)) {
-                                viewModel.setDeveloperModeEnabled(true)
+                                viewModel.showAnnouncementEditor()
                                 showPasswordDialog = false
                                 passwordInput = ""
                             } else {
@@ -427,11 +422,7 @@ internal fun SettingsScreen(
                     Switch(
                         checked = devModeEnabled,
                         onCheckedChange = { enabled ->
-                            if (enabled) {
-                                showPasswordDialog = true
-                            } else {
-                                viewModel.setDeveloperModeEnabled(false)
-                            }
+                            viewModel.setDeveloperModeEnabled(enabled)
                         },
                         colors = SwitchDefaults.colors(
                             checkedThumbColor = Color.White,
@@ -477,9 +468,11 @@ internal fun SettingsScreen(
                                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                                     )
                                 }
-                                if (isAdmin || BuildConfig.DEBUG) {
+                                if (isAdmin || BuildConfig.DEBUG || devModeEnabled) {
                                     Button(
-                                        onClick = { viewModel.showAnnouncementEditor() },
+                                        onClick = { 
+                                            showPasswordDialog = true
+                                        },
                                         shape = RoundedCornerShape(12.dp),
                                         contentPadding = PaddingValues(
                                             horizontal = 12.dp,
@@ -598,6 +591,7 @@ internal fun SettingsScreen(
                                         DeviceProfile.DEVICE_NP2A,
                                         DeviceProfile.DEVICE_NP3A,
                                         DeviceProfile.DEVICE_NP4A,
+                                        DeviceProfile.DEVICE_NP4B,
                                         DeviceProfile.DEVICE_NP4APRO,
                                         DeviceProfile.DEVICE_NP3
                                     )
@@ -607,17 +601,15 @@ internal fun SettingsScreen(
                                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                                         verticalArrangement = Arrangement.spacedBy(8.dp)
                                     ) {
-                                        devices.forEach { _ ->
-                                            ExpressiveSplitButton(
-                                                items = devices,
-                                                selectedItem = spoofedDevice,
-                                                onItemSelection = { dev -> viewModel.setSpoofedDevice(dev) },
-                                                labelProvider = { dev ->
-                                                    DeviceProfile.deviceName(dev).replace("Nothing Phone ", "")
-                                                },
-                                                modifier = Modifier.fillMaxWidth()
-                                            )
-                                        }
+                                        ExpressiveSplitButton(
+                                            items = devices,
+                                            selectedItem = spoofedDevice,
+                                            onItemSelection = { dev -> viewModel.setSpoofedDevice(dev) },
+                                            labelProvider = { dev ->
+                                                DeviceProfile.deviceName(dev).replace("Nothing Phone ", "")
+                                            },
+                                            modifier = Modifier.fillMaxWidth()
+                                        )
                                     }
                                     BodyText(
                                         text = stringResource(R.string.spoof_device_description),
@@ -744,12 +736,6 @@ internal fun SettingsScreen(
                             isSelected = uiAmplitudeSyncEnabled,
                             onClick = { viewModel.setUiAmplitudeSyncEnabled(!uiAmplitudeSyncEnabled) }
                         )
-                        OptionTile(
-                            label = stringResource(R.string.nav_overlay),
-                            icon = Icons.Default.Layers,
-                            isSelected = overlayEnabled,
-                            onClick = { onOverlayEnabledChanged(!overlayEnabled) }
-                        )
                         if (selectedDevice != DeviceProfile.DEVICE_UNKNOWN) {
                             OptionTile(
                                 label = stringResource(R.string.disable_glyphs_when_silent_title),
@@ -804,82 +790,6 @@ internal fun SettingsScreen(
                         text = stringResource(R.string.notification_controls_desc),
                         size = 12.sp
                     )
-
-                    AnimatedVisibility(visible = overlayEnabled) {
-                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            // Width Slider
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    text = stringResource(R.string.overlay_width),
-                                    style = MaterialTheme.typography.labelLarge,
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                                Text(
-                                    text = "${overlayWidth}dp",
-                                    style = MaterialTheme.typography.labelMedium,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-                            ExpressiveSlider(
-                                value = overlayWidth.toFloat(),
-                                onValueChange = { viewModel.setOverlayWidth(it.toInt()) },
-                                valueRange = 40f..360f,
-                                modifier = Modifier.fillMaxWidth()
-                            )
-
-                            // Height Slider
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    text = stringResource(R.string.overlay_height),
-                                    style = MaterialTheme.typography.labelLarge,
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                                Text(
-                                    text = "${overlayHeight}dp",
-                                    style = MaterialTheme.typography.labelMedium,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-                            ExpressiveSlider(
-                                value = overlayHeight.toFloat(),
-                                onValueChange = { viewModel.setOverlayHeight(it.toInt()) },
-                                valueRange = 4f..64f,
-                                modifier = Modifier.fillMaxWidth()
-                            )
-
-                            // Y Offset Slider
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    text = stringResource(R.string.vertical_position),
-                                    style = MaterialTheme.typography.labelLarge,
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                                Text(
-                                    text = "${overlayYOffset}dp",
-                                    style = MaterialTheme.typography.labelMedium,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-                            ExpressiveSlider(
-                                value = overlayYOffset.toFloat(),
-                                onValueChange = { viewModel.setOverlayYOffset(it.toInt()) },
-                                valueRange = -20f..80f,
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                        }
-                    }
                 }
             }
         }

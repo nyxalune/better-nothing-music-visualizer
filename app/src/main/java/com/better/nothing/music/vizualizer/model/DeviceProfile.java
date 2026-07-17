@@ -16,6 +16,7 @@ public final class DeviceProfile {
     public static final int DEVICE_NP4A = 5;
     public static final int DEVICE_NP4APRO = 6;
     public static final int DEVICE_NP3 = 7;
+    public static final int DEVICE_NP4B = 8;
 
     private DeviceProfile() {
     }
@@ -38,6 +39,8 @@ public final class DeviceProfile {
             return DEVICE_NP4APRO;
         } else if (Common.is23112()) {
             return DEVICE_NP3;
+        } else if (android.os.Build.MODEL.contains("26111") || android.os.Build.MODEL.toLowerCase().contains("phone 4b")) {
+            return DEVICE_NP4B;
         } else {
             return DEVICE_UNKNOWN;
         }
@@ -52,6 +55,7 @@ public final class DeviceProfile {
             case DEVICE_NP4A -> "Phone (4a)";
             case DEVICE_NP4APRO -> "phone (4a) pro";
             case DEVICE_NP3 -> "Phone (3)";
+            case DEVICE_NP4B -> "Phone (4b)";
             default -> "Unknown";
         };
     }
@@ -65,6 +69,7 @@ public final class DeviceProfile {
             case DEVICE_NP4A -> 7;
             case DEVICE_NP4APRO -> 169;
             case DEVICE_NP3 -> 625;
+            case DEVICE_NP4B -> 5;
             default -> 0;
         };
     }

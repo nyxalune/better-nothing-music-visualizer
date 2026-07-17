@@ -147,7 +147,7 @@
     <string name="strobe_mode">Strobe Mode</string>
     <string name="strobe_mode_desc">Alternating flash pattern for Glyphs</string>
     <string name="developer_access">Developer Access</string>
-    <string name="developer_access_desc">Please enter the developer password to enable advanced features and device spoofing.</string>
+    <string name="developer_access_desc">Please enter the developer password to access administrative tools.</string>
     <string name="password">Password</string>
     <string name="unlock">Unlock</string>
     <string name="incorrect_password">Incorrect Password</string>
@@ -183,6 +183,7 @@
     <string name="nav_overlay">Nav Overlay</string>
     <string name="overlay_width">Overlay Width</string>
     <string name="overlay_height">Overlay Height</string>
+    <string name="overlay_sensitivity">Overlay Sensitivity</string>
     <string name="vertical_position">Vertical Position</string>
     <string name="dynamic_gain">Dynamic Gain</string>
     <string name="flashlight_multi_intensity_forced_title">Flashlight Multi-Intensity</string>
@@ -216,6 +217,7 @@
 
     <string name="tab_audio">Audio</string>
     <string name="tab_glyphs">Glyphs</string>
+    <string name="tab_visuals">Visuals</string>
     <string name="tab_haptics">Haptics</string>
     <string name="tab_flashlight">Flashlight</string>
     <string name="tab_settings">Settings</string>

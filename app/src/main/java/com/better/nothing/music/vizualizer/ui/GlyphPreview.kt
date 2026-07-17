@@ -129,6 +129,20 @@ fun GlyphPreviewContent(
             put("p4a_bar", parser.parsePathString("M40.5,300.5L142.5,300.5").toPath())
             put("p4a_dot", parser.parsePathString("M91,330.5A5,5 0 1,1 90.99,330.5Z").toPath())
 
+            // --- Phone (4b) ---
+            put("p4b_island", Path().apply {
+                addRoundRect(
+                    androidx.compose.ui.geometry.RoundRect(
+                        left = 10f,
+                        top = 10f,
+                        right = 172f,
+                        bottom = 160f,
+                        cornerRadius = CornerRadius(24f)
+                    )
+                )
+            })
+            put("p4b_bar", parser.parsePathString("M144,50h14v100h-14z").toPath())
+            
             // --- Phone (1) & (2) Camera Plate ---
             val p12CamRadius = 28f
             val p12CamX = 6f
@@ -213,6 +227,7 @@ fun GlyphPreviewContent(
                 DeviceProfile.DEVICE_NP1,
                 DeviceProfile.DEVICE_NP3,
                 DeviceProfile.DEVICE_NP4A,
+                DeviceProfile.DEVICE_NP4B,
                 DeviceProfile.DEVICE_NP4APRO -> 382f
                 else -> 182f
             }
@@ -366,6 +381,16 @@ fun GlyphPreviewContent(
                         }
                     }
 
+                    DeviceProfile.DEVICE_NP4B -> {
+                        paths["p4b_island"]?.let {
+                            drawPath(it, Color.White.copy(alpha = 0.05f))
+                            drawPath(it, Color.White.copy(alpha = 0.15f), style = Stroke(width = 1f))
+                        }
+                        paths["p4b_bar"]?.let {
+                            drawPathAddressable(this, it, color, (0..4).toList(), vizState, baseOpacity, scale, glowPaint, vertical = true, specialColors = mapOf(4 to Color.Red))
+                        }
+                    }
+
                     DeviceProfile.DEVICE_NP4APRO, DeviceProfile.DEVICE_NP3 -> {
                         val isPro = device == DeviceProfile.DEVICE_NP4APRO
                         
@@ -478,7 +503,8 @@ private fun drawPathAddressable(
     baseOpacity: Float,
     scale: Float,
     paint: Paint,
-    vertical: Boolean = true
+    vertical: Boolean = true,
+    specialColors: Map<Int, Color> = emptyMap()
 ) {
     val b = path.getBounds()
     val count = indices.size
@@ -487,6 +513,7 @@ private fun drawPathAddressable(
 
     indices.forEachIndexed { i, idx ->
         val alpha = baseOpacity + (state.getOrElse(idx) { 0f } * (1f - baseOpacity))
+        val activeColor = specialColors[idx] ?: color
 
         scope.drawIntoCanvas { canvas ->
             canvas.save()
@@ -498,7 +525,7 @@ private fun drawPathAddressable(
                 bottom = if (vertical) b.top + (i + 1) * step else b.bottom
             )
 
-            paint.color = color
+            paint.color = activeColor
             paint.alpha = alpha * 0.4f
             paint.nativePaint.maskFilter = android.graphics.BlurMaskFilter(8f * scale, android.graphics.BlurMaskFilter.Blur.NORMAL)
             canvas.drawPath(path, paint)

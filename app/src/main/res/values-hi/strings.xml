@@ -150,11 +150,13 @@
     <string name="nav_overlay">नेविगेशन ओवरले</string>
     <string name="overlay_width">ओवरले चौड़ाई</string>
     <string name="overlay_height">ओवरले ऊंचाई</string>
+    <string name="overlay_sensitivity">ओवरले संवेदनशीलता</string>
     <string name="vertical_position">ऊर्ध्वाधर स्थिति</string>
     <string name="dynamic_gain">डायनेमिक गेन</string>
 
     <string name="tab_audio">ऑडियो</string>
     <string name="tab_glyphs">ग्लिफ़</string>
+    <string name="tab_visuals">विजुअल्स</string>
     <string name="tab_haptics">हैप्टिक्स</string>
     <string name="tab_flashlight">टॉर्च</string>
     <string name="tab_settings">सेटिंग्स</string>

@@ -52,6 +52,7 @@ Even if it technically isn’t, the visual response to music just isn’t very o
 - Nothing phone (3a pro)
 - Nothing phone (3) 
 - Nothing Phone (4a)
+- Nothing Phone (4b)
 - Nothing Phone (4a) pro *(not really ready yet but almost)*
 
 **Keep in mind that every android phone is compatible with the haptic and the flashlight visualization.**
