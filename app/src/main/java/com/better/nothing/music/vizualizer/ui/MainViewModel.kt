@@ -139,6 +139,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _appUpdateStatus = MutableStateFlow<AppUpdateStatus>(AppUpdateStatus.Idle)
     val appUpdateStatus = _appUpdateStatus.asStateFlow()
 
+    sealed class LicenseStatus {
+        object Loading : LicenseStatus()
+        data class Success(val content: String) : LicenseStatus()
+        data class Error(val message: String) : LicenseStatus()
+    }
+    private val _licenseStatus = MutableStateFlow<LicenseStatus>(LicenseStatus.Loading)
+    val licenseStatus = _licenseStatus.asStateFlow()
+
     private val _isShowingAbout = MutableStateFlow(false)
     val isShowingAbout = _isShowingAbout.asStateFlow()
     fun showAbout() { _isShowingAbout.value = true }
@@ -146,8 +154,37 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _isShowingLicense = MutableStateFlow(false)
     val isShowingLicense = _isShowingLicense.asStateFlow()
-    fun showLicense() { _isShowingLicense.value = true }
+    fun showLicense() { 
+        _isShowingLicense.value = true 
+        if (_licenseStatus.value is LicenseStatus.Loading || _licenseStatus.value is LicenseStatus.Error) {
+            fetchLicense()
+        }
+    }
     fun hideLicense() { _isShowingLicense.value = false }
+
+    fun fetchLicense() {
+        viewModelScope.launch(Dispatchers.IO) {
+            _licenseStatus.value = LicenseStatus.Loading
+            var connection: HttpURLConnection? = null
+            try {
+                val url = URL("https://raw.githubusercontent.com/aleks-levet/better-nothing-music-visualizer/main/LICENSE")
+                connection = url.openConnection() as HttpURLConnection
+                connection.connectTimeout = 10000
+                connection.readTimeout = 10000
+
+                if (connection.responseCode == HttpURLConnection.HTTP_OK) {
+                    val content = connection.inputStream.bufferedReader().use { it.readText() }
+                    _licenseStatus.value = LicenseStatus.Success(content)
+                } else {
+                    _licenseStatus.value = LicenseStatus.Error("Failed to load license: ${connection.responseCode}")
+                }
+            } catch (e: Exception) {
+                _licenseStatus.value = LicenseStatus.Error(e.message ?: "Unknown error")
+            } finally {
+                connection?.disconnect()
+            }
+        }
+    }
 
     private val _isShowingCommunity = MutableStateFlow(false)
     val isShowingCommunity = _isShowingCommunity.asStateFlow()
@@ -1111,17 +1148,17 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun navigateBack(): Boolean {
-        // First check for overlays
-        if (_isShowingEditor.value) { hideEditor(); return true }
-        if (_isShowingAbout.value) { hideAbout(); return true }
-        if (_isShowingLicense.value) { hideLicense(); return true }
-        if (_isShowingCommunity.value) { hideCommunity(); return true }
-        if (_isShowingLeaderboard.value) { hideLeaderboard(); return true }
-        if (_isShowingStats.value) { hideStats(); return true }
-        if (_isShowingProfileSetup.value) { hideProfileSetup(); return true }
-        if (_showAnnouncementHistory.value) { hideAnnouncementHistory(); return true }
-        if (_showAnnouncementModal.value) { _showAnnouncementModal.value = false; return true }
+        // First check for overlays (order by visual precedence - top-most first)
+        if (_showAnnouncementModal.value) { dismissAnnouncement(); return true }
         if (_showAnnouncementEditor.value) { hideAnnouncementEditor(); return true }
+        if (_isShowingLeaderboard.value) { hideLeaderboard(); return true }
+        if (_showAnnouncementHistory.value) { hideAnnouncementHistory(); return true }
+        if (_isShowingCommunity.value) { hideCommunity(); return true }
+        if (_isShowingProfileSetup.value) { hideProfileSetup(); return true }
+        if (_isShowingStats.value) { hideStats(); return true }
+        if (_isShowingLicense.value) { hideLicense(); return true }
+        if (_isShowingAbout.value) { hideAbout(); return true }
+        if (_isShowingEditor.value) { hideEditor(); return true }
 
         // Then check tab history
         if (tabHistory.isNotEmpty()) {

@@ -55,7 +55,10 @@ internal fun MainOverlays(
         enter = slideInVertically { it } + fadeIn(),
         exit = slideOutVertically { it } + fadeOut()
     ) {
-        LicenseScreen(onDismiss = { viewModel.hideLicense() })
+        LicenseScreen(
+            viewModel = viewModel,
+            onDismiss = { viewModel.hideLicense() }
+        )
     }
 
     AnimatedVisibility(
