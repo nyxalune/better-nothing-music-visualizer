@@ -64,6 +64,10 @@
         </service>
 
         <service
+            android:name=".service.VisualizerService"
+            android:exported="false" />
+
+        <service
             android:name=".service.VisualizerTileService"
             android:exported="true"
             android:icon="@drawable/ic_notif_monochrome"

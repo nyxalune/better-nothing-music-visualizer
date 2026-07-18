@@ -275,6 +275,31 @@ public class AudioCaptureService extends Service {
     private boolean mDisableGlyphsWhenSilent = false;
 
     private boolean mOverlayEnabled = false;
+    private boolean mLensVisualizerEnabled = false;
+    public volatile float mLensVisualizerRadius = 40f;
+    public volatile float mLensVisualizerX = 0.5f;
+    public volatile float mLensVisualizerY = 0.05f;
+    public volatile float mLensVisualizerBarWidth = 3f;
+    public volatile float mLensVisualizerMaxHeight = 20f;
+    public volatile int mLensVisualizerBarCount = 24;
+    public volatile float mLensVisualizerSensitivity = 1.0f;
+
+    public void setLensVisualizerEnabled(boolean enabled) {
+        mLensVisualizerEnabled = enabled;
+        updateOverlayVisibility();
+    }
+
+    public void setLensVisualizerRadius(float radius) {
+        mLensVisualizerRadius = radius;
+        // Broadcast to VisualizerService if running
+    }
+
+    public void setLensVisualizerX(float x) { mLensVisualizerX = x; }
+    public void setLensVisualizerY(float y) { mLensVisualizerY = y; }
+    public void setLensVisualizerBarWidth(float width) { mLensVisualizerBarWidth = width; }
+    public void setLensVisualizerMaxHeight(float height) { mLensVisualizerMaxHeight = height; }
+    public void setLensVisualizerBarCount(int count) { mLensVisualizerBarCount = count; }
+    public void setLensVisualizerSensitivity(float sensitivity) { mLensVisualizerSensitivity = sensitivity; }
     private int mOverlayWidth = 120;
     private int mOverlayHeight = 12;
     private int mOverlayYOffset = 2;
@@ -1197,13 +1222,31 @@ public class AudioCaptureService extends Service {
     }
 
     private void updateOverlayVisibility() {
-        if (mOverlayEnabled && sIsRunning) {
-            if (mOverlayView == null && Settings.canDrawOverlays(this)) {
-                mMainHandler.post(this::showOverlay);
+        boolean anyOverlay = mOverlayEnabled || mLensVisualizerEnabled;
+        if (anyOverlay && sIsRunning) {
+            if (Settings.canDrawOverlays(this)) {
+                if (mOverlayEnabled && mOverlayView == null) {
+                    mMainHandler.post(this::showOverlay);
+                }
+                updateVisualizerService();
             }
         } else {
             mMainHandler.post(this::hideOverlay);
+            stopVisualizerService();
         }
+    }
+
+    private void updateVisualizerService() {
+        Intent intent = new Intent(this, VisualizerService.class);
+        if (mLensVisualizerEnabled && sIsRunning) {
+            startService(intent);
+        } else {
+            stopService(intent);
+        }
+    }
+
+    private void stopVisualizerService() {
+        stopService(new Intent(this, VisualizerService.class));
     }
 
     private void showOverlay() {

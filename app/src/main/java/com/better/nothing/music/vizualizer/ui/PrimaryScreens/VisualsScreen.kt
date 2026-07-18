@@ -169,7 +169,7 @@ fun VisualsScreen(
                     ExpressiveSlider(
                         value = overlaySensitivity,
                         onValueChange = { viewModel.setOverlaySensitivity(it) },
-                        valueRange = 0.01f..10.0f,
+                        valueRange = 0.01f..1.0f,
                         modifier = Modifier.fillMaxWidth()
                     )
 
@@ -194,6 +194,235 @@ fun VisualsScreen(
                         value = overlayYOffset.toFloat(),
                         onValueChange = { viewModel.setOverlayYOffset(it.toInt()) },
                         valueRange = -300f..300f,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            }
+        }
+
+        // Lens Visualizer
+        val lensEnabled by viewModel.lensVisualizerEnabled.collectAsStateWithLifecycle()
+        val lensRadius by viewModel.lensVisualizerRadius.collectAsStateWithLifecycle()
+        val lensX by viewModel.lensVisualizerX.collectAsStateWithLifecycle()
+        val lensY by viewModel.lensVisualizerY.collectAsStateWithLifecycle()
+        val lensBarWidth by viewModel.lensVisualizerBarWidth.collectAsStateWithLifecycle()
+        val lensMaxHeight by viewModel.lensVisualizerMaxHeight.collectAsStateWithLifecycle()
+        val lensBarCount by viewModel.lensVisualizerBarCount.collectAsStateWithLifecycle()
+        val lensSensitivity by viewModel.lensVisualizerSensitivity.collectAsStateWithLifecycle()
+
+        ExpressiveCard {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(end = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Icon(
+                        Icons.Default.Layers,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = stringResource(R.string.lens_visualizer),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+                Switch(
+                    checked = lensEnabled,
+                    onCheckedChange = { enabled ->
+                        if (enabled && !Settings.canDrawOverlays(context)) {
+                            onOverlayPermissionRequest()
+                        } else {
+                            viewModel.setLensVisualizerEnabled(enabled)
+                        }
+                    },
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor = Color.White,
+                        checkedTrackColor = MaterialTheme.colorScheme.primary
+                    ),
+                    modifier = Modifier.size(height = 24.dp, width = 48.dp)
+                )
+            }
+
+            AnimatedVisibility(visible = lensEnabled) {
+                Column(
+                    modifier = Modifier.padding(top = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    // Radius Slider
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = stringResource(R.string.lens_radius),
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Text(
+                            text = "${lensRadius.toInt()}dp",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                    ExpressiveSlider(
+                        value = lensRadius,
+                        onValueChange = { viewModel.setLensVisualizerRadius(it) },
+                        valueRange = 2f..20f,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    // X Position Slider
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = stringResource(R.string.lens_x_position),
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Text(
+                            text = String.format("%.2f", lensX),
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                    ExpressiveSlider(
+                        value = lensX,
+                        onValueChange = { viewModel.setLensVisualizerX(it) },
+                        valueRange = 0f..1f,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    // Y Position Slider
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = stringResource(R.string.lens_y_position),
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Text(
+                            text = String.format("%.2f", lensY),
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                    ExpressiveSlider(
+                        value = lensY,
+                        onValueChange = { viewModel.setLensVisualizerY(it) },
+                        valueRange = -0.1f..1.1f,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    // Bar Width Slider
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = stringResource(R.string.lens_bar_width),
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Text(
+                            text = "${lensBarWidth.toInt()}dp",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                    ExpressiveSlider(
+                        value = lensBarWidth,
+                        onValueChange = { viewModel.setLensVisualizerBarWidth(it) },
+                        valueRange = 1f..10f,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    // Max Height Slider
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = stringResource(R.string.lens_max_height),
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Text(
+                            text = "${lensMaxHeight.toInt()}dp",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                    ExpressiveSlider(
+                        value = lensMaxHeight,
+                        onValueChange = { viewModel.setLensVisualizerMaxHeight(it) },
+                        valueRange = 5f..100f,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    // Bar Count Slider
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = stringResource(R.string.lens_bar_count),
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Text(
+                            text = "${lensBarCount}",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                    ExpressiveSlider(
+                        value = lensBarCount.toFloat(),
+                        onValueChange = { viewModel.setLensVisualizerBarCount(it.toInt()) },
+                        valueRange = 8f..48f,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    // Sensitivity Slider
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = stringResource(R.string.lens_sensitivity),
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Text(
+                            text = String.format("%.2fx", lensSensitivity),
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                    ExpressiveSlider(
+                        value = lensSensitivity,
+                        onValueChange = { viewModel.setLensVisualizerSensitivity(it) },
+                        valueRange = 0.01f..1.0f,
                         modifier = Modifier.fillMaxWidth()
                     )
                 }

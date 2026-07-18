@@ -376,6 +376,14 @@ class MainActivity : ComponentActivity() {
             it.setIdlePattern(viewModel.idlePattern.value)
             it.setStrobeEnabled(viewModel.strobeEnabled.value)
             it.setDisableGlyphsWhenSilent(viewModel.disableGlyphsWhenSilent.value)
+            it.setLensVisualizerEnabled(viewModel.lensVisualizerEnabled.value)
+            it.setLensVisualizerRadius(viewModel.lensVisualizerRadius.value)
+            it.setLensVisualizerX(viewModel.lensVisualizerX.value)
+            it.setLensVisualizerY(viewModel.lensVisualizerY.value)
+            it.setLensVisualizerBarWidth(viewModel.lensVisualizerBarWidth.value)
+            it.setLensVisualizerMaxHeight(viewModel.lensVisualizerMaxHeight.value)
+            it.setLensVisualizerBarCount(viewModel.lensVisualizerBarCount.value)
+            it.setLensVisualizerSensitivity(viewModel.lensVisualizerSensitivity.value)
         }
     }
 

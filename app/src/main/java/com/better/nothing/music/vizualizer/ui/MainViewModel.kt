@@ -290,6 +290,94 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    private val _lensVisualizerEnabled = MutableStateFlow(false)
+    val lensVisualizerEnabled = _lensVisualizerEnabled.asStateFlow()
+    fun setLensVisualizerEnabled(enabled: Boolean) {
+        _lensVisualizerEnabled.value = enabled
+        MainActivity.serviceStatic?.setLensVisualizerEnabled(enabled)
+        viewModelScope.launch(Dispatchers.IO) {
+            ctx.getSharedPreferences("viz_prefs", Context.MODE_PRIVATE)
+                .edit { putBoolean("lens_visualizer_enabled", enabled) }
+        }
+    }
+
+    private val _lensVisualizerRadius = MutableStateFlow(16f)
+    val lensVisualizerRadius = _lensVisualizerRadius.asStateFlow()
+    fun setLensVisualizerRadius(radius: Float) {
+        _lensVisualizerRadius.value = radius
+        MainActivity.serviceStatic?.setLensVisualizerRadius(radius)
+        viewModelScope.launch(Dispatchers.IO) {
+            ctx.getSharedPreferences("viz_prefs", Context.MODE_PRIVATE)
+                .edit { putFloat("lens_visualizer_radius", radius) }
+        }
+    }
+
+    private val _lensVisualizerX = MutableStateFlow(0.50f)
+    val lensVisualizerX = _lensVisualizerX.asStateFlow()
+    fun setLensVisualizerX(x: Float) {
+        _lensVisualizerX.value = x
+        MainActivity.serviceStatic?.setLensVisualizerX(x)
+        viewModelScope.launch(Dispatchers.IO) {
+            ctx.getSharedPreferences("viz_prefs", Context.MODE_PRIVATE)
+                .edit { putFloat("lens_visualizer_x", x) }
+        }
+    }
+
+    private val _lensVisualizerY = MutableStateFlow(0.03f)
+    val lensVisualizerY = _lensVisualizerY.asStateFlow()
+    fun setLensVisualizerY(y: Float) {
+        _lensVisualizerY.value = y
+        MainActivity.serviceStatic?.setLensVisualizerY(y)
+        viewModelScope.launch(Dispatchers.IO) {
+            ctx.getSharedPreferences("viz_prefs", Context.MODE_PRIVATE)
+                .edit { putFloat("lens_visualizer_y", y) }
+        }
+    }
+
+    private val _lensVisualizerBarWidth = MutableStateFlow(1f)
+    val lensVisualizerBarWidth = _lensVisualizerBarWidth.asStateFlow()
+    fun setLensVisualizerBarWidth(width: Float) {
+        _lensVisualizerBarWidth.value = width
+        MainActivity.serviceStatic?.setLensVisualizerBarWidth(width)
+        viewModelScope.launch(Dispatchers.IO) {
+            ctx.getSharedPreferences("viz_prefs", Context.MODE_PRIVATE)
+                .edit { putFloat("lens_visualizer_bar_width", width) }
+        }
+    }
+
+    private val _lensVisualizerMaxHeight = MutableStateFlow(5f)
+    val lensVisualizerMaxHeight = _lensVisualizerMaxHeight.asStateFlow()
+    fun setLensVisualizerMaxHeight(height: Float) {
+        _lensVisualizerMaxHeight.value = height
+        MainActivity.serviceStatic?.setLensVisualizerMaxHeight(height)
+        viewModelScope.launch(Dispatchers.IO) {
+            ctx.getSharedPreferences("viz_prefs", Context.MODE_PRIVATE)
+                .edit { putFloat("lens_visualizer_max_height", height) }
+        }
+    }
+
+    private val _lensVisualizerBarCount = MutableStateFlow(35)
+    val lensVisualizerBarCount = _lensVisualizerBarCount.asStateFlow()
+    fun setLensVisualizerBarCount(count: Int) {
+        _lensVisualizerBarCount.value = count
+        MainActivity.serviceStatic?.setLensVisualizerBarCount(count)
+        viewModelScope.launch(Dispatchers.IO) {
+            ctx.getSharedPreferences("viz_prefs", Context.MODE_PRIVATE)
+                .edit { putInt("lens_visualizer_bar_count", count) }
+        }
+    }
+
+    private val _lensVisualizerSensitivity = MutableStateFlow(0.32f)
+    val lensVisualizerSensitivity = _lensVisualizerSensitivity.asStateFlow()
+    fun setLensVisualizerSensitivity(sensitivity: Float) {
+        _lensVisualizerSensitivity.value = sensitivity
+        MainActivity.serviceStatic?.setLensVisualizerSensitivity(sensitivity)
+        viewModelScope.launch(Dispatchers.IO) {
+            ctx.getSharedPreferences("viz_prefs", Context.MODE_PRIVATE)
+                .edit { putFloat("lens_visualizer_sensitivity", sensitivity) }
+        }
+    }
+
     private val _selectedTheme = MutableStateFlow("Default")
     val selectedTheme = _selectedTheme.asStateFlow()
     fun setSelectedTheme(theme: String) {
@@ -1790,6 +1878,15 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _overlayHeight.value = prefs.getInt("overlay_height", 12)
         _overlayYOffset.value = prefs.getInt("overlay_y_offset", 2)
         _overlaySensitivity.value = prefs.getFloat("overlay_sensitivity", 1.0f)
+
+        _lensVisualizerEnabled.value = prefs.getBoolean("lens_visualizer_enabled", false)
+        _lensVisualizerRadius.value = prefs.getFloat("lens_visualizer_radius", 16f)
+        _lensVisualizerX.value = prefs.getFloat("lens_visualizer_x", 0.50f)
+        _lensVisualizerY.value = prefs.getFloat("lens_visualizer_y", 0.03f)
+        _lensVisualizerBarWidth.value = prefs.getFloat("lens_visualizer_bar_width", 1f)
+        _lensVisualizerMaxHeight.value = prefs.getFloat("lens_visualizer_max_height", 5f)
+        _lensVisualizerBarCount.value = prefs.getInt("lens_visualizer_bar_count", 35)
+        _lensVisualizerSensitivity.value = prefs.getFloat("lens_visualizer_sensitivity", 0.32f)
 
         reloadFlashlightSpeedForLevels()
 
